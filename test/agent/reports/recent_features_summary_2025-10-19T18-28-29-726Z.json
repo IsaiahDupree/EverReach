@@ -1,0 +1,54 @@
+{
+  "timestamp": "2025-10-19T18:28:29.725Z",
+  "duration_ms": 347,
+  "total": 5,
+  "passed": 0,
+  "failed": 5,
+  "tests": [
+    {
+      "name": "Developer Notifications API",
+      "file": "test/agent/dev-notifications-api.mjs",
+      "success": false,
+      "code": 1,
+      "duration": 56,
+      "reportPath": "test/agent/reports/dev_notifications_2025-10-19T18-28-29-427Z.md",
+      "error": "Error: Missing env: SUPABASE_URL\n    at getEnv (file:///C:/Users/Isaia/Documents/Coding/PersonalCRM/test/agent/_shared.mjs:6:58)\n    at getAccessToken (file:///C:/Users/Isaia/Documents/Coding/PersonalCRM/test/agent/_shared.mjs:12:30)\n    at test (file:///C:/Users/Isaia/Documents/Coding/PersonalCRM/test/agent/dev-notifications-api.mjs:26:25)\n"
+    },
+    {
+      "name": "Campaign Automation E2E",
+      "file": "test/agent/campaign-automation-e2e.mjs",
+      "success": false,
+      "code": 1,
+      "duration": 51,
+      "reportPath": "test/agent/reports/campaign_automation_2025-10-19T18-28-29-479Z.md",
+      "error": "Error: Missing env: SUPABASE_URL\n    at getEnv (file:///C:/Users/Isaia/Documents/Coding/PersonalCRM/test/agent/_shared.mjs:6:58)\n    at test (file:///C:/Users/Isaia/Documents/Coding/PersonalCRM/test/agent/campaign-automation-e2e.mjs:27:32)\n"
+    },
+    {
+      "name": "Paywall Analytics API",
+      "file": "test/agent/paywall-analytics-api.mjs",
+      "success": false,
+      "code": 1,
+      "duration": 53,
+      "reportPath": "test/agent/reports/paywall_analytics_2025-10-19T18-28-29-531Z.md",
+      "error": "Error: Missing env: SUPABASE_URL\n    at getEnv (file:///C:/Users/Isaia/Documents/Coding/PersonalCRM/test/agent/_shared.mjs:6:58)\n    at getAccessToken (file:///C:/Users/Isaia/Documents/Coding/PersonalCRM/test/agent/_shared.mjs:12:30)\n    at test (file:///C:/Users/Isaia/Documents/Coding/PersonalCRM/test/agent/paywall-analytics-api.mjs:25:25)\n"
+    },
+    {
+      "name": "Backend Tracking Events",
+      "file": "test/agent/backend-tracking-events.mjs",
+      "success": false,
+      "code": 1,
+      "duration": 88,
+      "reportPath": null,
+      "error": ""
+    },
+    {
+      "name": "Backend Tracking Identify",
+      "file": "test/agent/backend-tracking-identify.mjs",
+      "success": false,
+      "code": 1,
+      "duration": 97,
+      "reportPath": null,
+      "error": ""
+    }
+  ]
+}

@@ -1,0 +1,51 @@
+appId: com.everreach.crm
+name: Contact Lifecycle - Create and View
+---
+
+# Stage 1: Navigate to Add Contact
+- launchApp:
+    clearState: true
+- tapOn: "People"
+- takeScreenshot: create-view-01-people-list
+
+- tapOn:
+    text: "Add.*"
+    index: 0
+- takeScreenshot: create-view-02-add-button
+
+# Stage 2: Fill contact form
+- tapOn: "Name"
+- inputText: "Lifecycle User ${TIMESTAMP}"
+- takeScreenshot: create-view-03-name-entered
+
+- tapOn: "Email"
+- inputText: "lifecycle-${TIMESTAMP}@test.com"
+- takeScreenshot: create-view-04-email-entered
+
+- tapOn: "Phone"
+- inputText: "+15555551234"
+- takeScreenshot: create-view-05-phone-entered
+
+# Stage 3: Save contact
+- tapOn: "Save"
+- assertVisible: "Lifecycle User"
+- takeScreenshot: create-view-06-contact-saved
+
+# Stage 4: View contact details
+- tapOn:
+    text: "Lifecycle User.*"
+    index: 0
+- assertVisible: "Email"
+- assertVisible: "lifecycle-.*@test.com"
+- assertVisible: "Warmth"
+- takeScreenshot: create-view-07-detail-screen
+
+# Stage 5: Verify warmth badge visible
+- assertVisible:
+    text: "40|Neutral"
+- takeScreenshot: create-view-08-warmth-badge
+
+# Stage 6: Go back to list
+- tapOn: "Back"
+- assertVisible: "People"
+- takeScreenshot: create-view-09-back-to-list

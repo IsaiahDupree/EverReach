@@ -1,0 +1,87 @@
+appId: com.everreach.app
+---
+# Regression Test Suite
+# Tests features that have historically broken
+
+- launchApp
+- takeScreenshot: screenshots/regression-01-start.png
+
+###############################################################################
+# REGRESSION 1: Tab Navigation Memory
+# Verify tabs remember their state when switching
+###############################################################################
+
+- tapOn: "People"
+- scrollUntilVisible:
+    element: "Filter"
+    direction: DOWN
+- takeScreenshot: screenshots/regression-02-people-scrolled.png
+
+# Switch to Chat and back
+- tapOn: "Chat"
+- tapOn: "People"
+
+# Verify scroll position maintained (filter still visible)
+- assertVisible: "Filter"
+- takeScreenshot: screenshots/regression-03-people-state-maintained.png
+
+###############################################################################
+# REGRESSION 2: Contact Detail Back Navigation
+# Verify back button works correctly from contact details
+###############################################################################
+
+- tapOn:
+    index: 0
+- assertVisible: "Contact Details"
+- takeScreenshot: screenshots/regression-04-contact-detail.png
+
+- back
+- assertVisible: "All Contacts"
+- takeScreenshot: screenshots/regression-05-back-to-people.png
+
+###############################################################################
+# REGRESSION 3: Settings Navigation Stack
+# Verify deep navigation in settings doesn't break
+###############################################################################
+
+- tapOn: "Settings"
+- tapOn: "Privacy Settings"
+- takeScreenshot: screenshots/regression-06-privacy.png
+
+- tapOn: "Notification Settings"
+- takeScreenshot: screenshots/regression-07-notifications.png
+
+- back
+- assertVisible: "Privacy Settings"
+- back
+- assertVisible: "Account & Subscription"
+- takeScreenshot: screenshots/regression-08-settings-root.png
+
+###############################################################################
+# REGRESSION 4: Home Quick Actions Return
+# Verify quick actions return to home correctly
+###############################################################################
+
+- tapOn: "Home"
+- tapOn: "Voice Note"
+- back
+- assertVisible: "Welcome"
+- takeScreenshot: screenshots/regression-09-home-return.png
+
+###############################################################################
+# REGRESSION 5: Contact Creation Flow
+# Verify full contact creation and navigation
+###############################################################################
+
+- tapOn: "Add Contact"
+- inputText: "Regression Test Contact"
+- tapOn: "Save"
+- takeScreenshot: screenshots/regression-10-contact-created.png
+
+# Verify we can navigate to the contact
+- tapOn: "People"
+- assertVisible: "Regression Test Contact"
+- takeScreenshot: screenshots/regression-11-contact-in-list.png
+
+# Test complete
+- takeScreenshot: screenshots/regression-12-complete.png

@@ -1,0 +1,122 @@
+{
+  "expo": {
+    "name": "AI-Enhanced Personal CRM",
+    "slug": "ai-enhanced-personal-crm",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "everreach",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": false,
+    "splash": {
+      "image": "./assets/images/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "jsEngine": "jsc",
+      "supportsTablet": true,
+      "bundleIdentifier": "com.everreach.app",
+      "infoPlist": {
+        "UIBackgroundModes": [
+          "audio"
+        ],
+        "NSMicrophoneUsageDescription": "EverReach needs microphone access to record voice notes and audio messages for your contacts.",
+        "NSPhotoLibraryUsageDescription": "EverReach needs photo access to let you add profile pictures and share images with your contacts.",
+        "NSCameraUsageDescription": "EverReach needs camera access to take photos for contact profiles and capture moments.",
+        "NSContactsUsageDescription": "EverReach needs contacts access to import your existing contacts into your personal CRM.",
+        "LSApplicationQueriesSchemes": [
+          "mailto",
+          "tel",
+          "telprompt",
+          "sms",
+          "http",
+          "https"
+        ]
+      },
+      "usesAppleSignIn": true,
+      "accessesContactNotes": true
+    },
+    "android": {
+      "jsEngine": "hermes",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.everreach.crm",
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.INTERNET",
+        "android.permission.CAMERA",
+        "android.permission.READ_CONTACTS",
+        "android.permission.WRITE_CONTACTS",
+        "android.permission.VIBRATE",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.SCHEDULE_EXACT_ALARM",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/images/favicon.png",
+      "bundler": "metro",
+      "name": "EverReach - Never Let A Relationship Go Cold Again",
+      "shortName": "EverReach",
+      "description": "AI-powered relationship intelligence that tells you exactly who to reach out to, what to say, and when to say it.",
+      "themeColor": "#7C3AED",
+      "backgroundColor": "#0A0A0F",
+      "output": "static"
+    },
+    "plugins": [
+      [
+        "expo-router",
+        {
+          "origin": "https://everreach.app/"
+        }
+      ],
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone"
+        }
+      ],
+      "expo-apple-authentication",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app accesses your photos to let you share them with your friends."
+        }
+      ],
+      [
+        "expo-contacts",
+        {
+          "contactsPermission": "Allow $(PRODUCT_NAME) to access your contacts to import people into your CRM."
+        }
+      ],
+      "expo-localization",
+      [
+        "expo-notifications",
+        {
+          "color": "#ffffff",
+          "defaultChannel": "default",
+          "enableBackgroundRemoteNotifications": false
+        }
+      ],
+      "expo-font",
+      "expo-web-browser"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": "https://everreach.app/"
+      },
+      "eas": {
+        "projectId": "c4c7bc9d-c16c-4a08-bfa4-80abb3ebead4"
+      }
+    },
+    "owner": "isaiahdupree"
+  }
+}

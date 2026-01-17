@@ -1,0 +1,54 @@
+{
+  "timestamp": "2025-10-19T19:56:55.696Z",
+  "duration_ms": 11453,
+  "total": 5,
+  "passed": 4,
+  "failed": 1,
+  "tests": [
+    {
+      "name": "Developer Notifications API",
+      "file": "test/agent/dev-notifications-api.mjs",
+      "success": true,
+      "code": 0,
+      "duration": 7369,
+      "reportPath": "test/agent/reports/dev_notifications_2025-10-19T19-56-51-602Z.md",
+      "error": null
+    },
+    {
+      "name": "Campaign Automation E2E",
+      "file": "test/agent/campaign-automation-e2e.mjs",
+      "success": true,
+      "code": 0,
+      "duration": 1499,
+      "reportPath": "test/agent/reports/campaign_automation_2025-10-19T19-56-53-101Z.md",
+      "error": null
+    },
+    {
+      "name": "Paywall Analytics API",
+      "file": "test/agent/paywall-analytics-api.mjs",
+      "success": true,
+      "code": 0,
+      "duration": 970,
+      "reportPath": "test/agent/reports/paywall_analytics_2025-10-19T19-56-54-073Z.md",
+      "error": null
+    },
+    {
+      "name": "Backend Tracking Events",
+      "file": "test/agent/backend-tracking-events.mjs",
+      "success": true,
+      "code": 0,
+      "duration": 1288,
+      "reportPath": "test/agent/reports/backend_tracking_events_2025-10-19T19-56-55-361Z.md",
+      "error": null
+    },
+    {
+      "name": "Backend Tracking Identify",
+      "file": "test/agent/backend-tracking-identify.mjs",
+      "success": false,
+      "code": 1,
+      "duration": 325,
+      "reportPath": "test/agent/reports/backend_tracking_identify_2025-10-19T19-56-55-687Z.md",
+      "error": "Error: User identification failed\n    at test (file:///C:/Users/Isaia/Documents/Coding/PersonalCRM/test/agent/backend-tracking-identify.mjs:54:13)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n"
+    }
+  ]
+}

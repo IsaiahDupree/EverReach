@@ -1,0 +1,23 @@
+{
+  "conversation_id": "c16ea60a-100c-41c8-9e77-dfc5b92e14e1",
+  "message": "The contact is associated with multiple persona notes related to business, indicating a focus on various agent analyses and contexts for operations.",
+  "tool_calls_made": 1,
+  "tools_used": [
+    "get_persona_notes"
+  ],
+  "usage": {
+    "prompt_tokens": 747,
+    "completion_tokens": 40,
+    "total_tokens": 787,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  }
+}

@@ -1,0 +1,6 @@
+appId: com.everreach.app
+---
+# Simple Test - Just verify app launches
+- launchApp
+- takeScreenshot: screenshots/app-launched.png
+- assertVisible: "EverReach"

@@ -1,0 +1,7 @@
+appId: ${APP_ID}
+name: Smoke - Launch
+steps:
+  - launchApp: { clearState: true }
+  - waitForAnimationToEnd
+  - assertVisible: "Choose Your Plan"
+  - takeScreenshot: smoke-home

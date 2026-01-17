@@ -1,0 +1,19 @@
+appId: com.everreach.app
+---
+# Test 2: Basic Navigation
+# Purpose: Verify user can navigate to key screens
+
+- launchApp
+- takeScreenshot: screenshots/02-home.png
+
+# Test Settings navigation
+- tapOn: "Settings"
+- assertVisible: "Account & Subscription"
+- takeScreenshot: screenshots/02-settings.png
+- back
+
+# Test Subscription Plans navigation
+- tapOn: "Settings"
+- tapOn: "Subscription Plans"
+- assertVisible: "Core Monthly"
+- takeScreenshot: screenshots/02-plans.png

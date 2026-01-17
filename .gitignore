@@ -1,0 +1,79 @@
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+
+# dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+*.pem
+
+# Environment variables (NEVER COMMIT THESE!)
+.env
+.env.*
+.env.local
+.env.*.local
+!.env.example
+*.env
+
+# typescript
+*.tsbuildinfo
+.vercel
+
+# Logs
+*.log
+xcode-*.log
+build-*.log
+
+# Build outputs
+build/
+.next/
+web/.next/
+
+# Test artifacts
+test-results/
+test/frontend/.auth/
+playwright-report/
+test-screenshots-*/
+test-results-*.txt
+test-logs-*/
+maestro/screenshots/
+.maestro/
+
+# Native prebuild outputs (do not commit)
+android/
+
+# Duplicate directories to exclude
+fifth_pull/
+Users/
+
+# Xcode local config (should not be committed)
+ios/.xcode.env.local
+.xcode.env.local
+
+# npm config (may contain local settings)
+
+# Prevent bun from being used (force npm)
+bun.lock
+bun.lockb

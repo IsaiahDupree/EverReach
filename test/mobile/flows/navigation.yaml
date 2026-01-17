@@ -1,0 +1,22 @@
+appId: ${APP_ID}
+name: Navigation - Basic tab/screen flows
+steps:
+  - launchApp: { clearState: true }
+  - waitForAnimationToEnd
+  
+  # Assert home screen
+  - assertVisible: "Choose Your Plan"
+  - takeScreenshot: nav-home
+  
+  # Test deep link to health
+  - openLink: "everreach://health"
+  - waitForAnimationToEnd
+  - assertVisible: "Connectivity Checks"
+  - takeScreenshot: nav-health
+  
+  # Go back
+  - pressKey: Back
+  - waitForAnimationToEnd
+  
+  # Verify returned to home
+  - assertVisible: "Choose Your Plan"
