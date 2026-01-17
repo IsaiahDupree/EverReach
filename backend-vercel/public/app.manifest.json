@@ -1,0 +1,222 @@
+{
+  "name": "EverReach CRM",
+  "version": "1.0.0",
+  "description": "Warmth scoring, daily follow-ups, and screenshot-to-lead — inside ChatGPT.",
+  "permissions": {
+    "network": {
+      "allowedHosts": [
+        "api.everreach.app",
+        "ever-reach-be.vercel.app"
+      ]
+    }
+  },
+  "auth": {
+    "type": "oauth2",
+    "authorizationUrl": "https://accounts.everreach.app/oauth/authorize",
+    "tokenUrl": "https://accounts.everreach.app/oauth/token",
+    "scopes": [
+      "contacts:read",
+      "contacts:write",
+      "warmth:read",
+      "outreach:write",
+      "screenshots:read",
+      "interactions:read"
+    ]
+  },
+  "tools": [
+    {
+      "name": "contacts_search",
+      "title": "Search Contacts",
+      "description": "Search for contacts by name, email, or tags",
+      "endpoint": "/api/v1/contacts",
+      "method": "GET",
+      "parameters": {
+        "q": {
+          "type": "string",
+          "description": "Search query"
+        },
+        "tags": {
+          "type": "string",
+          "description": "Filter by tags (comma-separated)"
+        },
+        "limit": {
+          "type": "integer",
+          "default": 20
+        }
+      }
+    },
+    {
+      "name": "contacts_get",
+      "title": "Get Contact",
+      "description": "Get a specific contact by ID",
+      "endpoint": "/api/v1/contacts/{id}",
+      "method": "GET",
+      "parameters": {
+        "id": {
+          "type": "string",
+          "required": true
+        }
+      }
+    },
+    {
+      "name": "contacts_upsert",
+      "title": "Upsert Contact",
+      "description": "Create or update a contact",
+      "endpoint": "/api/v1/contacts",
+      "method": "POST",
+      "parameters": {
+        "name": {
+          "type": "string",
+          "required": true
+        },
+        "email": {
+          "type": "string"
+        },
+        "phone": {
+          "type": "string"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "name": "warmth_score",
+      "title": "Get Warmth Score",
+      "description": "Get the current warmth score for a contact",
+      "endpoint": "/api/v1/warmth/{contact_id}",
+      "method": "GET",
+      "parameters": {
+        "contact_id": {
+          "type": "string",
+          "required": true
+        },
+        "model": {
+          "type": "string",
+          "default": "v1_linear",
+          "enum": ["v1_linear", "v2_tree"]
+        }
+      }
+    },
+    {
+      "name": "warmth_explain",
+      "title": "Explain Warmth Score",
+      "description": "Get detailed explanation of warmth score factors",
+      "endpoint": "/api/v1/warmth/{contact_id}/explain",
+      "method": "GET",
+      "parameters": {
+        "contact_id": {
+          "type": "string",
+          "required": true
+        }
+      }
+    },
+    {
+      "name": "outreach_suggest",
+      "title": "Suggest Outreach Message",
+      "description": "Generate a personalized outreach message",
+      "endpoint": "/api/v1/agent/compose/smart",
+      "method": "POST",
+      "parameters": {
+        "contact_id": {
+          "type": "string",
+          "required": true
+        },
+        "channel": {
+          "type": "string",
+          "enum": ["email", "sms", "dm"],
+          "default": "email"
+        },
+        "goal": {
+          "type": "string",
+          "description": "What you want to achieve",
+          "default": "book a coffee chat next week"
+        },
+        "tone": {
+          "type": "string",
+          "default": "friendly, concise"
+        }
+      }
+    },
+    {
+      "name": "screenshots_analyze",
+      "title": "Analyze Screenshot",
+      "description": "Extract entities and insights from a screenshot",
+      "endpoint": "/api/v1/screenshots/analyze",
+      "method": "POST",
+      "parameters": {
+        "image_url": {
+          "type": "string",
+          "required": true,
+          "description": "URL or base64-encoded image"
+        },
+        "context": {
+          "type": "string",
+          "description": "Optional context about the screenshot"
+        }
+      }
+    },
+    {
+      "name": "interactions_list",
+      "title": "List Interactions",
+      "description": "Get recent interactions for a contact",
+      "endpoint": "/api/v1/contacts/{contact_id}/interactions",
+      "method": "GET",
+      "parameters": {
+        "contact_id": {
+          "type": "string",
+          "required": true
+        },
+        "limit": {
+          "type": "integer",
+          "default": 10
+        }
+      }
+    },
+    {
+      "name": "context_bundle",
+      "title": "Get Context Bundle",
+      "description": "Get complete LLM-ready context for a contact",
+      "endpoint": "/api/v1/contacts/{id}/context-bundle",
+      "method": "GET",
+      "parameters": {
+        "id": {
+          "type": "string",
+          "required": true
+        },
+        "interactions": {
+          "type": "integer",
+          "default": 20
+        }
+      }
+    },
+    {
+      "name": "magnetism_score",
+      "title": "Get Magnetism Score",
+      "description": "Get brand magnetism score (engagement & loyalty)",
+      "endpoint": "/api/v1/marketing/magnetism/{user_id}",
+      "method": "GET",
+      "parameters": {
+        "user_id": {
+          "type": "string",
+          "required": true
+        }
+      }
+    }
+  ],
+  "panes": [
+    {
+      "id": "warmth-review",
+      "title": "Today's Warmth Review",
+      "source": "warmth_review.pane.json"
+    },
+    {
+      "id": "marketing-insights",
+      "title": "Marketing Insights",
+      "source": "marketing_insights.pane.json"
+    }
+  ]
+}

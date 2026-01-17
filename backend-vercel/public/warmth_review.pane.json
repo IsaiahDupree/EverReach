@@ -1,0 +1,172 @@
+{
+  "$schema": "https://app.openai.com/app-ui.schema.json",
+  "type": "panel",
+  "title": "Today's Warmth Review",
+  "layout": {
+    "kind": "vertical",
+    "sections": [
+      {
+        "type": "header",
+        "title": "Top Contacts to Ping",
+        "subtitle": "Ranked by current warmth and recent signals"
+      },
+      {
+        "type": "controls",
+        "items": [
+          {
+            "type": "select",
+            "id": "model",
+            "label": "Warmth model",
+            "options": [
+              { "label": "v1_linear (default)", "value": "v1_linear" },
+              { "label": "v2_tree", "value": "v2_tree" }
+            ],
+            "defaultValue": "v1_linear"
+          },
+          {
+            "type": "number",
+            "id": "limit",
+            "label": "How many",
+            "min": 3,
+            "max": 20,
+            "defaultValue": 10
+          },
+          {
+            "type": "button",
+            "id": "refresh",
+            "label": "Refresh",
+            "action": { "type": "reload" }
+          }
+        ]
+      },
+      {
+        "type": "list",
+        "id": "warm-list",
+        "dataSource": {
+          "type": "tool",
+          "name": "contacts_search",
+          "params": { "q": "" }
+        },
+        "transform": {
+          "map": {
+            "item": {
+              "id": "{{item.id}}",
+              "title": "{{item.name}}",
+              "subtitle": "{{item.email}}",
+              "meta": [
+                {
+                  "label": "Warmth",
+                  "value": {
+                    "type": "tool",
+                    "name": "warmth_score",
+                    "params": {
+                      "contact_id": "{{item.id}}",
+                      "model": "{{state.model}}"
+                    },
+                    "pick": "score"
+                  }
+                },
+                {
+                  "label": "Segment",
+                  "value": {
+                    "type": "tool",
+                    "name": "warmth_score",
+                    "params": {
+                      "contact_id": "{{item.id}}",
+                      "model": "{{state.model}}"
+                    },
+                    "pick": "segment"
+                  }
+                }
+              ],
+              "actions": [
+                {
+                  "type": "button",
+                  "label": "Explain",
+                  "action": {
+                    "type": "tool",
+                    "name": "warmth_explain",
+                    "params": { "contact_id": "{{item.id}}" },
+                    "display": {
+                      "type": "modal",
+                      "title": "Warmth factors for {{item.name}}",
+                      "showJson": true
+                    }
+                  }
+                },
+                {
+                  "type": "button",
+                  "style": "primary",
+                  "label": "Draft outreach",
+                  "action": {
+                    "type": "form",
+                    "title": "Draft a message",
+                    "fields": [
+                      { 
+                        "id": "channel", 
+                        "type": "select", 
+                        "label": "Channel", 
+                        "options": [
+                          { "label": "Email", "value": "email" },
+                          { "label": "SMS", "value": "sms" },
+                          { "label": "DM", "value": "dm" }
+                        ], 
+                        "defaultValue": "email" 
+                      },
+                      { 
+                        "id": "goal", 
+                        "type": "text", 
+                        "label": "Goal", 
+                        "placeholder": "book a coffee chat next week", 
+                        "defaultValue": "book a coffee chat next week" 
+                      },
+                      { 
+                        "id": "tone", 
+                        "type": "text", 
+                        "label": "Tone", 
+                        "placeholder": "friendly, concise", 
+                        "defaultValue": "friendly, concise" 
+                      }
+                    ],
+                    "submit": {
+                      "type": "tool",
+                      "name": "outreach_suggest",
+                      "params": {
+                        "contact_id": "{{item.id}}",
+                        "channel": "{{form.channel}}",
+                        "goal": "{{form.goal}}",
+                        "tone": "{{form.tone}}"
+                      },
+                      "display": {
+                        "type": "drawer",
+                        "title": "Suggested message for {{item.name}}",
+                        "showText": "copyable"
+                      }
+                    }
+                  }
+                },
+                {
+                  "type": "button",
+                  "label": "Open in EverReach",
+                  "action": {
+                    "type": "open-url",
+                    "url": "https://app.everreach.app/contacts/{{item.id}}"
+                  }
+                }
+              ]
+            }
+          },
+          "limit": "{{state.limit}}",
+          "sortBy": {
+            "key": "meta[0].value",
+            "direction": "desc"
+          }
+        },
+        "emptyState": {
+          "title": "No contacts yet",
+          "description": "Add or import contacts to see warmth recommendations."
+        }
+      }
+    ]
+  }
+}

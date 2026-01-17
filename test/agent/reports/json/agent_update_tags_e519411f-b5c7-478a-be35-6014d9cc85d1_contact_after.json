@@ -1,0 +1,26 @@
+{
+  "contact": {
+    "id": "1bc3154c-fd44-49eb-a93f-ae1bef228484",
+    "display_name": "Agent Tags e519411f",
+    "emails": [
+      "agenttagse519411f.agent-@example.com"
+    ],
+    "phones": [],
+    "company": null,
+    "notes": null,
+    "tags": [
+      "agent_tag_e519"
+    ],
+    "avatar_url": null,
+    "metadata": {
+      "idempotency_key": "agent-4a11e088-7463-4015-9356-98238e36569a"
+    },
+    "warmth": 0,
+    "warmth_band": null,
+    "warmth_override": false,
+    "warmth_override_reason": null,
+    "last_interaction_at": null,
+    "created_at": "2025-10-11T17:54:59.239329+00:00",
+    "updated_at": "2025-10-11T17:55:01.011617+00:00"
+  }
+}

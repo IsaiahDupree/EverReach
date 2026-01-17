@@ -1,0 +1,24 @@
+{
+  "conversation_id": "f9e93f90-0906-4203-bd67-959e8fee7dc5",
+  "message": "Name: Agent Details 4889c572, Warmth: 0",
+  "tool_calls_made": 2,
+  "tools_used": [
+    "get_contact",
+    "get_contact_interactions"
+  ],
+  "usage": {
+    "prompt_tokens": 751,
+    "completion_tokens": 98,
+    "total_tokens": 849,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  }
+}

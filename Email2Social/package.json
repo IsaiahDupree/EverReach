@@ -1,0 +1,55 @@
+{
+  "name": "email2social-api-clients",
+  "version": "1.0.0",
+  "description": "Comprehensive API clients for Social Links Search and Perplexity AI - Lead enrichment, company research, and B2B intelligence",
+  "type": "module",
+  "main": "social-links-search.js",
+  "scripts": {
+    "test": "node test-social-links-search.mjs && node test-perplexity.mjs",
+    "test:social": "node test-social-links-search.mjs",
+    "test:perplexity": "node test-perplexity.mjs",
+    "example": "node example-usage.mjs",
+    "example:social": "node example-usage.mjs",
+    "example:perplexity": "node perplexity-examples.mjs",
+    "start": "node example-usage.mjs"
+  },
+  "keywords": [
+    "social-media",
+    "social-search",
+    "profile-search",
+    "rapidapi",
+    "api-client",
+    "rate-limiting",
+    "facebook",
+    "linkedin",
+    "twitter",
+    "instagram",
+    "tiktok",
+    "github",
+    "perplexity",
+    "ai",
+    "lead-enrichment",
+    "company-research",
+    "b2b",
+    "intelligence"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "node-fetch": "^3.3.2"
+  },
+  "devDependencies": {
+    "dotenv": "^16.3.1"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/social-links-search-client.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/social-links-search-client/issues"
+  },
+  "homepage": "https://github.com/yourusername/social-links-search-client#readme"
+}

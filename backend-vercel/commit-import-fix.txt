@@ -1,0 +1,9 @@
+fix: remove non-existent getServiceSupabaseClient import
+
+The function doesn't exist in lib/supabase.ts - only getServiceClient
+and getSupabaseServiceClient exist. The file CRUD endpoint doesn't
+actually need this import, removed it to fix build error.
+
+Error was:
+Type error: '"@/lib/supabase"' has no exported member named 
+'getServiceSupabaseClient'. Did you mean 'getServiceClient'?

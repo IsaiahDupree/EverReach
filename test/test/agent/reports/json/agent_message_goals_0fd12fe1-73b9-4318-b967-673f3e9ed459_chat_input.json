@@ -1,0 +1,7 @@
+{
+  "message": "Using tools, fetch message goals for category 'business' for this contact and list their names only.",
+  "context": {
+    "contact_id": "dddd0e10-1a78-4bb6-9521-004833ef41ed",
+    "use_tools": true
+  }
+}

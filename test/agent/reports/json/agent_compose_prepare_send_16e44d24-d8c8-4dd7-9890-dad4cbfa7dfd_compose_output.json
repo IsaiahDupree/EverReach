@@ -1,0 +1,33 @@
+{
+  "contact": {
+    "id": "f0e06ad2-2780-4d95-aa84-ae14cc265eee",
+    "name": "Agent Compose 16e44d24"
+  },
+  "message": {
+    "channel": "email",
+    "subject": "Introduction and Collaboration Opportunity",
+    "body": "Dear Agent Compose,\n\nI hope this message finds you well. I'm reaching out to explore potential collaboration opportunities. Given our shared interests in the industry, I believe we could benefit from discussing how our goals align.\n\nCould we schedule a brief call next week to connect? Please let me know your availability.\n\nLooking forward to your response.\n\nBest regards,  \n[Your Name]  \n[Your Position]  \n[Your Company]  \n[Your Contact Information]",
+    "tone": "concise",
+    "estimated_length": 451
+  },
+  "context_sources": {
+    "voice_notes_used": true,
+    "interactions_used": true,
+    "contact_warmth": 0
+  },
+  "usage": {
+    "prompt_tokens": 318,
+    "completion_tokens": 96,
+    "total_tokens": 414,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  }
+}

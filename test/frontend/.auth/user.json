@@ -1,0 +1,22 @@
+{
+  "cookies": [],
+  "origins": [
+    {
+      "origin": "http://localhost:8081",
+      "localStorage": [
+        {
+          "name": "@app_settings_trial_start",
+          "value": "2025-10-19T02:14:47.541Z"
+        },
+        {
+          "name": "@trial_start_date",
+          "value": "2025-10-19T02:14:50.718Z"
+        },
+        {
+          "name": "@app_settings_cloud_mode",
+          "value": "true"
+        }
+      ]
+    }
+  ]
+}

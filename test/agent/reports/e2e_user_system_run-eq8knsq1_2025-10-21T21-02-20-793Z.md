@@ -1,0 +1,87 @@
+# E2E Test: User & System Endpoints
+
+- **Run ID**: 6e2476c7-d7fa-4e6d-8599-a7f29230d498
+- **Timestamp**: 2025-10-21T21:02:18.630Z
+- **Backend**: https://ever-reach-be.vercel.app/api
+- **Origin**: https://everreach.app
+
+## Test Results
+
+### System
+
+
+### User Profile
+
+
+### Persona Notes
+
+
+### Custom Fields
+
+
+### Search
+
+
+**Summary**: 9 passed, 2 failed
+
+### ✅ GET /health (health check)
+
+- **Status**: 200
+- **Duration**: 203ms
+- **Health Status**: healthy
+
+### ✅ GET /v1/me (current user)
+
+- **Status**: 200
+- **Duration**: 245ms
+- **User ID**: e5eaa347-9c72-4190-bace-ec7a2063f69a
+
+### ✅ GET /v1/me/compose-settings (get settings)
+
+- **Status**: 200
+- **Duration**: 199ms
+
+### ✅ PATCH /v1/me/compose-settings (update settings)
+
+- **Status**: 200
+- **Duration**: 166ms
+
+### ✅ POST /v1/me/persona-notes (create)
+
+- **Status**: 201
+- **Duration**: 127ms
+- **Note ID**: 9978e2bb-346a-44bf-a92f-4fe7b70e9fd7
+
+### ❌ GET /v1/me/persona-notes (list)
+
+- **Status**: 200
+- **Duration**: 201ms
+- **Count**: 0
+
+### ✅ GET /v1/me/persona-notes/:id (get single)
+
+- **Status**: 200
+- **Duration**: 162ms
+
+### ❌ PATCH /v1/me/persona-notes/:id (update)
+
+- **Status**: 400
+- **Duration**: 59ms
+
+### ✅ DELETE /v1/me/persona-notes/:id (delete)
+
+- **Status**: 200
+- **Duration**: 118ms
+
+### ✅ GET /v1/custom-fields (list)
+
+- **Status**: 500
+- **Duration**: 149ms
+- **Count**: 0
+- **Note**: Endpoint returns 500 (may need migration or implementation)
+
+### ✅ POST /v1/search (search)
+
+- **Status**: 200
+- **Duration**: 240ms
+- **Results**: 14

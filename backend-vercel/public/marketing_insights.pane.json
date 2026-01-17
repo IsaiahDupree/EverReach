@@ -1,0 +1,149 @@
+{
+  "$schema": "https://app.openai.com/app-ui.schema.json",
+  "type": "panel",
+  "title": "Marketing Insights",
+  "layout": {
+    "kind": "vertical",
+    "sections": [
+      {
+        "type": "header",
+        "title": "Marketing Intelligence Dashboard",
+        "subtitle": "User personas, magnetism scores, and conversion analytics"
+      },
+      {
+        "type": "metrics",
+        "id": "funnel-metrics",
+        "dataSource": {
+          "type": "tool",
+          "name": "analytics_funnel",
+          "params": { "days": 30 }
+        },
+        "cards": [
+          {
+            "title": "Email → Trial",
+            "value": "{{data.overall_rates.email_to_trial_rate | percent}}",
+            "trend": {
+              "direction": "up",
+              "label": "+2.3%"
+            }
+          },
+          {
+            "title": "Trial → Purchase",
+            "value": "{{data.overall_rates.trial_to_purchase_rate | percent}}",
+            "trend": {
+              "direction": "up",
+              "label": "+1.8%"
+            }
+          },
+          {
+            "title": "Total Conversions",
+            "value": "{{data.totals.purchases_completed}}",
+            "trend": {
+              "direction": "up",
+              "label": "+15%"
+            }
+          }
+        ]
+      },
+      {
+        "type": "chart",
+        "id": "persona-distribution",
+        "title": "User Personas",
+        "chartType": "pie",
+        "dataSource": {
+          "type": "tool",
+          "name": "analytics_personas",
+          "params": {}
+        },
+        "transform": {
+          "labels": "{{data.personas[].label}}",
+          "values": "{{data.personas[].user_count}}",
+          "colors": ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF", "#FF9F40"]
+        }
+      },
+      {
+        "type": "chart",
+        "id": "magnetism-bands",
+        "title": "Magnetism Distribution",
+        "chartType": "bar",
+        "dataSource": {
+          "type": "tool",
+          "name": "analytics_magnetism",
+          "params": { "window": "7d" }
+        },
+        "transform": {
+          "labels": ["Hot", "Warm", "Cooling", "Cold"],
+          "values": [
+            "{{data.distribution.hot}}",
+            "{{data.distribution.warm}}",
+            "{{data.distribution.cooling}}",
+            "{{data.distribution.cold}}"
+          ],
+          "colors": ["#10B981", "#3B82F6", "#F59E0B", "#EF4444"]
+        }
+      },
+      {
+        "type": "table",
+        "id": "top-personas",
+        "title": "Top Performing Personas",
+        "dataSource": {
+          "type": "tool",
+          "name": "analytics_personas",
+          "params": {}
+        },
+        "columns": [
+          {
+            "header": "Persona",
+            "accessor": "label"
+          },
+          {
+            "header": "Users",
+            "accessor": "user_count",
+            "type": "number"
+          },
+          {
+            "header": "Trial Rate",
+            "accessor": "trial_rate",
+            "type": "percent"
+          },
+          {
+            "header": "Purchase Rate",
+            "accessor": "purchase_rate",
+            "type": "percent"
+          },
+          {
+            "header": "Avg Magnetism",
+            "accessor": "avg_magnetism_7d",
+            "type": "number"
+          }
+        ],
+        "transform": {
+          "data": "{{data.personas}}",
+          "limit": 5
+        }
+      },
+      {
+        "type": "controls",
+        "items": [
+          {
+            "type": "button",
+            "label": "View Full Dashboard",
+            "action": {
+              "type": "open-url",
+              "url": "https://app.everreach.app/admin/marketing"
+            }
+          },
+          {
+            "type": "button",
+            "label": "Export Data",
+            "action": {
+              "type": "tool",
+              "name": "analytics_export",
+              "params": { "format": "csv", "days": 30 }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

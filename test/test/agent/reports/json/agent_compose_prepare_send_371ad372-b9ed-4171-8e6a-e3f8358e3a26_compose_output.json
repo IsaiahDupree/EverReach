@@ -1,0 +1,44 @@
+{
+  "draft": {
+    "email": {
+      "subject": "Inquiry for Collaboration",
+      "body": "Dear Agent Compose 371ad372,\n\nI hope this message finds you well. I am reaching out to explore potential collaboration opportunities. We are currently seeking partnerships that align with our objectives and would like to discuss how we might work together. \n\nPlease let me know if you are available for a brief call or meeting to discuss this further.\n\nLooking forward to your response.\n\nBest regards,  \n[Your Name]  \n[Your Position]  \n[Your Company]  \n[Your Contact Information]"
+    }
+  },
+  "contact": {
+    "id": "6eda11dd-5165-44e1-b1db-168d549a268d",
+    "name": "Agent Compose 371ad372"
+  },
+  "message": {
+    "channel": "email",
+    "subject": "Inquiry for Collaboration",
+    "body": "Dear Agent Compose 371ad372,\n\nI hope this message finds you well. I am reaching out to explore potential collaboration opportunities. We are currently seeking partnerships that align with our objectives and would like to discuss how we might work together. \n\nPlease let me know if you are available for a brief call or meeting to discuss this further.\n\nLooking forward to your response.\n\nBest regards,  \n[Your Name]  \n[Your Position]  \n[Your Company]  \n[Your Contact Information]",
+    "tone": "concise",
+    "estimated_length": 479
+  },
+  "context_used": [
+    "interactions",
+    "voice_notes",
+    "contact"
+  ],
+  "context_sources": {
+    "voice_notes_used": true,
+    "interactions_used": true,
+    "contact_warmth": 0
+  },
+  "usage": {
+    "prompt_tokens": 318,
+    "completion_tokens": 104,
+    "total_tokens": 422,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  }
+}

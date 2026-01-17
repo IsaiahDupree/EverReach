@@ -1,0 +1,24 @@
+{
+  "conversation_id": "5f5cbd7f-4f45-4559-977f-86be4919a4ed",
+  "message": "The last two interactions with Agent Inter 08f6347f were notes recorded on November 21, 2025: the first note was created at 23:05:35, followed by a second note shortly after at 23:05:36.",
+  "tool_calls_made": 2,
+  "tools_used": [
+    "get_contact_interactions",
+    "get_contact"
+  ],
+  "usage": {
+    "prompt_tokens": 733,
+    "completion_tokens": 96,
+    "total_tokens": 829,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  }
+}

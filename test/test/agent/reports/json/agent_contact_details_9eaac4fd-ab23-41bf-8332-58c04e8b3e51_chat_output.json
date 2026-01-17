@@ -1,0 +1,24 @@
+{
+  "conversation_id": "c3ee46ab-503e-4b8d-8d9a-86e34985f2ce",
+  "message": "Name: Test Contact 9eaac4fd, Warmth: 0",
+  "tool_calls_made": 2,
+  "tools_used": [
+    "get_contact",
+    "get_contact_interactions"
+  ],
+  "usage": {
+    "prompt_tokens": 744,
+    "completion_tokens": 84,
+    "total_tokens": 828,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  }
+}

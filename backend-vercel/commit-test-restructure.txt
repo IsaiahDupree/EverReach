@@ -1,0 +1,41 @@
+feat: restructure backend tests to follow agent test pattern
+
+Following the proven test structure from test/agent/, implemented:
+
+Unified Test Infrastructure:
+- test/backend/_shared.mjs - Shared utilities (getAccessToken, apiFetch, reporting)
+- test/backend/run-all.mjs - Unified test runner with comprehensive reporting
+- Moved tests to test/backend/ directory for organization
+
+Key Features:
+- Individual test reports with detailed results
+- Unified report combining all test outputs
+- Markdown reports in test/backend/reports/
+- Consistent error logging and stack traces
+- Performance metrics tracking (duration per test)
+- Success rate calculations
+- Test RUN_ID for correlating reports
+
+Test Structure:
+- Each test generates its own detailed report
+- Runner combines all reports into unified view
+- Failed tests shown first in reports
+- Complete environment info logged
+- Follows same pattern as agent tests for consistency
+
+Files Created/Modified:
+- test/backend/_shared.mjs (shared utilities, 170 lines)
+- test/backend/run-all.mjs (unified runner, 280 lines)
+- test/backend/file-crud.mjs (refactored to use _shared)
+- test/backend/revenuecat-webhook.mjs (moved from test/)
+- scripts/test-file-crud.ps1 (updated to use unified runner)
+
+Benefits:
+- Consistent test infrastructure across codebase
+- Better debugging with detailed error logs
+- Comprehensive reporting for CI/CD
+- Easy to add new tests (just drop .mjs files in test/backend/)
+- Automatic report generation
+
+Run tests: node test/backend/run-all.mjs
+Or via script: .\scripts\test-file-crud.ps1

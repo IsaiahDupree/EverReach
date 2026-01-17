@@ -1,0 +1,1224 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="EverReach Backend Tests" tests="254" failures="167" errors="0" time="23.772">
+  <testsuite name="Embeddings Library" errors="0" failures="0" skipped="0" timestamp="2025-10-10T16:33:52" time="12.797" tests="21">
+    <testcase classname="Embeddings Library › cosineSimilarity" name="should calculate perfect similarity for identical vectors" time="0.003">
+    </testcase>
+    <testcase classname="Embeddings Library › cosineSimilarity" name="should calculate zero similarity for orthogonal vectors" time="0">
+    </testcase>
+    <testcase classname="Embeddings Library › cosineSimilarity" name="should calculate negative similarity for opposite vectors" time="0.001">
+    </testcase>
+    <testcase classname="Embeddings Library › cosineSimilarity" name="should calculate partial similarity for similar vectors" time="0.001">
+    </testcase>
+    <testcase classname="Embeddings Library › cosineSimilarity" name="should throw error for different length vectors" time="0.009">
+    </testcase>
+    <testcase classname="Embeddings Library › cosineSimilarity" name="should handle zero vectors" time="0">
+    </testcase>
+    <testcase classname="Embeddings Library › calculateCentroid" name="should calculate centroid of multiple vectors" time="0.001">
+    </testcase>
+    <testcase classname="Embeddings Library › calculateCentroid" name="should return the vector itself for single vector" time="0.001">
+    </testcase>
+    <testcase classname="Embeddings Library › calculateCentroid" name="should return zero vector for empty array" time="0.001">
+    </testcase>
+    <testcase classname="Embeddings Library › calculateCentroid" name="should handle negative numbers" time="0.001">
+    </testcase>
+    <testcase classname="Embeddings Library › calculateCentroid" name="should calculate weighted average correctly" time="0">
+    </testcase>
+    <testcase classname="Embeddings Library › formatVectorForPostgres" name="should format vector as PostgreSQL array string" time="0.001">
+    </testcase>
+    <testcase classname="Embeddings Library › formatVectorForPostgres" name="should handle decimal numbers" time="0">
+    </testcase>
+    <testcase classname="Embeddings Library › formatVectorForPostgres" name="should handle negative numbers" time="0">
+    </testcase>
+    <testcase classname="Embeddings Library › formatVectorForPostgres" name="should handle large vectors" time="0.001">
+    </testcase>
+    <testcase classname="Embeddings Library › parseVectorFromPostgres" name="should parse PostgreSQL vector string" time="0">
+    </testcase>
+    <testcase classname="Embeddings Library › parseVectorFromPostgres" name="should handle decimal numbers" time="0.001">
+    </testcase>
+    <testcase classname="Embeddings Library › parseVectorFromPostgres" name="should handle negative numbers" time="0">
+    </testcase>
+    <testcase classname="Embeddings Library › parseVectorFromPostgres" name="should round-trip with formatVectorForPostgres" time="0.001">
+    </testcase>
+    <testcase classname="Embeddings Library › Vector operations integration" name="should maintain similarity after centroid calculation" time="0">
+    </testcase>
+    <testcase classname="Embeddings Library › Vector operations integration" name="should create centroids that are between input vectors" time="0.001">
+    </testcase>
+  </testsuite>
+  <testsuite name="AI Clustering Logic" errors="0" failures="1" skipped="0" timestamp="2025-10-10T16:34:06" time="0.475" tests="24">
+    <testcase classname="AI Clustering Logic › generateEmbedding" name="should generate embedding for text" time="0.005">
+    </testcase>
+    <testcase classname="AI Clustering Logic › generateEmbedding" name="should generate different embeddings for different text" time="0.005">
+      <failure>Error: expect(received).not.toEqual(expected) // deep equality
+
+Expected: not [0, 0.009999833334166664, 0.01999866669333308, 0.02999550020249566, 0.03998933418663416, 0.04997916927067833, 0.059964006479444595, 0.06994284733753277, 0.0799146939691727, 0.08987854919801104, …]
+
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\integration\clustering.test.ts:79:24)</failure>
+    </testcase>
+    <testcase classname="AI Clustering Logic › generateEmbedding" name="should handle long text by truncating" time="0">
+    </testcase>
+    <testcase classname="AI Clustering Logic › generateEmbedding" name="should handle empty text" time="0">
+    </testcase>
+    <testcase classname="AI Clustering Logic › Similarity Clustering" name="should group similar feature requests" time="0.002">
+    </testcase>
+    <testcase classname="AI Clustering Logic › Similarity Clustering" name="should separate different feature categories" time="0.001">
+    </testcase>
+    <testcase classname="AI Clustering Logic › Similarity Clustering" name="should calculate accurate centroid for cluster" time="0.002">
+    </testcase>
+    <testcase classname="AI Clustering Logic › generateBucketTitle" name="should generate title for dark mode requests" time="0">
+    </testcase>
+    <testcase classname="AI Clustering Logic › generateBucketTitle" name="should generate title for screenshot requests" time="0">
+    </testcase>
+    <testcase classname="AI Clustering Logic › generateBucketTitle" name="should generate title for calendar requests" time="0">
+    </testcase>
+    <testcase classname="AI Clustering Logic › generateBucketTitle" name="should handle single request" time="0.001">
+    </testcase>
+    <testcase classname="AI Clustering Logic › generateBucketTitle" name="should handle requests without description" time="0">
+    </testcase>
+    <testcase classname="AI Clustering Logic › generateBucketSummary" name="should generate summary for dark mode requests" time="0.001">
+    </testcase>
+    <testcase classname="AI Clustering Logic › generateBucketSummary" name="should generate summary for screenshot requests" time="0">
+    </testcase>
+    <testcase classname="AI Clustering Logic › generateBucketSummary" name="should be concise (&lt; 150 chars)" time="0">
+    </testcase>
+    <testcase classname="AI Clustering Logic › generateBucketSummary" name="should handle multiple requests" time="0.001">
+    </testcase>
+    <testcase classname="AI Clustering Logic › Clustering Decision Logic" name="should create new bucket when similarity &lt; threshold" time="0.004">
+    </testcase>
+    <testcase classname="AI Clustering Logic › Clustering Decision Logic" name="should assign to existing bucket when similarity &gt;= threshold" time="0">
+    </testcase>
+    <testcase classname="AI Clustering Logic › Clustering Decision Logic" name="should update centroid after adding request" time="0.001">
+    </testcase>
+    <testcase classname="AI Clustering Logic › Edge Cases" name="should handle empty bucket (no requests)" time="0">
+    </testcase>
+    <testcase classname="AI Clustering Logic › Edge Cases" name="should handle single request in bucket" time="0.004">
+    </testcase>
+    <testcase classname="AI Clustering Logic › Edge Cases" name="should handle very similar requests" time="0.001">
+    </testcase>
+    <testcase classname="AI Clustering Logic › Edge Cases" name="should handle special characters in text" time="0">
+    </testcase>
+    <testcase classname="AI Clustering Logic › Edge Cases" name="should handle multilingual text" time="0.001">
+    </testcase>
+  </testsuite>
+  <testsuite name="Webhook Registration" errors="0" failures="23" skipped="0" timestamp="2025-10-10T16:34:07" time="2.102" tests="23">
+    <testcase classname="Webhook Registration" name="should create webhook with events" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-webhooks.test.ts:26:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Webhook Registration" name="should support multiple webhooks per org" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-webhooks.test.ts:26:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Webhook Registration" name="should allow webhook without description" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-webhooks.test.ts:26:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Webhook Registration" name="should set default retry count" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-webhooks.test.ts:26:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Webhook Signature Verification" name="should generate valid HMAC signature" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-webhooks.test.ts:26:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Webhook Signature Verification" name="should verify valid signature" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-webhooks.test.ts:26:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Webhook Signature Verification" name="should reject invalid signature" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-webhooks.test.ts:26:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Webhook Signature Verification" name="should reject old timestamp (replay attack)" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-webhooks.test.ts:26:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Webhook Signature Verification" name="should use constant-time comparison" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-webhooks.test.ts:26:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Event Emission" name="should emit event to subscribed webhooks" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-webhooks.test.ts:26:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Event Emission" name="should not emit to unsubscribed webhooks" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-webhooks.test.ts:26:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Event Emission" name="should not emit to disabled webhooks" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-webhooks.test.ts:26:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Event Emission" name="should generate unique event IDs" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-webhooks.test.ts:26:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Delivery Tracking" name="should track delivery attempts" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-webhooks.test.ts:26:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Delivery Tracking" name="should update delivery status after attempt" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-webhooks.test.ts:26:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Delivery Tracking" name="should track failed deliveries" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-webhooks.test.ts:26:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Delivery Tracking" name="should support multiple retry attempts" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-webhooks.test.ts:26:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Webhook Status Tracking" name="should track consecutive failures" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-webhooks.test.ts:26:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Webhook Status Tracking" name="should track last delivery status" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-webhooks.test.ts:26:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Webhook Management" name="should update webhook URL" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-webhooks.test.ts:26:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Webhook Management" name="should update subscribed events" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-webhooks.test.ts:26:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Webhook Management" name="should enable/disable webhook" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-webhooks.test.ts:26:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Webhook Management" name="should delete webhook and cascade to deliveries" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-webhooks.test.ts:26:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="" name="Test execution failure: could be caused by test hooks like &apos;afterAll&apos;." time="0">
+      <failure>{&quot;message&quot;:&quot;&quot;,&quot;stack&quot;:&quot;Error: @supabase/auth-js: Expected parameter to be UUID but is not\n    at validateUUID (C:\\Users\\Isaia\\Documents\\Coding\\PersonalCRM\\backend-vercel\\node_modules\\@supabase\\auth-js\\src\\lib\\helpers.ts:367:11)\n    at GoTrueAdminApi.deleteUser (C:\\Users\\Isaia\\Documents\\Coding\\PersonalCRM\\backend-vercel\\node_modules\\@supabase\\auth-js\\src\\GoTrueAdminApi.ts:281:17)\n    at Object.&lt;anonymous&gt; (C:\\Users\\Isaia\\Documents\\Coding\\PersonalCRM\\backend-vercel\\__tests__\\api\\public-api-webhooks.test.ts:41:29)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)&quot;}</failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="Warmth Score Calculation" errors="0" failures="6" skipped="0" timestamp="2025-10-10T16:34:09" time="0.48" tests="6">
+    <testcase classname="Warmth Score Calculation" name="Base score should be 30 for contact with no interactions" time="0.001">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\warmth-score.test.ts:25:29)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Warmth Score Calculation" name="Warmth score increases after single interaction" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\warmth-score.test.ts:25:29)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Warmth Score Calculation" name="Warmth score reaches maximum of 100 with optimal engagement" time="0.001">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\warmth-score.test.ts:25:29)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Warmth Score Calculation" name="Warmth score decays after 30 days of no interaction" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\warmth-score.test.ts:25:29)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Warmth Score Calculation" name="Warmth score never goes below 0" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\warmth-score.test.ts:25:29)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Warmth Score Calculation" name="Channel diversity bonus applies with 2+ interaction types" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\warmth-score.test.ts:25:29)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="Basic Rate Limiting" errors="0" failures="20" skipped="0" timestamp="2025-10-10T16:34:10" time="0.628" tests="20">
+    <testcase classname="Basic Rate Limiting" name="should allow first request within limit" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-rate-limit.test.ts:31:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Basic Rate Limiting" name="should track multiple requests in same window" time="0.001">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-rate-limit.test.ts:31:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Basic Rate Limiting" name="should reject request when limit exceeded" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-rate-limit.test.ts:31:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Basic Rate Limiting" name="should reset in new window" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-rate-limit.test.ts:31:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Multiple Rate Limits" name="should enforce all rate limits" time="0.001">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-rate-limit.test.ts:31:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Multiple Rate Limits" name="should return most restrictive remaining count" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-rate-limit.test.ts:31:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Multiple Rate Limits" name="should fail if any limit exceeded" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-rate-limit.test.ts:31:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Endpoint-Specific Limits" name="should enforce stricter limit for AI generation endpoint" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-rate-limit.test.ts:31:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Endpoint-Specific Limits" name="should enforce stricter limit for warmth recompute endpoint" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-rate-limit.test.ts:31:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Rate Limit Headers" name="should add standard rate limit headers" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-rate-limit.test.ts:31:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Rate Limit Headers" name="should add Retry-After header when rate limited" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-rate-limit.test.ts:31:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Rate Limit Cleanup" name="should clean up old rate limit windows" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-rate-limit.test.ts:31:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Rate Limit Cleanup" name="should not clean up recent windows" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-rate-limit.test.ts:31:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Rate Limit Configurations" name="should have reasonable default limits" time="0.001">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-rate-limit.test.ts:31:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Rate Limit Configurations" name="should have stricter limits for expensive operations" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-rate-limit.test.ts:31:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Concurrent Requests" name="should handle concurrent requests correctly" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-rate-limit.test.ts:31:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Different Key Types" name="should handle api_key type" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-rate-limit.test.ts:31:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Different Key Types" name="should handle ip type" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-rate-limit.test.ts:31:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Different Key Types" name="should handle org type" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-rate-limit.test.ts:31:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Different Key Types" name="should isolate limits by key type" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-rate-limit.test.ts:31:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="Context Bundle Structure" errors="0" failures="23" skipped="0" timestamp="2025-10-10T16:34:11" time="0.573" tests="23">
+    <testcase classname="Context Bundle Structure" name="should return complete context bundle structure" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-context-bundle.test.ts:28:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Context Bundle Structure" name="should include complete contact information" time="0.001">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-context-bundle.test.ts:28:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Context Bundle Structure" name="should include recent interactions" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-context-bundle.test.ts:28:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Context Bundle Structure" name="should include context helpers for AI" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-context-bundle.test.ts:28:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Context Bundle Structure" name="should include metadata with token estimate" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-context-bundle.test.ts:28:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Query Parameters" name="should limit interactions with query param" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-context-bundle.test.ts:28:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Query Parameters" name="should enforce max interactions limit" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-context-bundle.test.ts:28:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Query Parameters" name="should default to 20 interactions" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-context-bundle.test.ts:28:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Prompt Skeleton Generation" name="should include contact name in skeleton" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-context-bundle.test.ts:28:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Prompt Skeleton Generation" name="should include warmth information" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-context-bundle.test.ts:28:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Prompt Skeleton Generation" name="should include tags" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-context-bundle.test.ts:28:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Prompt Skeleton Generation" name="should include last contact information" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-context-bundle.test.ts:28:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Prompt Skeleton Generation" name="should include recent interactions summary" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-context-bundle.test.ts:28:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Prompt Skeleton Generation" name="should be token-efficient" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-context-bundle.test.ts:28:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Authorization" name="should require authentication" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-context-bundle.test.ts:28:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Authorization" name="should require contacts:read scope" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-context-bundle.test.ts:28:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Authorization" name="should enforce tenant isolation" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-context-bundle.test.ts:28:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Edge Cases" name="should handle contact with no interactions" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-context-bundle.test.ts:28:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Edge Cases" name="should handle contact with no custom fields" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-context-bundle.test.ts:28:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Edge Cases" name="should handle contact with DNC flag" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-context-bundle.test.ts:28:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Edge Cases" name="should return 404 for non-existent contact" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-context-bundle.test.ts:28:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Response Headers" name="should include rate limit headers" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-context-bundle.test.ts:28:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Response Headers" name="should include request ID header" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-context-bundle.test.ts:28:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="" name="Test execution failure: could be caused by test hooks like &apos;afterAll&apos;." time="0">
+      <failure>{&quot;message&quot;:&quot;&quot;,&quot;stack&quot;:&quot;Error: @supabase/auth-js: Expected parameter to be UUID but is not\n    at validateUUID (C:\\Users\\Isaia\\Documents\\Coding\\PersonalCRM\\backend-vercel\\node_modules\\@supabase\\auth-js\\src\\lib\\helpers.ts:367:11)\n    at GoTrueAdminApi.deleteUser (C:\\Users\\Isaia\\Documents\\Coding\\PersonalCRM\\backend-vercel\\node_modules\\@supabase\\auth-js\\src\\GoTrueAdminApi.ts:281:17)\n    at Object.&lt;anonymous&gt; (C:\\Users\\Isaia\\Documents\\Coding\\PersonalCRM\\backend-vercel\\__tests__\\api\\public-api-context-bundle.test.ts:116:29)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)&quot;}</failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="PostHog Webhook" errors="0" failures="10" skipped="0" timestamp="2025-10-10T16:34:11" time="0.529" tests="10">
+    <testcase classname="PostHog Webhook" name="Rejects requests without webhook secret" time="0.001">
+      <failure>TypeError: Failed to parse URL from undefined/api/posthog-webhook
+    at node:internal/deps/undici/undici:13484:13</failure>
+    </testcase>
+    <testcase classname="PostHog Webhook" name="Rejects requests with invalid webhook secret" time="0">
+      <failure>TypeError: Failed to parse URL from undefined/api/posthog-webhook
+    at node:internal/deps/undici/undici:13484:13</failure>
+    </testcase>
+    <testcase classname="PostHog Webhook" name="Accepts valid webhook requests" time="0.001">
+      <failure>TypeError: Failed to parse URL from undefined/api/posthog-webhook
+    at node:internal/deps/undici/undici:13484:13</failure>
+    </testcase>
+    <testcase classname="PostHog Webhook" name="Filters out PII properties" time="0.001">
+      <failure>TypeError: Failed to parse URL from undefined/api/posthog-webhook
+    at node:internal/deps/undici/undici:13484:13</failure>
+    </testcase>
+    <testcase classname="PostHog Webhook" name="Stores message generation events in typed table" time="0">
+      <failure>TypeError: Failed to parse URL from undefined/api/posthog-webhook
+    at node:internal/deps/undici/undici:13484:13</failure>
+    </testcase>
+    <testcase classname="PostHog Webhook" name="Stores warmth score changes in typed table" time="0.001">
+      <failure>TypeError: Failed to parse URL from undefined/api/posthog-webhook
+    at node:internal/deps/undici/undici:13484:13</failure>
+    </testcase>
+    <testcase classname="PostHog Webhook" name="Handles batch events correctly" time="0">
+      <failure>TypeError: Failed to parse URL from undefined/api/posthog-webhook
+    at node:internal/deps/undici/undici:13484:13</failure>
+    </testcase>
+    <testcase classname="PostHog Webhook" name="Returns correct response format" time="0.001">
+      <failure>TypeError: Failed to parse URL from undefined/api/posthog-webhook
+    at node:internal/deps/undici/undici:13484:13</failure>
+    </testcase>
+    <testcase classname="PostHog Webhook" name="Handles empty batch gracefully" time="0">
+      <failure>TypeError: Failed to parse URL from undefined/api/posthog-webhook
+    at node:internal/deps/undici/undici:13484:13</failure>
+    </testcase>
+    <testcase classname="PostHog Webhook" name="Handles malformed JSON gracefully" time="0.001">
+      <failure>TypeError: Failed to parse URL from undefined/api/posthog-webhook
+    at node:internal/deps/undici/undici:13484:13</failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="API Key Generation" errors="0" failures="27" skipped="0" timestamp="2025-10-10T16:34:12" time="0.526" tests="27">
+    <testcase classname="API Key Generation" name="should generate test key with correct prefix" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-auth.test.ts:37:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="API Key Generation" name="should generate live key with correct prefix" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-auth.test.ts:37:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="API Key Generation" name="should generate unique keys" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-auth.test.ts:37:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="API Key Generation" name="should hash keys consistently" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-auth.test.ts:37:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="API Key Generation" name="should extract key prefix for display" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-auth.test.ts:37:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="API Authentication" name="should authenticate valid API key" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-auth.test.ts:37:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="API Authentication" name="should reject missing Authorization header" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-auth.test.ts:37:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="API Authentication" name="should reject invalid Authorization header format" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-auth.test.ts:37:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="API Authentication" name="should reject invalid API key format" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-auth.test.ts:37:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="API Authentication" name="should reject non-existent API key" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-auth.test.ts:37:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="API Authentication" name="should reject revoked API key" time="0.001">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-auth.test.ts:37:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="API Authentication" name="should reject expired API key" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-auth.test.ts:37:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="API Authentication" name="should update key usage metadata" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-auth.test.ts:37:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Authorization &amp; Scopes" name="should allow access with exact scope match" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-auth.test.ts:37:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Authorization &amp; Scopes" name="should deny access without required scope" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-auth.test.ts:37:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Authorization &amp; Scopes" name="should support wildcard scopes" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-auth.test.ts:37:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Authorization &amp; Scopes" name="should support full wildcard scope" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-auth.test.ts:37:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Authorization &amp; Scopes" name="should throw on missing required scope" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-auth.test.ts:37:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Authorization &amp; Scopes" name="should not throw on present required scope" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-auth.test.ts:37:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Authorization &amp; Scopes" name="should require any of multiple scopes" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-auth.test.ts:37:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Tenant Isolation" name="should verify resource ownership for owned resource" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-auth.test.ts:37:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Tenant Isolation" name="should deny resource ownership for non-owned resource" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-auth.test.ts:37:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Tenant Isolation" name="should deny ownership for non-existent resource" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-auth.test.ts:37:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="IP Allowlists" name="should allow request from allowed IP" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-auth.test.ts:37:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="API Key Rotation" name="should support key rotation workflow" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-auth.test.ts:37:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Complex Scope Scenarios" name="should handle read-only agent correctly" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-auth.test.ts:37:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Complex Scope Scenarios" name="should handle autonomous agent correctly" time="0.001">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\public-api-auth.test.ts:37:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="" name="Test execution failure: could be caused by test hooks like &apos;afterAll&apos;." time="0">
+      <failure>{&quot;message&quot;:&quot;&quot;,&quot;stack&quot;:&quot;Error: @supabase/auth-js: Expected parameter to be UUID but is not\n    at validateUUID (C:\\Users\\Isaia\\Documents\\Coding\\PersonalCRM\\backend-vercel\\node_modules\\@supabase\\auth-js\\src\\lib\\helpers.ts:367:11)\n    at GoTrueAdminApi.deleteUser (C:\\Users\\Isaia\\Documents\\Coding\\PersonalCRM\\backend-vercel\\node_modules\\@supabase\\auth-js\\src\\GoTrueAdminApi.ts:281:17)\n    at Object.&lt;anonymous&gt; (C:\\Users\\Isaia\\Documents\\Coding\\PersonalCRM\\backend-vercel\\__tests__\\api\\public-api-auth.test.ts:75:29)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)&quot;}</failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="Message Send with Auto-Recompute" errors="0" failures="5" skipped="0" timestamp="2025-10-10T16:34:12" time="0.467" tests="5">
+    <testcase classname="Message Send with Auto-Recompute" name="Sending a message creates an interaction record" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\message-send.test.ts:27:29)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Message Send with Auto-Recompute" name="Warmth score increases after sending a message" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\message-send.test.ts:27:29)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Message Send with Auto-Recompute" name="Multiple messages increase frequency boost" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\message-send.test.ts:27:29)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Message Send with Auto-Recompute" name="Message metadata includes sent_at timestamp" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\message-send.test.ts:27:29)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Message Send with Auto-Recompute" name="Failed warmth recompute does not prevent message from being sent" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\message-send.test.ts:27:29)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="Golden Scenario Tests" errors="0" failures="12" skipped="0" timestamp="2025-10-10T16:34:13" time="0.479" tests="52">
+    <testcase classname="Golden Scenario Tests › business_revive_negative_sentiment" name="[business_revive_negative_sentiment] Cold business contact who went quiet after proposal" time="0.002">
+    </testcase>
+    <testcase classname="Golden Scenario Tests › business_revive_negative_sentiment" name="[business_revive_negative_sentiment] Channel selection logic" time="0">
+    </testcase>
+    <testcase classname="Golden Scenario Tests › business_revive_negative_sentiment" name="[business_revive_negative_sentiment] Warmth-based approach validation" time="0.001">
+      <failure>Error: expect(received).toContainEqual(expected) // deep equality
+
+Expected value: StringContaining &quot;respectful, value-focused&quot;
+Received array: [&quot;value-focused&quot;, &quot;respectful&quot;, &quot;no-pressure&quot;]
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\message-scenarios.test.ts:121:66)
+    at Promise.then.completed (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\utils.js:298:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\utils.js:231:10)
+    at _callCircusTest (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:316:40)
+    at _runTest (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:252:3)
+    at _runTestsForDescribeBlock (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:126:9)
+    at _runTestsForDescribeBlock (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:121:9)
+    at _runTestsForDescribeBlock (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:121:9)
+    at run (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:71:3)
+    at runAndTransformResultsToJestFormat (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapterInit.js:122:21)
+    at jestAdapter (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapter.js:79:19)
+    at runTestInternal (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-runner\build\runTest.js:367:16)
+    at runTest (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-runner\build\runTest.js:444:34)</failure>
+    </testcase>
+    <testcase classname="Golden Scenario Tests › business_revive_negative_sentiment" name="[business_revive_negative_sentiment] Pipeline and status influence tone" time="0">
+      <failure>Error: expect(received).toContainEqual(expected) // deep equality
+
+Expected value: StringContaining &quot;respectful, value-focused&quot;
+Received array: [&quot;value-focused&quot;, &quot;no-pressure&quot;, &quot;respectful&quot;]
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\message-scenarios.test.ts:178:66)
+    at Promise.then.completed (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\utils.js:298:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\utils.js:231:10)
+    at _callCircusTest (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:316:40)
+    at _runTest (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:252:3)
+    at _runTestsForDescribeBlock (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:126:9)
+    at _runTestsForDescribeBlock (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:121:9)
+    at _runTestsForDescribeBlock (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:121:9)
+    at run (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:71:3)
+    at runAndTransformResultsToJestFormat (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapterInit.js:122:21)
+    at jestAdapter (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapter.js:79:19)
+    at runTestInternal (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-runner\build\runTest.js:367:16)
+    at runTest (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-runner\build\runTest.js:444:34)</failure>
+    </testcase>
+    <testcase classname="Golden Scenario Tests › business_revive_negative_sentiment" name="[business_revive_negative_sentiment] Boundary respect" time="0.001">
+    </testcase>
+    <testcase classname="Golden Scenario Tests › business_revive_negative_sentiment" name="[business_revive_negative_sentiment] Goal-appropriate CTA" time="0.002">
+      <failure>Error: expect(received).toMatch(expected)
+
+Expected pattern: /meeting|call|sync/
+Received string:  &quot;soft_ask&quot;
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\message-scenarios.test.ts:213:40)
+    at Promise.then.completed (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\utils.js:298:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\utils.js:231:10)
+    at _callCircusTest (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:316:40)
+    at _runTest (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:252:3)
+    at _runTestsForDescribeBlock (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:126:9)
+    at _runTestsForDescribeBlock (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:121:9)
+    at _runTestsForDescribeBlock (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:121:9)
+    at run (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:71:3)
+    at runAndTransformResultsToJestFormat (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapterInit.js:122:21)
+    at jestAdapter (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapter.js:79:19)
+    at runTestInternal (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-runner\build\runTest.js:367:16)
+    at runTest (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-runner\build\runTest.js:444:34)</failure>
+    </testcase>
+    <testcase classname="Golden Scenario Tests › business_revive_negative_sentiment" name="[business_revive_negative_sentiment] Message length constraints" time="0">
+    </testcase>
+    <testcase classname="Golden Scenario Tests › business_revive_negative_sentiment" name="[business_revive_negative_sentiment] Recent interaction context is considered" time="0.004">
+    </testcase>
+    <testcase classname="Golden Scenario Tests › networking_new_warm" name="[networking_new_warm] New contact from networking event, warm introduction" time="0.001">
+    </testcase>
+    <testcase classname="Golden Scenario Tests › networking_new_warm" name="[networking_new_warm] Channel selection logic" time="0">
+    </testcase>
+    <testcase classname="Golden Scenario Tests › networking_new_warm" name="[networking_new_warm] Warmth-based approach validation" time="0.001">
+      <failure>Error: expect(received).toContainEqual(expected) // deep equality
+
+Expected value: StringContaining &quot;friendly, casual&quot;
+Received array: [&quot;professional&quot;, &quot;clear&quot;, &quot;balanced&quot;]
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\message-scenarios.test.ts:146:57)
+    at Promise.then.completed (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\utils.js:298:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\utils.js:231:10)
+    at _callCircusTest (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:316:40)
+    at _runTest (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:252:3)
+    at _runTestsForDescribeBlock (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:126:9)
+    at _runTestsForDescribeBlock (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:121:9)
+    at _runTestsForDescribeBlock (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:121:9)
+    at run (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:71:3)
+    at runAndTransformResultsToJestFormat (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapterInit.js:122:21)
+    at jestAdapter (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapter.js:79:19)
+    at runTestInternal (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-runner\build\runTest.js:367:16)
+    at runTest (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-runner\build\runTest.js:444:34)</failure>
+    </testcase>
+    <testcase classname="Golden Scenario Tests › networking_new_warm" name="[networking_new_warm] Pipeline and status influence tone" time="0">
+      <failure>Error: expect(received).toContainEqual(expected) // deep equality
+
+Expected value: StringContaining &quot;friendly, casual&quot;
+Received array: [&quot;friendly&quot;, &quot;casual&quot;, &quot;warm&quot;]
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\message-scenarios.test.ts:164:50)
+    at Promise.then.completed (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\utils.js:298:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\utils.js:231:10)
+    at _callCircusTest (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:316:40)
+    at _runTest (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:252:3)
+    at _runTestsForDescribeBlock (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:126:9)
+    at _runTestsForDescribeBlock (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:121:9)
+    at _runTestsForDescribeBlock (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:121:9)
+    at run (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:71:3)
+    at runAndTransformResultsToJestFormat (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapterInit.js:122:21)
+    at jestAdapter (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapter.js:79:19)
+    at runTestInternal (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-runner\build\runTest.js:367:16)
+    at runTest (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-runner\build\runTest.js:444:34)</failure>
+    </testcase>
+    <testcase classname="Golden Scenario Tests › networking_new_warm" name="[networking_new_warm] Boundary respect" time="0.001">
+    </testcase>
+    <testcase classname="Golden Scenario Tests › networking_new_warm" name="[networking_new_warm] Goal-appropriate CTA" time="0">
+    </testcase>
+    <testcase classname="Golden Scenario Tests › networking_new_warm" name="[networking_new_warm] Message length constraints" time="0">
+    </testcase>
+    <testcase classname="Golden Scenario Tests › networking_new_warm" name="[networking_new_warm] Recent interaction context is considered" time="0">
+    </testcase>
+    <testcase classname="Golden Scenario Tests › personal_nurture_high_warmth" name="[personal_nurture_high_warmth] Close personal contact, regular check-ins" time="0.001">
+    </testcase>
+    <testcase classname="Golden Scenario Tests › personal_nurture_high_warmth" name="[personal_nurture_high_warmth] Channel selection logic" time="0">
+    </testcase>
+    <testcase classname="Golden Scenario Tests › personal_nurture_high_warmth" name="[personal_nurture_high_warmth] Warmth-based approach validation" time="0.001">
+      <failure>Error: expect(received).toContainEqual(expected) // deep equality
+
+Expected value: StringContaining &quot;casual, friendly&quot;
+Received array: [&quot;casual&quot;, &quot;friendly&quot;, &quot;warm&quot;]
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\message-scenarios.test.ts:137:50)
+    at Promise.then.completed (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\utils.js:298:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\utils.js:231:10)
+    at _callCircusTest (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:316:40)
+    at _runTest (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:252:3)
+    at _runTestsForDescribeBlock (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:126:9)
+    at _runTestsForDescribeBlock (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:121:9)
+    at _runTestsForDescribeBlock (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:121:9)
+    at run (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:71:3)
+    at runAndTransformResultsToJestFormat (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapterInit.js:122:21)
+    at jestAdapter (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapter.js:79:19)
+    at runTestInternal (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-runner\build\runTest.js:367:16)
+    at runTest (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-runner\build\runTest.js:444:34)</failure>
+    </testcase>
+    <testcase classname="Golden Scenario Tests › personal_nurture_high_warmth" name="[personal_nurture_high_warmth] Pipeline and status influence tone" time="0">
+      <failure>Error: expect(received).toContainEqual(expected) // deep equality
+
+Expected value: StringContaining &quot;casual, friendly&quot;
+Received array: [&quot;casual&quot;, &quot;friendly&quot;, &quot;warm&quot;, &quot;genuine&quot;]
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\message-scenarios.test.ts:171:61)
+    at Promise.then.completed (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\utils.js:298:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\utils.js:231:10)
+    at _callCircusTest (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:316:40)
+    at _runTest (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:252:3)
+    at _runTestsForDescribeBlock (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:126:9)
+    at _runTestsForDescribeBlock (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:121:9)
+    at _runTestsForDescribeBlock (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:121:9)
+    at run (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:71:3)
+    at runAndTransformResultsToJestFormat (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapterInit.js:122:21)
+    at jestAdapter (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapter.js:79:19)
+    at runTestInternal (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-runner\build\runTest.js:367:16)
+    at runTest (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-runner\build\runTest.js:444:34)</failure>
+    </testcase>
+    <testcase classname="Golden Scenario Tests › personal_nurture_high_warmth" name="[personal_nurture_high_warmth] Boundary respect" time="0.001">
+      <failure>Error: expect(received).toContainEqual(expected) // deep equality
+
+Expected value: StringMatching /evening|tonight/i
+Received array: [&quot;professional&quot;, &quot;formal&quot;]
+    at C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\message-scenarios.test.ts:202:34
+    at Array.forEach (&lt;anonymous&gt;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\message-scenarios.test.ts:192:20)
+    at Promise.then.completed (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\utils.js:298:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\utils.js:231:10)
+    at _callCircusTest (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:316:40)
+    at _runTest (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:252:3)
+    at _runTestsForDescribeBlock (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:126:9)
+    at _runTestsForDescribeBlock (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:121:9)
+    at _runTestsForDescribeBlock (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:121:9)
+    at run (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:71:3)
+    at runAndTransformResultsToJestFormat (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapterInit.js:122:21)
+    at jestAdapter (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapter.js:79:19)
+    at runTestInternal (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-runner\build\runTest.js:367:16)
+    at runTest (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-runner\build\runTest.js:444:34)</failure>
+    </testcase>
+    <testcase classname="Golden Scenario Tests › personal_nurture_high_warmth" name="[personal_nurture_high_warmth] Goal-appropriate CTA" time="0">
+    </testcase>
+    <testcase classname="Golden Scenario Tests › personal_nurture_high_warmth" name="[personal_nurture_high_warmth] Message length constraints" time="0.001">
+    </testcase>
+    <testcase classname="Golden Scenario Tests › personal_nurture_high_warmth" name="[personal_nurture_high_warmth] Recent interaction context is considered" time="0">
+    </testcase>
+    <testcase classname="Golden Scenario Tests › business_active_book_meeting" name="[business_active_book_meeting] Active business contact, scheduling next sync" time="0.004">
+    </testcase>
+    <testcase classname="Golden Scenario Tests › business_active_book_meeting" name="[business_active_book_meeting] Channel selection logic" time="0">
+    </testcase>
+    <testcase classname="Golden Scenario Tests › business_active_book_meeting" name="[business_active_book_meeting] Warmth-based approach validation" time="0">
+      <failure>Error: expect(received).toContainEqual(expected) // deep equality
+
+Expected value: StringContaining &quot;professional, clear&quot;
+Received array: [&quot;casual&quot;, &quot;friendly&quot;, &quot;warm&quot;]
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\message-scenarios.test.ts:137:50)
+    at Promise.then.completed (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\utils.js:298:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\utils.js:231:10)
+    at _callCircusTest (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:316:40)
+    at _runTest (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:252:3)
+    at _runTestsForDescribeBlock (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:126:9)
+    at _runTestsForDescribeBlock (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:121:9)
+    at _runTestsForDescribeBlock (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:121:9)
+    at run (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:71:3)
+    at runAndTransformResultsToJestFormat (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapterInit.js:122:21)
+    at jestAdapter (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapter.js:79:19)
+    at runTestInternal (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-runner\build\runTest.js:367:16)
+    at runTest (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-runner\build\runTest.js:444:34)</failure>
+    </testcase>
+    <testcase classname="Golden Scenario Tests › business_active_book_meeting" name="[business_active_book_meeting] Pipeline and status influence tone" time="0">
+    </testcase>
+    <testcase classname="Golden Scenario Tests › business_active_book_meeting" name="[business_active_book_meeting] Boundary respect" time="0">
+    </testcase>
+    <testcase classname="Golden Scenario Tests › business_active_book_meeting" name="[business_active_book_meeting] Goal-appropriate CTA" time="0">
+    </testcase>
+    <testcase classname="Golden Scenario Tests › business_active_book_meeting" name="[business_active_book_meeting] Message length constraints" time="0.001">
+    </testcase>
+    <testcase classname="Golden Scenario Tests › business_active_book_meeting" name="[business_active_book_meeting] Recent interaction context is considered" time="0">
+    </testcase>
+    <testcase classname="Golden Scenario Tests › business_dormant_value_hook" name="[business_dormant_value_hook] Dormant business contact, needs value-first approach" time="0.001">
+    </testcase>
+    <testcase classname="Golden Scenario Tests › business_dormant_value_hook" name="[business_dormant_value_hook] Channel selection logic" time="0">
+    </testcase>
+    <testcase classname="Golden Scenario Tests › business_dormant_value_hook" name="[business_dormant_value_hook] Warmth-based approach validation" time="0.001">
+      <failure>Error: expect(received).toContainEqual(expected) // deep equality
+
+Expected value: StringContaining &quot;value-focused, no-pressure&quot;
+Received array: [&quot;value-focused&quot;, &quot;respectful&quot;, &quot;no-pressure&quot;]
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\message-scenarios.test.ts:121:66)
+    at Promise.then.completed (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\utils.js:298:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\utils.js:231:10)
+    at _callCircusTest (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:316:40)
+    at _runTest (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:252:3)
+    at _runTestsForDescribeBlock (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:126:9)
+    at _runTestsForDescribeBlock (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:121:9)
+    at _runTestsForDescribeBlock (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:121:9)
+    at run (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:71:3)
+    at runAndTransformResultsToJestFormat (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapterInit.js:122:21)
+    at jestAdapter (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapter.js:79:19)
+    at runTestInternal (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-runner\build\runTest.js:367:16)
+    at runTest (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-runner\build\runTest.js:444:34)</failure>
+    </testcase>
+    <testcase classname="Golden Scenario Tests › business_dormant_value_hook" name="[business_dormant_value_hook] Pipeline and status influence tone" time="0">
+      <failure>Error: expect(received).toContainEqual(expected) // deep equality
+
+Expected value: StringContaining &quot;value-focused, no-pressure&quot;
+Received array: [&quot;value-focused&quot;, &quot;no-pressure&quot;, &quot;respectful&quot;]
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\message-scenarios.test.ts:178:66)
+    at Promise.then.completed (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\utils.js:298:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\utils.js:231:10)
+    at _callCircusTest (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:316:40)
+    at _runTest (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:252:3)
+    at _runTestsForDescribeBlock (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:126:9)
+    at _runTestsForDescribeBlock (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:121:9)
+    at _runTestsForDescribeBlock (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:121:9)
+    at run (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:71:3)
+    at runAndTransformResultsToJestFormat (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapterInit.js:122:21)
+    at jestAdapter (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapter.js:79:19)
+    at runTestInternal (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-runner\build\runTest.js:367:16)
+    at runTest (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-runner\build\runTest.js:444:34)</failure>
+    </testcase>
+    <testcase classname="Golden Scenario Tests › business_dormant_value_hook" name="[business_dormant_value_hook] Boundary respect" time="0">
+    </testcase>
+    <testcase classname="Golden Scenario Tests › business_dormant_value_hook" name="[business_dormant_value_hook] Goal-appropriate CTA" time="0">
+    </testcase>
+    <testcase classname="Golden Scenario Tests › business_dormant_value_hook" name="[business_dormant_value_hook] Message length constraints" time="0">
+    </testcase>
+    <testcase classname="Golden Scenario Tests › business_dormant_value_hook" name="[business_dormant_value_hook] Recent interaction context is considered" time="0">
+    </testcase>
+    <testcase classname="Golden Scenario Tests › networking_nurture_low_ask" name="[networking_nurture_low_ask] Networking contact in nurture phase, stay top-of-mind" time="0.002">
+    </testcase>
+    <testcase classname="Golden Scenario Tests › networking_nurture_low_ask" name="[networking_nurture_low_ask] Channel selection logic" time="0">
+    </testcase>
+    <testcase classname="Golden Scenario Tests › networking_nurture_low_ask" name="[networking_nurture_low_ask] Warmth-based approach validation" time="0.003">
+      <failure>Error: expect(received).toContainEqual(expected) // deep equality
+
+Expected value: StringContaining &quot;supportive, low-pressure&quot;
+Received array: [&quot;professional&quot;, &quot;clear&quot;, &quot;balanced&quot;]
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\message-scenarios.test.ts:146:57)
+    at Promise.then.completed (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\utils.js:298:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\utils.js:231:10)
+    at _callCircusTest (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:316:40)
+    at _runTest (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:252:3)
+    at _runTestsForDescribeBlock (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:126:9)
+    at _runTestsForDescribeBlock (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:121:9)
+    at _runTestsForDescribeBlock (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:121:9)
+    at run (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\run.js:71:3)
+    at runAndTransformResultsToJestFormat (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapterInit.js:122:21)
+    at jestAdapter (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapter.js:79:19)
+    at runTestInternal (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-runner\build\runTest.js:367:16)
+    at runTest (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\node_modules\jest-runner\build\runTest.js:444:34)</failure>
+    </testcase>
+    <testcase classname="Golden Scenario Tests › networking_nurture_low_ask" name="[networking_nurture_low_ask] Pipeline and status influence tone" time="0">
+    </testcase>
+    <testcase classname="Golden Scenario Tests › networking_nurture_low_ask" name="[networking_nurture_low_ask] Boundary respect" time="0">
+    </testcase>
+    <testcase classname="Golden Scenario Tests › networking_nurture_low_ask" name="[networking_nurture_low_ask] Goal-appropriate CTA" time="0.001">
+    </testcase>
+    <testcase classname="Golden Scenario Tests › networking_nurture_low_ask" name="[networking_nurture_low_ask] Message length constraints" time="0">
+    </testcase>
+    <testcase classname="Golden Scenario Tests › networking_nurture_low_ask" name="[networking_nurture_low_ask] Recent interaction context is considered" time="0">
+    </testcase>
+    <testcase classname="Golden Scenario Tests" name="All scenarios cover diverse warmth ranges" time="0.001">
+    </testcase>
+    <testcase classname="Golden Scenario Tests" name="All scenarios cover all pipeline types" time="0">
+    </testcase>
+    <testcase classname="Golden Scenario Tests" name="All scenarios cover diverse status types" time="0.001">
+    </testcase>
+    <testcase classname="Golden Scenario Tests" name="All scenarios have valid interaction histories" time="0.001">
+    </testcase>
+  </testsuite>
+  <testsuite name="Message Generation Performance" errors="0" failures="9" skipped="0" timestamp="2025-10-10T16:34:13" time="0.457" tests="10">
+    <testcase classname="Message Generation Performance" name="Simple message generation completes within threshold" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\message-generation-performance.test.ts:34:29)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Message Generation Performance" name="Complex message with multiple goals stays performant" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\message-generation-performance.test.ts:34:29)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Message Generation Performance" name="Message generation with full context retrieval" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\message-generation-performance.test.ts:34:29)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Message Generation Performance" name="No generation should exceed critical threshold" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\message-generation-performance.test.ts:34:29)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Message Generation Performance" name="Concurrent requests maintain acceptable performance" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\message-generation-performance.test.ts:34:29)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Message Generation Performance" name="Token usage is reasonable for simple messages" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\message-generation-performance.test.ts:34:29)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Message Generation Performance" name="Streaming response starts quickly" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\message-generation-performance.test.ts:34:29)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Message Generation Performance" name="Performance degrades gracefully with large context" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\message-generation-performance.test.ts:34:29)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Message Generation Performance" name="Error responses are fast (no timeout on errors)" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\message-generation-performance.test.ts:34:29)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Performance Metrics Summary" name="Log performance summary" time="0">
+    </testcase>
+  </testsuite>
+  <testsuite name="Context Assembly &amp; Compression" errors="0" failures="8" skipped="0" timestamp="2025-10-10T16:34:15" time="0.475" tests="10">
+    <testcase classname="Context Assembly &amp; Compression" name="Retrieves recent interaction history" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\context-assembly.test.ts:26:29)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Context Assembly &amp; Compression" name="Message generation includes relevant context from history" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\context-assembly.test.ts:26:29)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Context Assembly &amp; Compression" name="Context is compressed when interaction history is large" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\context-assembly.test.ts:26:29)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Context Assembly &amp; Compression" name="Pipeline stage and status influence message tone" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\context-assembly.test.ts:26:29)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Context Assembly &amp; Compression" name="Contact metadata (facts, preferences, boundaries) is respected" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\context-assembly.test.ts:26:29)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Context Assembly &amp; Compression" name="Warmth score affects message approach" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\context-assembly.test.ts:26:29)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Context Assembly &amp; Compression" name="Goal type influences message structure and CTA" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\context-assembly.test.ts:26:29)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Context Budget &amp; Compression Properties" name="Context always stays within token budget" time="0.001">
+      <failure>TypeError: Failed to parse URL from undefined/v1/agent/compose/smart
+    at node:internal/deps/undici/undici:13484:13
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Context Budget &amp; Compression Properties" name="Removing non-salient interactions does not change core message intent" time="0">
+    </testcase>
+    <testcase classname="Context Budget &amp; Compression Properties" name="Safety: Low warmth score prevents aggressive asks" time="0">
+    </testcase>
+  </testsuite>
+  <testsuite name="Ad Pixel Configuration" errors="0" failures="23" skipped="0" timestamp="2025-10-10T16:34:15" time="0.704" tests="23">
+    <testcase classname="Ad Pixel Configuration" name="should create Meta Pixel configuration" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\ad-pixels.test.ts:24:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Ad Pixel Configuration" name="should create Google Analytics 4 configuration" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\ad-pixels.test.ts:24:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Ad Pixel Configuration" name="should create TikTok Pixel configuration" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\ad-pixels.test.ts:24:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Ad Pixel Configuration" name="should prevent duplicate pixel IDs per org" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\ad-pixels.test.ts:24:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Ad Pixel Configuration" name="should allow disabling pixels" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\ad-pixels.test.ts:24:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Pixel Event Tracking" name="should log Meta Pixel events" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\ad-pixels.test.ts:24:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Pixel Event Tracking" name="should log Google Analytics events" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\ad-pixels.test.ts:24:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Pixel Event Tracking" name="should log TikTok Pixel events" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\ad-pixels.test.ts:24:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Pixel Event Tracking" name="should deduplicate events within 5 minutes" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\ad-pixels.test.ts:24:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Pixel Event Tracking" name="should track conversion attribution" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\ad-pixels.test.ts:24:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Server-Side Conversion API" name="should send Meta Conversion API event" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\ad-pixels.test.ts:24:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Server-Side Conversion API" name="should send Google Analytics 4 Measurement Protocol event" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\ad-pixels.test.ts:24:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Server-Side Conversion API" name="should send TikTok Events API event" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\ad-pixels.test.ts:24:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Privacy &amp; Compliance" name="should respect user tracking consent" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\ad-pixels.test.ts:24:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Privacy &amp; Compliance" name="should hash PII before sending to pixels" time="0.001">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\ad-pixels.test.ts:24:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Privacy &amp; Compliance" name="should anonymize IP addresses in test mode" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\ad-pixels.test.ts:24:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Privacy &amp; Compliance" name="should respect GDPR deletion requests" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\ad-pixels.test.ts:24:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Pixel Reporting" name="should calculate conversion funnel" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\ad-pixels.test.ts:24:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Pixel Reporting" name="should aggregate revenue by pixel" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\ad-pixels.test.ts:24:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Pixel Reporting" name="should track events by UTM source" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\ad-pixels.test.ts:24:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Pixel Error Handling" name="should handle API failures gracefully" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\ad-pixels.test.ts:24:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Pixel Error Handling" name="should retry failed conversions" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\ad-pixels.test.ts:24:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="Pixel Error Handling" name="should move to dead letter queue after max retries" time="0">
+      <failure>TypeError: Cannot read properties of null (reading &apos;id&apos;)
+    at Object.&lt;anonymous&gt; (C:\Users\Isaia\Documents\Coding\PersonalCRM\backend-vercel\__tests__\api\ad-pixels.test.ts:24:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="" name="Test execution failure: could be caused by test hooks like &apos;afterAll&apos;." time="0">
+      <failure>{&quot;message&quot;:&quot;&quot;,&quot;stack&quot;:&quot;Error: @supabase/auth-js: Expected parameter to be UUID but is not\n    at validateUUID (C:\\Users\\Isaia\\Documents\\Coding\\PersonalCRM\\backend-vercel\\node_modules\\@supabase\\auth-js\\src\\lib\\helpers.ts:367:11)\n    at GoTrueAdminApi.deleteUser (C:\\Users\\Isaia\\Documents\\Coding\\PersonalCRM\\backend-vercel\\node_modules\\@supabase\\auth-js\\src\\GoTrueAdminApi.ts:281:17)\n    at Object.&lt;anonymous&gt; (C:\\Users\\Isaia\\Documents\\Coding\\PersonalCRM\\backend-vercel\\__tests__\\api\\ad-pixels.test.ts:40:29)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)&quot;}</failure>
+    </testcase>
+  </testsuite>
+</testsuites>

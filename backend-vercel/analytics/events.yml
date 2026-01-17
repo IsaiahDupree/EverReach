@@ -1,0 +1,240 @@
+# Analytics Event Taxonomy for EverReach
+# Version: 1.0
+# Date: 2025-11-01
+# Description: Canonical event names and required properties for analytics tracking
+
+version: 1
+
+events:
+  # ==========================================
+  # AI & Prompt Events
+  # ==========================================
+  prompt_submitted:
+    description: User submits a prompt to AI for message generation
+    required: [session_id, user_id, prompt_id, input_chars, model, temperature]
+    optional: [context_len, tags, latency_ms, contact_id]
+    
+  ai_response_generated:
+    description: AI generates a response to user prompt
+    required: [session_id, user_id, prompt_id, response_id, output_tokens, model]
+    optional: [latency_ms, finish_reason, safety_blocks, cost_usd]
+    
+  response_copied:
+    description: User copies AI-generated response to clipboard
+    required: [user_id, response_id, ui_surface]
+    optional: [contact_id]
+    # ui_surface: composer|detail|share-sheet|quick-reply
+    
+  response_liked:
+    description: User likes an AI-generated response
+    required: [user_id, response_id, reason_code]
+    optional: [free_text_feedback]
+    # reason_code: helpful|tone|format|creative|other
+    
+  response_disliked:
+    description: User dislikes an AI-generated response
+    required: [user_id, response_id, reason_code]
+    optional: [free_text_feedback]
+    # reason_code: off-topic|inaccurate|unsafe|style|tone|other
+
+  # ==========================================
+  # Paywall & Purchase Events
+  # ==========================================
+  paywall_shown:
+    description: Paywall screen displayed to user
+    required: [user_id, placement, source]
+    optional: [trial_days_remaining, feature_key]
+    # source: hard|soft|post-trial|feature-gate|trial-expired
+    # placement: onboarding|message-limit|contacts-limit|feature-ai|feature-analytics
+    
+  purchase_attempted:
+    description: User initiates purchase flow
+    required: [user_id, store, product_id]
+    optional: [placement, source]
+    # store: apple|google|stripe|web
+    
+  purchase_succeeded:
+    description: Purchase completed successfully
+    required: [user_id, store, product_id, entitlement, price, currency]
+    optional: [transaction_id, placement, source]
+    # entitlement: pro|premium|core
+    
+  purchase_failed:
+    description: Purchase attempt failed
+    required: [user_id, store, product_id, failure_code]
+    optional: [failure_message, placement]
+    # failure_code: payment_failed|cancelled|network_error|store_error|unknown
+    
+  purchase_restored:
+    description: User restores previous purchases
+    required: [user_id, store]
+    optional: [entitlements_restored]
+    
+  entitlement_refreshed:
+    description: User entitlement status refreshed
+    required: [user_id, entitlement, active, source]
+    optional: [expires_at]
+    # source: revenuecat|restore|login|purchase|webhook
+
+  # ==========================================
+  # Trial & Subscription Events
+  # ==========================================
+  trial_started:
+    description: User starts free trial
+    required: [user_id, trial_end_at, trial_length_days]
+    optional: [source, product_id]
+    
+  trial_expired:
+    description: User's free trial ended
+    required: [user_id, trial_ended_at]
+    optional: [messages_sent_during_trial, days_active]
+    
+  trial_extended:
+    description: Trial period extended for user
+    required: [user_id, extension_days, new_end_at]
+    optional: [reason]
+    
+  subscription_cancelled:
+    description: User cancels subscription
+    required: [user_id, product_id, reason_code]
+    optional: [feedback, will_expire_at]
+    # reason_code: price|not_using|features|support|other
+    
+  feature_blocked:
+    description: Feature access blocked due to entitlement
+    required: [user_id, feature_key, reason]
+    optional: [entitlement_required, current_entitlement]
+    # reason: no-entitlement|trial-over|limit-hit|plan-upgrade-required
+
+  # ==========================================
+  # Onboarding Events
+  # ==========================================
+  signup_started:
+    description: User begins signup flow
+    required: [session_id, source]
+    optional: [referrer, utm_source, utm_medium, utm_campaign]
+    
+  signup_completed:
+    description: User completes signup
+    required: [user_id, segment, source]
+    optional: [goal, cadence, channels]
+    # segment: business|networking|personal|all
+    
+  onboarding_question_answered:
+    description: User answers onboarding question
+    required: [user_id, question_number, question_key]
+    optional: [answer, skipped]
+    
+  onboarding_question_skipped:
+    description: User skips onboarding question
+    required: [user_id, question_number, question_key]
+    
+  onboarding_completed:
+    description: User completes all onboarding
+    required: [user_id, questions_answered, questions_skipped, duration_seconds]
+    optional: [segment, goal]
+    
+  first_contact_created:
+    description: User creates their first contact
+    required: [user_id, contact_id, source]
+    # source: onboarding|manual|import|sync
+    
+  aha_reached:
+    description: User reaches aha moment (first message sent)
+    required: [user_id, elapsed_since_signup_seconds]
+    optional: [contact_id, channel]
+
+  # ==========================================
+  # Warmth & Contact Events
+  # ==========================================
+  contact_warmth_changed:
+    description: Contact warmth score changes significantly
+    required: [user_id, contact_id, old_warmth, new_warmth, old_band, new_band]
+    optional: [reason]
+    
+  contact_warmth_below_threshold:
+    description: Contact warmth drops below threshold
+    required: [user_id, contact_id, warmth, band, threshold]
+    optional: [days_since_last_touch]
+    
+  contact_imported:
+    description: Contacts imported into system
+    required: [user_id, source, count]
+    optional: [duration_ms]
+    # source: phone|google|csv|manual
+    
+  interaction_created:
+    description: New interaction logged with contact
+    required: [user_id, contact_id, interaction_id, channel, direction]
+    optional: [sentiment, ai_generated]
+    # channel: sms|email|call|linkedin|instagram|twitter|whatsapp|in-person
+    # direction: inbound|outbound
+
+  # ==========================================
+  # Feature Usage Events
+  # ==========================================
+  message_sent:
+    description: User sends message to contact
+    required: [user_id, contact_id, channel]
+    optional: [ai_assisted, template_used, warmth_before]
+    
+  message_template_used:
+    description: User uses message template
+    required: [user_id, template_id, template_name, channel]
+    
+  contact_searched:
+    description: User searches contacts
+    required: [user_id, query]
+    optional: [results_count]
+    
+  filter_applied:
+    description: User applies filter to contacts
+    required: [user_id, filter_type, filter_value]
+    # filter_type: warmth|segment|tag|date|channel
+    
+  export_data:
+    description: User exports data
+    required: [user_id, export_type, record_count]
+    optional: [format]
+    # export_type: contacts|interactions|warmth|all
+    # format: csv|json|pdf
+
+# ==========================================
+# ML Labels (Derived Metrics)
+# ==========================================
+ml_labels:
+  description: Supervised signals for training and evaluation
+  helpful:
+    formula: "derived(response_liked minus response_disliked)"
+    description: Net helpfulness score for AI responses
+  copy_rate:
+    formula: "P(response_copied | response_id)"
+    description: Probability response was copied
+  dwell_ms:
+    formula: "elapsed(response_rendered -> first_interaction)"
+    description: Time from render to first user interaction
+  ctr_paywall:
+    formula: "P(purchase_succeeded | paywall_shown)"
+    description: Paywall conversion rate
+  trial_conversion_rate:
+    formula: "P(purchase_succeeded | trial_started)"
+    description: Trial to paid conversion rate
+  onboarding_completion_rate:
+    formula: "P(onboarding_completed | signup_started)"
+    description: Signup to onboarding completion rate
+  aha_reached_rate:
+    formula: "P(aha_reached | signup_completed)"
+    description: Users who reach aha moment
+
+# ==========================================
+# Event Tracking Notes
+# ==========================================
+notes:
+  - All events should include timestamp (auto-added by collector)
+  - session_id should persist across app lifecycle
+  - user_id null for pre-auth events
+  - Use past-tense event names (e.g., submitted not submit)
+  - Keep props lean; avoid PII in event properties
+  - Store detailed data in specialized tables (prompts, responses)
+  - Use snake_case for all property names
+  - Enum values use kebab-case (e.g., post-trial, trial-expired)

@@ -1,0 +1,8 @@
+fix: update file-crud test to use JWT token instead of signin endpoint
+
+- Use TEST_JWT environment variable for authentication
+- Load JWT from test-token.txt file if available  
+- Remove non-existent /api/auth/signin endpoint usage
+- Consistent with other E2E tests (revenuecat-webhook, profile-smoke)
+
+This allows the file CRUD tests to run properly after deployment.

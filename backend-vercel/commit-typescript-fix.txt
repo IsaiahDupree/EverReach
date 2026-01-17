@@ -1,0 +1,12 @@
+fix(ci): pin typescript to ^5.6.3 to resolve Vercel build failures
+
+TypeScript ~5.8.3 does not exist on npm registry and was causing
+'No matching version found' errors during Vercel deployment.
+
+Changed to stable version ^5.6.3 which is compatible with:
+- Next.js 14.2.10
+- Node 18-20 (per package.json engines)
+- All existing type definitions
+
+This should resolve the build failures and allow successful deployment
+of the RevenueCat webhook and file CRUD endpoints.

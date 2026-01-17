@@ -1,0 +1,24 @@
+{
+  "conversation_id": "776cbc35-bb49-4196-85f0-bb84d2f50a22",
+  "message": "The last two interactions with Agent Inter 9041047b consisted of two notes: the first note recorded on November 21, 2025, at 22:31:05, and a second note shortly after, at 22:31:05, which indicates active communication.",
+  "tool_calls_made": 2,
+  "tools_used": [
+    "get_contact",
+    "get_contact_interactions"
+  ],
+  "usage": {
+    "prompt_tokens": 732,
+    "completion_tokens": 96,
+    "total_tokens": 828,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  }
+}

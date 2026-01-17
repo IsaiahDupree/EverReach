@@ -1,0 +1,24 @@
+{
+  "conversation_id": "20c96926-7f3f-48bb-a6a1-7b38198f8138",
+  "message": "The last two interactions with Agent Inter d7e429d1 were both notes recorded on October 11, 2025: the first note was made at 18:41:01, followed shortly by a second note at 18:41:02.",
+  "tool_calls_made": 2,
+  "tools_used": [
+    "get_contact_interactions",
+    "get_contact"
+  ],
+  "usage": {
+    "prompt_tokens": 732,
+    "completion_tokens": 94,
+    "total_tokens": 826,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  }
+}

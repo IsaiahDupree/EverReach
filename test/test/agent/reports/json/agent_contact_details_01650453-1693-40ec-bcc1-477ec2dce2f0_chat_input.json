@@ -1,0 +1,7 @@
+{
+  "message": "Using tools, fetch contact details and reply with: Name: <name>, Warmth: <score> If warmth is not available, use N/A.",
+  "context": {
+    "contact_id": "19622966-a229-4652-9d70-00602defe8a8",
+    "use_tools": true
+  }
+}

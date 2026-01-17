@@ -1,0 +1,4 @@
+{
+  "error": "Could not find the 'delivery_status' column of 'messages' in the schema cache",
+  "request_id": "req_f6af554a35de4853ac5245c7886a02e1"
+}

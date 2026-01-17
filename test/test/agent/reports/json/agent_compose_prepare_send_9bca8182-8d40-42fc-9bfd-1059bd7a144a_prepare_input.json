@@ -1,0 +1,11 @@
+{
+  "contact_id": "ed9e53e2-2340-4d0d-8294-d4c6e16f878a",
+  "channel": "email",
+  "draft": {
+    "subject": "Agent Compose Test",
+    "body": "Dear Agent Compose,\n\nI hope this message finds you well. I am reaching out to explore potential collaboration opportunities that may align with our respective goals. Given the recent developments in our industry, I believe there could be mutual benefits in discussing our strategies.\n\nCould we schedule a brief call to discuss this further? Please let me know your availability.\n\nBest regards,  \n[Your Name]  \n[Your Position]  \n[Your Company]  \n[Your Contact Information]"
+  },
+  "composer_context": {
+    "template_id": null
+  }
+}

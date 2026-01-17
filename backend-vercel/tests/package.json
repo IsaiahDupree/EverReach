@@ -1,0 +1,20 @@
+{
+  "name": "everreach-backend-tests",
+  "version": "1.0.0",
+  "description": "Integration tests for EverReach backend API",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:voice-notes": "vitest run voice-notes.test.mjs",
+    "test:subscriptions": "vitest run subscriptions.test.mjs",
+    "test:coverage": "vitest run --coverage"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^1.0.0",
+    "vitest": "^1.0.0"
+  },
+  "dependencies": {
+    "node-fetch": "^3.3.2"
+  }
+}

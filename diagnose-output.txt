@@ -1,0 +1,40 @@
+  column_name  |        data_type         |  udt_name   | is_nullable 
+---------------+--------------------------+-------------+-------------
+ event_id      | uuid                     | uuid        | NO
+ user_id       | uuid                     | uuid        | YES
+ anonymous_id  | text                     | text        | YES
+ etype         | USER-DEFINED             | event_type  | NO
+ occurred_at   | timestamp with time zone | timestamptz | NO
+ campaign_id   | uuid                     | uuid        | YES
+ creative_id   | uuid                     | uuid        | YES
+ email_id      | uuid                     | uuid        | YES
+ post_id       | uuid                     | uuid        | YES
+ source        | USER-DEFINED             | channel     | YES
+ intent_weight | numeric                  | numeric     | YES
+ props         | jsonb                    | jsonb       | YES
+(12 rows)
+
+         enum_name          |                                                                                                                                                               enum_values                                                                                                                                                               
+----------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ aal_level                  | aal1, aal2, aal3
+ action                     | INSERT, UPDATE, DELETE, TRUNCATE, ERROR
+ activation_source          | ad, organic_post, email, direct, unknown
+ buckettype                 | STANDARD, ANALYTICS
+ channel                    | email, sms, push
+ code_challenge_method      | s256, plain
+ content_type               | ad, organic_post, email, landing, app_screen
+ delivery_status            | queued, sent, delivered, opened, clicked, bounced, failed, suppressed, unsubscribed
+ equality_op                | eq, neq, lt, lte, gt, gte, in
+ event_type                 | ad_impression, ad_click, landing_view, page_scroll, email_submitted, identity_enriched, email_open, email_click, app_open, feature_used, onboarding_step, trial_started, trial_completed, purchase, subscription_renewal, churn_intent, cancel, reactivation, social_comment, social_like, social_share, return_to_ad, return_to_social
+ factor_status              | unverified, verified
+ factor_type                | totp, webauthn, phone
+ ingestion_source           | posthog, server, app
+ message_role               | user, assistant, system, note
+ oauth_authorization_status | pending, approved, denied, expired
+ oauth_client_type          | public, confidential
+ oauth_registration_type    | dynamic, manual
+ oauth_response_type        | code
+ one_time_token_type        | confirmation_token, reauthentication_token, recovery_token, email_change_token_new, email_change_token_current, phone_change_token
+ sub_status                 | active, canceled, past_due, trialing
+(20 rows)
+

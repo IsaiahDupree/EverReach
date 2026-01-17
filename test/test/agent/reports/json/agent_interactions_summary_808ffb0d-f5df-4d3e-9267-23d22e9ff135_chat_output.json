@@ -1,0 +1,24 @@
+{
+  "conversation_id": "d6d02754-830e-4eb5-be9d-203ecc1dbc46",
+  "message": "The last two interactions with Agent Inter 808ffb0d involved taking notes on November 21, 2025, with the first note stating \"First note\" and the second note adding \"Second note.\"",
+  "tool_calls_made": 2,
+  "tools_used": [
+    "get_contact_interactions",
+    "get_contact"
+  ],
+  "usage": {
+    "prompt_tokens": 733,
+    "completion_tokens": 96,
+    "total_tokens": 829,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  }
+}

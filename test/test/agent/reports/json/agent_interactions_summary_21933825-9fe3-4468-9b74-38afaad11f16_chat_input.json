@@ -1,0 +1,7 @@
+{
+  "message": "Using tools, summarize the last 2 interactions for this contact in one sentence.",
+  "context": {
+    "contact_id": "6e23df7e-aae2-4240-95ab-8161920f52fb",
+    "use_tools": true
+  }
+}

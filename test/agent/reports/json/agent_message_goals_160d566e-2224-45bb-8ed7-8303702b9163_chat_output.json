@@ -1,0 +1,23 @@
+{
+  "conversation_id": "8172fd79-6cf6-4278-bd07-53dd3cc2eea0",
+  "message": "The message goal for the category 'business' for this contact is:\n\n- Agent Goals 160d566e\n\nThere are no suggested goals listed. Would you like to add any specific goals or take further action?",
+  "tool_calls_made": 1,
+  "tools_used": [
+    "get_message_goals"
+  ],
+  "usage": {
+    "prompt_tokens": 736,
+    "completion_tokens": 42,
+    "total_tokens": 778,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  }
+}

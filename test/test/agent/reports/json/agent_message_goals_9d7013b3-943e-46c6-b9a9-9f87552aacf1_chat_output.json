@@ -1,0 +1,23 @@
+{
+  "conversation_id": "a19d0fed-3d4f-4ac1-b826-fec852b60c95",
+  "message": "The only message goal for the category 'business' with this contact is \"Agent Goals 9d7013b3.\" There are no suggested goals available.",
+  "tool_calls_made": 1,
+  "tools_used": [
+    "get_message_goals"
+  ],
+  "usage": {
+    "prompt_tokens": 740,
+    "completion_tokens": 46,
+    "total_tokens": 786,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "conversation_id": "c901a073-b0f3-47c4-8428-800193af716b",
+  "message": "The last two interactions with Agent Inter involved taking notes at nearly the same time, with the first note noting a timestamp of \"First note\" and the second note capturing a timestamp of \"Second note,\" both created on November 21, 2025.",
+  "tool_calls_made": 2,
+  "tools_used": [
+    "get_contact_interactions",
+    "get_contact"
+  ],
+  "usage": {
+    "prompt_tokens": 737,
+    "completion_tokens": 106,
+    "total_tokens": 843,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  }
+}

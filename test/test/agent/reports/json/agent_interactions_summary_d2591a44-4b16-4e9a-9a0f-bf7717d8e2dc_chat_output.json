@@ -1,0 +1,24 @@
+{
+  "conversation_id": "4155f345-1e9d-47f8-9a67-c574d9b6a4d4",
+  "message": "The last two interactions with Agent Inter d2591a44 were notes created on November 21, 2025, with the content \"First note\" and \"Second note.\"",
+  "tool_calls_made": 2,
+  "tools_used": [
+    "get_contact_interactions",
+    "get_contact"
+  ],
+  "usage": {
+    "prompt_tokens": 734,
+    "completion_tokens": 98,
+    "total_tokens": 832,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  }
+}

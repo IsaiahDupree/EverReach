@@ -1,0 +1,23 @@
+{
+  "conversation_id": "8adc1c4d-29ab-48c7-bdb8-7ed759640fd7",
+  "message": "The last two interactions with this contact were notes recorded on November 21, 2025, with the first noting a brief update and the second following shortly after with additional details.",
+  "tool_calls_made": 1,
+  "tools_used": [
+    "get_contact_interactions"
+  ],
+  "usage": {
+    "prompt_tokens": 731,
+    "completion_tokens": 41,
+    "total_tokens": 772,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  }
+}

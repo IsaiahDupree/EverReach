@@ -1,0 +1,8 @@
+{
+  "contact_id": "a47d0526-dd6c-4eb3-95e0-14e339219bd2",
+  "goal_type": "business",
+  "channel": "email",
+  "tone": "concise",
+  "include_voice_context": true,
+  "include_interaction_history": true
+}
