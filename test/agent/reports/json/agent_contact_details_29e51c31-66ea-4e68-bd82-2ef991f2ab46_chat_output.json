@@ -1,0 +1,24 @@
+{
+  "conversation_id": "de8ea1e2-897f-4416-8b6f-fe3d666e9a84",
+  "message": "Name: Agent Details 29e51c31, Warmth: 0",
+  "tool_calls_made": 2,
+  "tools_used": [
+    "get_contact",
+    "get_contact_interactions"
+  ],
+  "usage": {
+    "prompt_tokens": 750,
+    "completion_tokens": 96,
+    "total_tokens": 846,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  }
+}

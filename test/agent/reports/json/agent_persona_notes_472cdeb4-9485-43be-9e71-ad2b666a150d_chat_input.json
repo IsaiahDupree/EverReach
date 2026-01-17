@@ -1,0 +1,7 @@
+{
+  "message": "Using tools, fetch my persona notes for this contact and summarize them in one sentence. Do not ask for contact_id. Only return the summary.",
+  "context": {
+    "contact_id": "6dfb6803-5165-498d-9085-0915829b704a",
+    "use_tools": true
+  }
+}

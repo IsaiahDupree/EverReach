@@ -1,0 +1,7 @@
+{
+  "message": "Using tools, add the tag \"agent_tag_c73e\" to this contact. Reply with 'OK' when done.",
+  "context": {
+    "contact_id": "a3631350-171e-4b5a-867b-05b4bd9f6639",
+    "use_tools": true
+  }
+}

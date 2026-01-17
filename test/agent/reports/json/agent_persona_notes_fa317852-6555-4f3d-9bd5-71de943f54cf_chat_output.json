@@ -1,0 +1,23 @@
+{
+  "conversation_id": "f476afe6-6e1d-4065-ab9a-6789ce2e4dd1",
+  "message": "The persona notes for this contact include various contexts and details related to their business interactions with agents, highlighting their roles and references to specific agent identifiers.",
+  "tool_calls_made": 1,
+  "tools_used": [
+    "get_persona_notes"
+  ],
+  "usage": {
+    "prompt_tokens": 744,
+    "completion_tokens": 37,
+    "total_tokens": 781,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  }
+}

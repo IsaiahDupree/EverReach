@@ -1,0 +1,100 @@
+# EAS Environment Variables for Production
+# Copy each variable and value into the EAS dashboard
+# https://expo.dev/accounts/isaiahdupree/projects/ai-enhanced-personal-crm/settings/environment-variables
+# Select "production" environment and set visibility to "Plain text" for all
+
+# ============================================
+# REQUIRED FOR BUILD (Minimum Set)
+# ============================================
+
+EXPO_PUBLIC_SUPABASE_URL
+https://utasetfxiqcrnwyfforx.supabase.co
+
+EXPO_PUBLIC_SUPABASE_KEY
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV0YXNldGZ4aXFjcm53eWZmb3J4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg1MDc0MzQsImV4cCI6MjA3NDA4MzQzNH0.obsHbYThUPkmTBn57T8cWcEP_32QxPclSk3Mx36TE04
+
+EXPO_PUBLIC_API_BASE_URL
+https://ever-reach-be.vercel.app
+
+EXPO_PUBLIC_API_URL
+https://ever-reach-be.vercel.app
+
+EXPO_PUBLIC_BACKEND_URL
+https://ever-reach-be.vercel.app
+
+EXPO_PUBLIC_REVENUECAT_IOS_KEY
+appl_vFMuKNRSMlJOSINeBHtjivpcZNs
+
+EXPO_PUBLIC_SUPERWALL_IOS_KEY
+pk_ACiUJ9wcjUecu-9D2eK3I
+
+# ============================================
+# RECOMMENDED (Additional Variables)
+# ============================================
+
+EXPO_PUBLIC_SUPABASE_STORAGE_BUCKET
+attachments
+
+EXPO_PUBLIC_REVENUECAT_ANDROID_KEY
+test_KsnKaXlsDwOXbyRyCrQZjHcQDhv
+
+EXPO_PUBLIC_REVENUECAT_TEST_KEY
+test_KsnKaXlsDwOXbyRyCrQZjHcQDhv
+
+EXPO_PUBLIC_REVENUECAT_WEB_KEY
+rcb_ElSyxfqivpMlrxCyzywWaeOsylYh
+
+EXPO_PUBLIC_IAP_OFFERING_ID
+default
+
+EXPO_PUBLIC_IAP_ENTITLEMENT_ID
+EverReach Core
+
+EXPO_PUBLIC_SUPERWALL_ANDROID_KEY
+your_android_public_api_key
+
+EXPO_PUBLIC_USE_SUPERWALL
+true
+
+EXPO_PUBLIC_FORCE_CUSTOM_PAYWALL
+true
+
+EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY
+pk_test_51RDA4DD7MP3Gp2rwN0DzAS8IPgf6hRPf3bWt33wxU2saHs4eC7C2ljUYU2KAn6VF8oYRvtHTYVR2HxIAfNApBEba00eaRpD0d3
+
+# ============================================
+# FEATURE FLAGS (Production Settings)
+# ============================================
+
+EXPO_PUBLIC_ENABLE_DEV_FEATURES
+false
+
+EXPO_PUBLIC_SHOW_DEBUG_INFO
+false
+
+EXPO_PUBLIC_SHOW_DEV_SETTINGS
+false
+
+EXPO_PUBLIC_SHOW_REFRESH_BUTTONS
+false
+
+EXPO_PUBLIC_ENABLE_DEBUG_LOGGING
+false
+
+EXPO_PUBLIC_ENABLE_EXPERIMENTAL
+false
+
+EXPO_PUBLIC_ENABLE_WEB_FEATURES
+true
+
+EXPO_PUBLIC_ENABLE_BACKEND_ANALYTICS
+true
+
+EXPO_PUBLIC_DISABLE_ONBOARDING
+true
+
+EXPO_PUBLIC_SKIP_ONBOARDING
+false
+
+EXPO_PUBLIC_LOCAL_ONLY
+false

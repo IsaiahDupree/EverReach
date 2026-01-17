@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "EverReach Analytics Event Schema",
+  "type": "object",
+  "properties": {
+    "events": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "requiredFields": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["requiredFields"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["events"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "events": {
+        "App Opened": { "requiredFields": ["platform", "is_first_launch"] },
+        "Paywall Viewed": { "requiredFields": ["trigger", "plan_shown"] },
+        "Subscription Purchased": { "requiredFields": ["plan", "billing_period", "price", "currency"] },
+        "Contact Created": { "requiredFields": ["source", "has_phone", "has_email"] },
+        "Message Generated": { "requiredFields": ["contact_id", "channel", "goal", "generation_time", "message_length"] },
+        "Error Occurred": { "requiredFields": ["error_type", "screen", "is_fatal"] }
+      }
+    }
+  ]
+}

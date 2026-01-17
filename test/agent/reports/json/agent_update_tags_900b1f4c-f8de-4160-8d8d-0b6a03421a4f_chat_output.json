@@ -1,0 +1,23 @@
+{
+  "conversation_id": "8e03fd81-6bf9-4f78-a02a-8c61de04729e",
+  "message": "OK",
+  "tool_calls_made": 1,
+  "tools_used": [
+    "update_contact"
+  ],
+  "usage": {
+    "prompt_tokens": 743,
+    "completion_tokens": 49,
+    "total_tokens": 792,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  }
+}

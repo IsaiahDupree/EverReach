@@ -1,0 +1,53 @@
+appId: com.everreach.app
+---
+# Test 5: Complete Purchase Flow (with Superwall)
+# Purpose: Test the full subscription purchase journey
+# Note: Uses StoreKit sandbox - no real charges
+
+- launchApp
+- takeScreenshot: screenshots/05-01-home.png
+
+# Step 1: Navigate to subscription plans
+- tapOn: "Settings"
+- takeScreenshot: screenshots/05-02-settings.png
+
+- tapOn: "Subscription Plans"
+- takeScreenshot: screenshots/05-03-plans-screen.png
+
+# Step 2: Trigger Superwall paywall
+- tapOn: "Core Monthly"
+- takeScreenshot: screenshots/05-04-loading-paywall.png
+
+# Step 3: Wait for Superwall to load (our fix should make this fast!)
+- assertVisible: "Keep the people who matter close"
+- takeScreenshot: screenshots/05-05-superwall-loaded.png
+
+# Step 4: Verify all Superwall content loaded
+- assertVisible: "Remember What Matters With Voice Notes"
+- assertVisible: "Monthly"
+- assertVisible: "$14.99/mo"
+- assertVisible: "Start my journey"
+- takeScreenshot: screenshots/05-06-ready-to-buy.png
+
+# Step 5: Initiate purchase
+- tapOn: "Start my journey"
+- takeScreenshot: screenshots/05-07-purchase-initiated.png
+
+# Step 6: StoreKit dialog appears (in sandbox mode)
+# Maestro can't interact with StoreKit system dialogs
+# Manual step: User completes StoreKit purchase
+
+# To continue automated testing after manual purchase:
+# - User taps "Subscribe" in StoreKit
+# - App receives purchase confirmation
+# - Auto-sync triggers
+
+# Step 7: Wait for purchase success (after manual StoreKit confirmation)
+# This requires the test to pause for manual interaction
+- takeScreenshot: screenshots/05-08-awaiting-storekit.png
+
+# Note: Test pauses here for manual StoreKit interaction
+# After completing StoreKit purchase, the app should:
+# 1. Show "Subscription Activated!" alert
+# 2. Auto-sync with backend
+# 3. Update subscription status

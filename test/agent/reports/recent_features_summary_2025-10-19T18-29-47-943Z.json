@@ -1,0 +1,54 @@
+{
+  "timestamp": "2025-10-19T18:29:47.942Z",
+  "duration_ms": 3843,
+  "total": 5,
+  "passed": 0,
+  "failed": 5,
+  "tests": [
+    {
+      "name": "Developer Notifications API",
+      "file": "test/agent/dev-notifications-api.mjs",
+      "success": false,
+      "code": 1,
+      "duration": 2877,
+      "reportPath": "test/agent/reports/dev_notifications_2025-10-19T18-29-46-968Z.md",
+      "error": "Error: Supabase sign-in failed: 400 Bad Request\n    at getAccessToken (file:///C:/Users/Isaia/Documents/Coding/PersonalCRM/test/agent/_shared.mjs:26:11)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async test (file:///C:/Users/Isaia/Documents/Coding/PersonalCRM/test/agent/dev-notifications-api.mjs:26:19)\n"
+    },
+    {
+      "name": "Campaign Automation E2E",
+      "file": "test/agent/campaign-automation-e2e.mjs",
+      "success": false,
+      "code": 1,
+      "duration": 411,
+      "reportPath": "test/agent/reports/campaign_automation_2025-10-19T18-29-47-378Z.md",
+      "error": "Error: Supabase sign-in failed: 400 Bad Request\n    at getAccessToken (file:///C:/Users/Isaia/Documents/Coding/PersonalCRM/test/agent/_shared.mjs:26:11)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async test (file:///C:/Users/Isaia/Documents/Coding/PersonalCRM/test/agent/campaign-automation-e2e.mjs:29:19)\n"
+    },
+    {
+      "name": "Paywall Analytics API",
+      "file": "test/agent/paywall-analytics-api.mjs",
+      "success": false,
+      "code": 1,
+      "duration": 397,
+      "reportPath": "test/agent/reports/paywall_analytics_2025-10-19T18-29-47-774Z.md",
+      "error": "Error: Supabase sign-in failed: 400 Bad Request\n    at getAccessToken (file:///C:/Users/Isaia/Documents/Coding/PersonalCRM/test/agent/_shared.mjs:26:11)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async test (file:///C:/Users/Isaia/Documents/Coding/PersonalCRM/test/agent/paywall-analytics-api.mjs:25:19)\n"
+    },
+    {
+      "name": "Backend Tracking Events",
+      "file": "test/agent/backend-tracking-events.mjs",
+      "success": false,
+      "code": 1,
+      "duration": 81,
+      "reportPath": null,
+      "error": ""
+    },
+    {
+      "name": "Backend Tracking Identify",
+      "file": "test/agent/backend-tracking-identify.mjs",
+      "success": false,
+      "code": 1,
+      "duration": 77,
+      "reportPath": null,
+      "error": ""
+    }
+  ]
+}

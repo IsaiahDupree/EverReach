@@ -1,0 +1,21 @@
+appId: com.everreach.app
+---
+# Automated Smoke Test - No Launch Required
+# Assumes app is already running
+
+# Just verify the app is showing
+- assertVisible: "Welcome"
+- takeScreenshot: screenshots/automated-01-home.png
+
+# Test tab navigation
+- tapOn: "People"
+- assertVisible: "All Contacts"
+- takeScreenshot: screenshots/automated-02-people.png
+
+- tapOn: "Settings"
+- assertVisible: "Account & Subscription"
+- takeScreenshot: screenshots/automated-03-settings.png
+
+- tapOn: "Home"
+- assertVisible: "Welcome"
+- takeScreenshot: screenshots/automated-04-complete.png

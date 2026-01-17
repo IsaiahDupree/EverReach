@@ -1,0 +1,33 @@
+# Example environment file with placeholders
+# Copy to your local environment and fill in the values.
+# Do NOT commit secrets to version control.
+
+# CORS / Origins
+CORS_ORIGINS=https://your-frontend-domain.example,https://another-allowed-origin.example
+
+# Supabase (Backend server-side)
+SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
+SUPABASE_JWT_SECRET=YOUR_SUPABASE_JWT_SECRET
+SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_KEY
+SUPABASE_SERVICE_ROLE_KEY=YOUR_SUPABASE_SERVICE_ROLE_KEY
+SUPABASE_PROJECT_REF=YOUR_PROJECT_REF
+
+# Billing / Subscriptions
+IOS_SUB_CORE_MONTHLY=com.yourapp.core.monthly
+
+# Email (Transactional)
+EMAIL_FROM=noreply@your-domain.example
+RESEND_API_KEY=YOUR_RESEND_API_KEY
+
+# OpenAI
+OPENAI_STUB=false
+OPENAI_API_KEY=YOUR_OPENAI_KEY
+
+# Stripe
+STRIPE_SECRET_KEY=YOUR_STRIPE_SECRET_KEY
+STRIPE_PUBLISHABLE_KEY=YOUR_STRIPE_PUBLISHABLE_KEY
+STRIPE_WEBHOOK_SECRET=YOUR_STRIPE_WEBHOOK_SECRET
+STRIPE_CANCEL_URL=https://your-frontend-domain.example/settings/billing?state=cancel
+
+# Storage
+SUPABASE_STORAGE_BUCKET=attachments

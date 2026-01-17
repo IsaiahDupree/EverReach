@@ -1,0 +1,54 @@
+{
+  "timestamp": "2025-10-19T18:32:23.572Z",
+  "duration_ms": 9632,
+  "total": 5,
+  "passed": 3,
+  "failed": 2,
+  "tests": [
+    {
+      "name": "Developer Notifications API",
+      "file": "test/agent/dev-notifications-api.mjs",
+      "success": true,
+      "code": 0,
+      "duration": 6409,
+      "reportPath": "test/agent/reports/dev_notifications_2025-10-19T18-32-20-340Z.md",
+      "error": null
+    },
+    {
+      "name": "Campaign Automation E2E",
+      "file": "test/agent/campaign-automation-e2e.mjs",
+      "success": true,
+      "code": 0,
+      "duration": 2203,
+      "reportPath": "test/agent/reports/campaign_automation_2025-10-19T18-32-22-545Z.md",
+      "error": null
+    },
+    {
+      "name": "Paywall Analytics API",
+      "file": "test/agent/paywall-analytics-api.mjs",
+      "success": true,
+      "code": 0,
+      "duration": 878,
+      "reportPath": "test/agent/reports/paywall_analytics_2025-10-19T18-32-23-423Z.md",
+      "error": null
+    },
+    {
+      "name": "Backend Tracking Events",
+      "file": "test/agent/backend-tracking-events.mjs",
+      "success": false,
+      "code": 1,
+      "duration": 68,
+      "reportPath": null,
+      "error": ""
+    },
+    {
+      "name": "Backend Tracking Identify",
+      "file": "test/agent/backend-tracking-identify.mjs",
+      "success": false,
+      "code": 1,
+      "duration": 72,
+      "reportPath": null,
+      "error": ""
+    }
+  ]
+}

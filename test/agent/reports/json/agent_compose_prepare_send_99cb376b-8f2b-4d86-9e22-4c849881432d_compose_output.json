@@ -1,0 +1,33 @@
+{
+  "contact": {
+    "id": "86f345a5-542a-4be4-af34-3f4b8a6395a6",
+    "name": "Agent Compose 99cb376b"
+  },
+  "message": {
+    "channel": "email",
+    "subject": "Inquiry About Collaboration Opportunities",
+    "body": "Dear Agent Compose,\n\nI hope this message finds you well. I am reaching out to explore potential collaboration opportunities that could be mutually beneficial. Given your expertise, I believe there may be synergies we could leverage.\n\nCould we schedule a brief call to discuss this further? Please let me know your availability.\n\nLooking forward to your response.\n\nBest regards,  \n[Your Name]  \n[Your Contact Information]",
+    "tone": "concise",
+    "estimated_length": 420
+  },
+  "context_sources": {
+    "voice_notes_used": true,
+    "interactions_used": true,
+    "contact_warmth": 0
+  },
+  "usage": {
+    "prompt_tokens": 308,
+    "completion_tokens": 88,
+    "total_tokens": 396,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  }
+}

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Purchase Flow Monitoring Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <h1>🧪 Purchase Flow Monitoring</h1>
+            <div class="header-actions">
+                <button id="refreshBtn" class="btn btn-primary">🔄 Refresh</button>
+                <button id="exportBtn" class="btn btn-secondary">📥 Export Report</button>
+                <span class="status-indicator" id="statusIndicator">●</span>
+                <span id="lastUpdate">Last updated: Never</span>
+            </div>
+        </header>
+
+        <!-- Overview Cards -->
+        <div class="overview-cards">
+            <div class="card">
+                <div class="card-icon">📊</div>
+                <div class="card-content">
+                    <div class="card-value" id="totalTests">0</div>
+                    <div class="card-label">Total Tests</div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-icon">✅</div>
+                <div class="card-content">
+                    <div class="card-value" id="passRate">0%</div>
+                    <div class="card-label">Pass Rate</div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-icon">⏱️</div>
+                <div class="card-content">
+                    <div class="card-value" id="avgDuration">0s</div>
+                    <div class="card-label">Avg Duration</div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-icon">🔥</div>
+                <div class="card-content">
+                    <div class="card-value" id="currentStreak">0</div>
+                    <div class="card-label">Pass Streak</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="charts-section">
+            <div class="chart-container">
+                <h2>Success Rate Over Time</h2>
+                <canvas id="successRateChart"></canvas>
+            </div>
+            
+            <div class="chart-container">
+                <h2>Backend Sync Latency</h2>
+                <canvas id="latencyChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Test Breakdown -->
+        <div class="test-breakdown">
+            <h2>Test Performance Breakdown</h2>
+            <div class="breakdown-grid">
+                <div class="breakdown-item">
+                    <div class="breakdown-label">Sign In</div>
+                    <div class="breakdown-bar">
+                        <div class="breakdown-fill" id="signInBar" style="width: 0%"></div>
+                    </div>
+                    <div class="breakdown-value" id="signInRate">0%</div>
+                </div>
+                
+                <div class="breakdown-item">
+                    <div class="breakdown-label">Purchase Flow</div>
+                    <div class="breakdown-bar">
+                        <div class="breakdown-fill" id="purchaseBar" style="width: 0%"></div>
+                    </div>
+                    <div class="breakdown-value" id="purchaseRate">0%</div>
+                </div>
+                
+                <div class="breakdown-item">
+                    <div class="breakdown-label">Auto-Sync</div>
+                    <div class="breakdown-bar">
+                        <div class="breakdown-fill" id="autoSyncBar" style="width: 0%"></div>
+                    </div>
+                    <div class="breakdown-value" id="autoSyncRate">0%</div>
+                </div>
+                
+                <div class="breakdown-item">
+                    <div class="breakdown-label">Feature Unlock</div>
+                    <div class="breakdown-bar">
+                        <div class="breakdown-fill" id="featureUnlockBar" style="width: 0%"></div>
+                    </div>
+                    <div class="breakdown-value" id="featureUnlockRate">0%</div>
+                </div>
+                
+                <div class="breakdown-item">
+                    <div class="breakdown-label">Restore Purchases</div>
+                    <div class="breakdown-bar">
+                        <div class="breakdown-fill" id="restoreBar" style="width: 0%"></div>
+                    </div>
+                    <div class="breakdown-value" id="restoreRate">0%</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Test Results Table -->
+        <div class="results-section">
+            <div class="section-header">
+                <h2>Recent Test Results</h2>
+                <div class="filters">
+                    <select id="filterStatus">
+                        <option value="all">All Tests</option>
+                        <option value="passed">Passed Only</option>
+                        <option value="failed">Failed Only</option>
+                        <option value="skipped">Skipped Only</option>
+                    </select>
+                    <input type="text" id="searchBox" placeholder="Search tests...">
+                </div>
+            </div>
+            
+            <table class="results-table">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Status</th>
+                        <th>Passed</th>
+                        <th>Failed</th>
+                        <th>Skipped</th>
+                        <th>Duration</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="resultsTableBody">
+                    <tr class="no-data">
+                        <td colspan="7">No test results yet. Run a test to see data here.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Test Details Modal -->
+        <div id="detailsModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Test Details</h2>
+                    <button class="close" id="closeModal">&times;</button>
+                </div>
+                <div class="modal-body" id="modalBody">
+                    <!-- Populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Screenshot Gallery -->
+        <div class="screenshots-section" id="screenshotsSection" style="display: none;">
+            <h2>Screenshots</h2>
+            <div class="screenshots-grid" id="screenshotsGrid">
+                <!-- Populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <script src="dashboard.js"></script>
+</body>
+</html>

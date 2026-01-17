@@ -1,0 +1,24 @@
+{
+  "conversation_id": "8a8fecbe-fe74-47be-9d6e-e376858d613f",
+  "message": "The last two interactions with Agent Inter 15c02f13 involved the addition of two notes: the first note was created at 18:36:07 on October 11, 2025, and the second note was added shortly after at 18:36:08 on the same day.",
+  "tool_calls_made": 2,
+  "tools_used": [
+    "get_contact",
+    "get_contact_interactions"
+  ],
+  "usage": {
+    "prompt_tokens": 730,
+    "completion_tokens": 90,
+    "total_tokens": 820,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  }
+}
