@@ -1,0 +1,23 @@
+{
+  "conversation_id": "b861431a-fc84-4874-9b87-9b70857a0af6",
+  "message": "The contact is associated with various agents and business contexts, indicating a focus on professional relationships and collaboration.",
+  "tool_calls_made": 1,
+  "tools_used": [
+    "get_persona_notes"
+  ],
+  "usage": {
+    "prompt_tokens": 745,
+    "completion_tokens": 38,
+    "total_tokens": 783,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  }
+}

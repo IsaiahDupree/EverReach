@@ -1,0 +1,8 @@
+appId: com.everreach.app
+---
+# Quick Check - Works with already running app
+# Just verify we can see the UI
+
+- assertVisible: 
+    text: ".*"  # Match any text (app is visible)
+- takeScreenshot: screenshots/00-quick-check.png

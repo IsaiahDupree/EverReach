@@ -1,0 +1,34 @@
+{
+  "timestamp": "2025-10-19T21:15:42.217Z",
+  "duration_ms": 7437,
+  "total": 3,
+  "passed": 1,
+  "failed": 2,
+  "skipped": 0,
+  "tests": [
+    {
+      "name": "Environment Validation",
+      "file": "test/agent/env-validation.mjs",
+      "success": true,
+      "code": 0,
+      "duration": 52,
+      "critical": true
+    },
+    {
+      "name": "Email Integration (Resend)",
+      "file": "test/agent/integration-email.mjs",
+      "success": false,
+      "code": 1,
+      "duration": 1855,
+      "critical": false
+    },
+    {
+      "name": "SMS Integration (Twilio)",
+      "file": "test/agent/integration-sms.mjs",
+      "success": false,
+      "code": 1,
+      "duration": 5527,
+      "critical": false
+    }
+  ]
+}

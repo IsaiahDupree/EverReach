@@ -1,0 +1,41 @@
+appId: com.everreach.app
+---
+# Test 4: Superwall Paywall Flow
+# Purpose: Navigate through Superwall paywall
+
+- launchApp
+
+# Navigate to subscription plans
+- tapOn: "Settings"
+- tapOn: "Subscription Plans"
+- takeScreenshot: screenshots/04-before-paywall.png
+
+# Tap to trigger paywall
+- tapOn: "Core Monthly"
+- takeScreenshot: screenshots/04-paywall-loading.png
+
+# Wait for Superwall to load
+- assertVisible: "Keep the people who matter close"
+- takeScreenshot: screenshots/04-superwall-loaded.png
+
+# Verify Superwall content
+- assertVisible: "Remember What Matters With Voice Notes"
+- assertVisible: "See Who's Drifting Before They Disappear"
+- assertVisible: "Reach Out in Seconds"
+
+# Verify pricing is shown
+- assertVisible: "Monthly"
+- assertVisible: "$14.99/mo"
+- assertVisible: "Most Popular"
+
+# Verify CTA button
+- assertVisible: "Start my journey"
+- takeScreenshot: screenshots/04-ready-to-purchase.png
+
+# Note: Don't tap "Start my journey" - that would trigger real purchase
+# For testing, we just verify the paywall loads correctly
+
+# Close paywall (tap back or X if visible)
+- tapOn:
+    point: "5%,10%"  # Top left back button
+- takeScreenshot: screenshots/04-paywall-dismissed.png

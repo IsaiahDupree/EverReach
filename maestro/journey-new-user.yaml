@@ -1,0 +1,46 @@
+appId: com.everreach.app
+---
+# User Journey: First-Time User Onboarding
+# Simulates a new user's experience
+
+- launchApp
+- takeScreenshot: screenshots/journey-new-user-01-start.png
+
+# New user flow
+- assertVisible: "Welcome"
+
+# Add first contact
+- tapOn: "Add Contact"
+- takeScreenshot: screenshots/journey-new-user-02-add-contact.png
+
+- inputText: "John Doe"
+- tapOn: "Save"
+- takeScreenshot: screenshots/journey-new-user-03-contact-saved.png
+
+# Navigate to People to see the contact
+- tapOn: "People"
+- assertVisible: "John Doe"
+- takeScreenshot: screenshots/journey-new-user-04-people-list.png
+
+# View contact details
+- tapOn: "John Doe"
+- assertVisible: "Contact Details"
+- takeScreenshot: screenshots/journey-new-user-05-contact-detail.png
+
+# Add a note
+- tapOn: "Notes"
+- tapOn: "Add Note"
+- inputText: "Met John at the conference"
+- tapOn: "Save"
+- takeScreenshot: screenshots/journey-new-user-06-note-added.png
+
+# Go to Chat to compose message
+- tapOn: "Chat"
+- assertVisible: "AI CRM Assistant"
+- takeScreenshot: screenshots/journey-new-user-07-chat.png
+
+# Check subscription plans
+- tapOn: "Settings"
+- tapOn: "Subscription Plans"
+- assertVisible: "Core Monthly"
+- takeScreenshot: screenshots/journey-new-user-08-plans.png

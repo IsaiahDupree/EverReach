@@ -1,0 +1,16 @@
+appId: com.everreach.app
+---
+# Master Test Suite - Run All Critical Tests
+# Run: maestro test maestro/test-suite.yaml
+
+# Test 1: App Launch
+- runFlow: 01-app-launch.yaml
+
+# Test 2: Navigation
+- runFlow: 02-navigation.yaml
+
+# Test 3: Subscription UI
+- runFlow: 03-subscription-ui.yaml
+
+# Test 4: Superwall Flow
+- runFlow: 04-superwall-flow.yaml

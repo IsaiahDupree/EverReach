@@ -1,0 +1,24 @@
+{
+  "conversation_id": "cb94fcd5-ce54-4f8b-96f4-151d5a119426",
+  "message": "Name: Agent Details 3186f426, Warmth: 0",
+  "tool_calls_made": 2,
+  "tools_used": [
+    "get_contact",
+    "get_contact_interactions"
+  ],
+  "usage": {
+    "prompt_tokens": 749,
+    "completion_tokens": 94,
+    "total_tokens": 843,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  }
+}

@@ -1,0 +1,10 @@
+python-dotenv>=1.0.1
+pydantic>=2.8
+Pillow>=10.4.0
+numpy>=1.26
+opencv-python>=4.10.0.84
+pytesseract>=0.3.10
+paddleocr>=2.7.0.3
+python-Levenshtein>=0.25.1
+tqdm>=4.66
+requests>=2.32

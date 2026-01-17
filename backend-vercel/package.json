@@ -1,0 +1,36 @@
+{
+  "name": "personal-crm-backend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start -p 3001",
+    "generate:openapi:ts": "openapi-typescript ./openapi/openapi.json -o ./openapi/types.ts"
+  },
+  "dependencies": {
+    "next": "14.2.10",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "@trpc/server": "^11.6.0",
+    "server-only": "^0.0.1",
+    "openai": "^5.19.1",
+    "superjson": "^2.2.2",
+    "zod": "^3.23.8",
+    "@supabase/supabase-js": "^2.57.2",
+    "stripe": "^14.25.0",
+    "jose": "^5.9.6",
+    "googleapis": "^137.0.0",
+    "resend": "^3.2.0",
+    "posthog-node": "^4.0.0",
+    "uuid": "^9.0.1",
+    "sharp": "^0.33.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "typescript": "~5.8.3",
+    "openapi-typescript": "^6.7.0"
+  }
+}

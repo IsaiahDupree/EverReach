@@ -1,0 +1,1445 @@
+warning: (arm64) /Users/isaiahdupree/Library/Developer/Xcode/DerivedData/AIEnhancedPersonalCRM-hawgsnimthxcrscnyncvddbvotng/Build/Products/Debug-iphonesimulator/AIEnhancedPersonalCRM.app/AIEnhancedPersonalCRM empty dSYM file detected, dSYM was created with an executable with no debug info.
+`UIScene` lifecycle will soon be required. Failure to adopt will result in an assert in the future.
+_setUpFeatureFlags called with release level 2
+Running application main ({
+    initialProps =     {
+    };
+    rootTag = 1;
+})
+🟢 Registering module 'ExpoModulesCoreJSLogger'
+🟢 Registering module 'ExpoFetchModule'
+🟢 Registering module 'ExpoAppleAuthentication'
+🟢 Registering module 'ExpoApplication'
+🟢 Registering module 'ExpoAsset'
+🟢 Registering module 'ExpoVideoView'
+🟢 Registering module 'ExpoBlurView'
+🟢 Registering module 'ExpoClipboard'
+🟢 Registering module 'ExponentConstants'
+🟢 Registering module 'ExpoContacts'
+🟢 Registering module 'ExpoContactAccessButton'
+🟢 Registering module 'ExpoCrypto'
+🟢 Registering module 'ExpoDevice'
+🟢 Registering module 'ExpoDocumentPicker'
+nw_protocol_socket_set_no_wake_from_sleep [C2.1.1:2] setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+nw_protocol_socket_set_no_wake_from_sleep setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+nw_protocol_socket_set_no_wake_from_sleep [C2.1.1:2] setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+nw_protocol_socket_set_no_wake_from_sleep setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+🟢 Registering module 'FileSystem'
+🟢 Registering module 'ExponentFileSystem'
+🟢 Registering module 'ExpoFontLoader'
+🟢 Registering module 'ExpoFontUtils'
+🟢 Registering module 'ExpoHaptics'
+🟢 Registering module 'ExpoImage'
+🟢 Registering module 'ExponentImagePicker'
+🟢 Registering module 'ExpoKeepAwake'
+🟢 Registering module 'ExpoLinearGradient'
+🟢 Registering module 'ExpoLinking'
+🟢 Registering module 'ExpoLocalization'
+🟢 Registering module 'ExpoLocation'
+🟢 Registering module 'ExpoBackgroundNotificationTasksModule'
+🟢 Registering module 'ExpoBadgeModule'
+🟢 Registering module 'ExpoNotificationCategoriesModule'
+🟢 Registering module 'ExpoNotificationsEmitter'
+🟢 Registering module 'ExpoNotificationsHandlerModule'
+🟢 Registering module 'ExpoNotificationPermissionsModule'
+🟢 Registering module 'ExpoNotificationPresenter'
+🟢 Registering module 'ExpoPushTokenManager'
+🟢 Registering module 'ExpoNotificationScheduler'
+🟢 Registering module 'NotificationsServerRegistrationModule'
+🟢 Registering module 'ExpoHead'
+🟢 Registering module 'ExpoRouterNativeLinkPreview'
+🟢 Registering module 'ExpoSharing'
+🟢 Registering module 'ExpoSMS'
+🟢 Registering module 'ExpoSplashScreen'
+🟢 Registering module 'SuperwallExpo'
+🟢 Registering module 'SymbolModule'
+🟢 Registering module 'ExpoSystemUI'
+🟢 Registering module 'ExpoWebBrowser'
+AddInstanceForFactory: No factory registered for id <CFUUID 0x600000278980> F8BB1C28-BAE8-11D6-9C31-00039315CD46
+🟢 Posting 'appBecomesActive' event to registered modules
+nw_socket_handle_socket_event [C4.1.1:1] Socket SO_ERROR [61: Connection refused]
+nw_protocol_socket_set_no_wake_from_sleep [C4.1.1:1] setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+nw_protocol_socket_set_no_wake_from_sleep setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+nw_endpoint_flow_failed_with_error [C4.1.1 ::1.8097 in_progress socket-flow (satisfied (Path is satisfied), interface: lo0)] already failing, returning
+🟢 Creating JS object for module 'ExpoModulesCoreJSLogger'
+nw_socket_handle_socket_event [C4.1.2:1] Socket SO_ERROR [61: Connection refused]
+nw_protocol_socket_set_no_wake_from_sleep [C4.1.2:1] setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+nw_protocol_socket_set_no_wake_from_sleep setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+nw_endpoint_flow_failed_with_error [C4.1.2 127.0.0.1:8097 in_progress socket-flow (satisfied (Path is satisfied), interface: lo0)] already failing, returning
+nw_endpoint_flow_failed_with_error [C4.1.2 127.0.0.1:8097 cancelled socket-flow ((null))] already failing, returning
+nw_connection_get_connected_socket_block_invoke [C4] Client called nw_connection_get_connected_socket on unconnected nw_connection
+TCP Conn 0x6000033030c0 Failed : error 0:61 [61]
+🟢 Creating JS object for module 'ExponentConstants'
+Unbalanced calls start/end for tag 19
+🟢 Creating JS object for module 'ExpoSplashScreen'
+Running "main" with {"rootTag":1,"initialProps":{}}
+Class CKBrowserSwitcherViewController overrides the -traitCollection getter, which is not supported. If you're trying to override traits, you must use the appropriate API.
+'🏁 App flags:', { LOCAL_ONLY: false }, { envLocalOnly: 'false', extraLocalOnly: undefined }
+🟢 Creating JS object for module 'ExpoAppleAuthentication'
+'[Supabase] Initializing client with URL:', 'https://utasetfxiqcrnwyfforx.supabase.co'
+'🔗 Redirect URIs:', { platform: 'ios',
+  isWeb: false,
+  dev: 'everreach://auth/callback',
+  prod: 'everreach://auth/callback',
+  current: 'everreach://auth/callback',
+  devReset: 'everreach://reset-password',
+  prodReset: 'everreach://reset-password',
+  resetCurrent: 'everreach://reset-password',
+  isDev: true }
+🟢 Creating JS object for module 'ExpoLocalization'
+🟢 Creating JS object for module 'ExpoWebBrowser'
+🟢 Creating JS object for module 'ExpoVideoView'
+[expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+🟢 Creating JS object for module 'FileSystem'
+🟢 Creating JS object for module 'ExpoClipboard'
+[tRPC Client] Initializing client-side tRPC setup
+🟢 Creating JS object for module 'ExpoLinearGradient'
+🟢 Creating JS object for module 'ExpoContactAccessButton'
+[PerformanceMonitor] NetInfo not available - network monitoring disabled
+[PerformanceMonitor] All monitors initialized
+[App] Performance monitoring initialized
+'[PostHog] Skipping initialization:', { isInitialized: false, hasKey: false }
+'[RevenueCat] Starting initialization...', { platform: 'ios', appOwnership: null, hasKeys: true }
+[RevenueCat] Loading Purchases module...
+'🔗 Backend Base URL:', 'http://localhost:3000'
+'📱 Platform:', 'ios'
+'📝 From env var:', 'EXPO_PUBLIC_API_BASE_URL'
+'[ENDPOINTS] Backend Base URL:', 'http://localhost:3000'
+'[ENDPOINTS] Platform:', 'ios'
+Route "./api/trpc/[trpc]/route.ts" is missing the required default export. Ensure a React component is exported as default.
+AX Safe category class 'SLHighlightDisambiguationPillViewAccessibility' was not found!
+'🚀 [Backend Analytics] Module loaded, BACKEND_URL:', 'http://localhost:3000'
+🟢 Creating JS object for module 'ExpoLinking'
+🟢 Creating JS object for module 'ExpoKeepAwake'
+The app is running using the Legacy Architecture. The Legacy Architecture is deprecated and will be removed in a future version of React Native. Please consider migrating to the New Architecture. For more information, please see https://reactnative.dev/blog/2024/10/23/the-new-architecture-is-here
+'📤 [AnalyticsRepo] Sending to backend:', 'app_state_duration'
+ [Supabase Auth] User signed in
+'🎫 Using token (age:', '0ms, expires in:', '2450s)'
+
+========== API REQUEST ==========
+'🌐 URL:', 'http://localhost:3000/api/v1/events/track'
+'📤 Method:', 'POST'
+'🔗 Base:', 'http://localhost:3000'
+'📍 Path:', '/api/v1/events/track'
+'🔐 Needs Auth:', true
+'🎫 Has Token:', true
+'🔄 Is Retry:', false
+'🎫 Token Preview:', 'Bearer eyJhbGciOiJIUzI1NiIsImt...'
+'📋 Headers:', '{\n  "Content-Type": "application/json",\n  "Authorization": "Bearer eyJhbG…"\n}'
+'📦 Body:', '{"event_type":"app_state_duration","timestamp":"2025-11-24T00:39:21.242Z","metadata":{"state":"inactive","duration_ms":344,"next_state":"active","session_id":null,"anon_id":"unknown","platform":"ios","app_version":"1.0.0","timestamp":"2025-11-24T00:39:21.224Z"}}'
+'📦 Body (parsed):', '{\n  "event_type": "app_state_duration",\n  "timestamp": "2025-11-24T00:39:21.242Z",\n  "metadata": {\n    "state": "inactive",\n    "duration_ms": 344,\n    "next_state": "active",\n    "session_id": null,\n    "anon_id": "unknown",\n    "platform": "ios",\n    "app_version": "1.0.0",\n    "timestamp": "2025-11-24T00:39:21.224Z"\n  }\n}'
+=================================
+🚀 [apiFetch] About to call fetch()...
+🚀 [apiFetch] fetch() called, promise created
+⏳ [apiFetch] Waiting for response...
+[MarketingFunnel] Initialized
+[App] Marketing funnel initialized
+'[PostHog] Skipping initialization:', { isInitialized: false, hasKey: false }
+🟢 Creating JS object for module 'SuperwallExpo'
+'Initialized listeners', 1
+
+[Auth] 🚀 Initializing...
+[AppSettings] Loading settings...
+'[EventEnvelope] Initialized', { anonId: 'anon_1763943...',
+  sessionId: 'ses_17639430...',
+  hasUtm: true,
+  experiments: 0 }
+[App] Event envelope initialized
+'[Auth] 🔔 Auth event:', 'INITIAL_SESSION'
+'[Auth] ✅ Found existing session:', 'lcreator34@gmail.com'
+[Auth] 🔄 Refreshing entitlements on startup...
+[SubscriptionRepo] Using BACKEND
+'🎫 Using token (age:', '54ms, expires in:', '2450s)'
+
+========== API REQUEST ==========
+'🌐 URL:', 'http://localhost:3000/api/v1/me/entitlements'
+'📤 Method:', 'GET'
+'🔗 Base:', 'http://localhost:3000'
+'📍 Path:', '/api/v1/me/entitlements'
+'🔐 Needs Auth:', true
+'🎫 Has Token:', true
+'🔄 Is Retry:', false
+'🎫 Token Preview:', 'Bearer eyJhbGciOiJIUzI1NiIsImt...'
+'📋 Headers:', '{\n  "Content-Type": "application/json",\n  "Authorization": "Bearer eyJhbG…"\n}'
+=================================
+🚀 [apiFetch] About to call fetch()...
+🚀 [apiFetch] fetch() called, promise created
+⏳ [apiFetch] Waiting for response...
+✅ [apiFetch] Response received!
+
+========== API RESPONSE ==========
+'⏱️  Duration:', '319ms'
+'📊 Status:', 200, ''
+'✅ OK:', true
+'🏷️  Status Code:', 200
+'📥 Response Body:', '{"tracked":true,"event_type":"app_state_duration"}'
+'📥 Response (parsed):', '{\n  "tracked": true,\n  "event_type": "app_state_duration"\n}'
+==================================
+'✅ [AnalyticsRepo] Event sent successfully:', 'app_state_duration'
+'[Analytics] Event tracked:', 'app_state_duration', { session: 'undefined...', hasUtm: false, experiments: 0 }
+✅ [apiFetch] Response received!
+
+========== API RESPONSE ==========
+'⏱️  Duration:', '421ms'
+'📊 Status:', 200, ''
+'✅ OK:', true
+'🏷️  Status Code:', 200
+'📥 Response Body:', '{"plan":"free","valid_until":null,"source":"manual","features":{"compose_runs":50,"voice_minutes":30,"messages":200},"tier":"free","subscription_status":"trial","trial_started_at":"2025-11-09T00:33:43.288451+00:00","trial_ends_at":"2025-11-16T00:33:43.288451+00:00","status":"trial","current_period_end":null,"payment_platform":null,"core_features":true}'
+'📥 Response (parsed):', '{\n  "plan": "free",\n  "valid_until": null,\n  "source": "manual",\n  "features": {\n    "compose_runs": 50,\n    "voice_minutes": 30,\n    "messages": 200\n  },\n  "tier": "free",\n  "subscription_status": "trial",\n  "trial_started_at": "2025-11-09T00:33:43.288451+00:00",\n  "trial_ends_at": "2025-11-16T00:33:43.288451+00:00",\n  "status": "trial",\n  "current_period_end": null,\n  "payment_platform": null,\n  "core_features": true\n}'
+==================================
+[Auth] ✅ Entitlements refreshed
+Getting subscription status
+[Avatars] Prefetching contact avatars...
+'🎫 Using token (age:', '891ms, expires in:', '2449s)'
+[App] Pre-fetching paywall configuration...
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔄 [PaywallConfig] FETCH STARTED @ 2025-11-24T00:39:22.137Z
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Platform: mobile
+   API Base: http://localhost:3000
+[MessagesRepo] Using SUPABASE
+[VoiceNotesProvider] Loading voice notes
+[VoiceNotesRepo] Using SUPABASE
+[SupabaseVoiceNotesRepo] Fetching all voice notes from backend...
+'🎫 Using token (age:', '904ms, expires in:', '2449s)'
+[InteractionsProvider] Loading interactions
+[InteractionsRepo] Using BACKEND
+'🎫 Using token (age:', '905ms, expires in:', '2449s)'
+[PeopleProvider] User/session changed - reloading contacts
+'[PeopleProvider] User ID:', '33888a02-9407-4fb9-ac59-c14032095ed2'
+'[PeopleProvider] Session preview:', 'eyJhbGciOi'
+[PeopleProvider] Loading contacts from backend/storage...
+[PeopleRepo] Using SUPABASE
+'[SupabaseContactsRepo.all] Fetching contacts from:', '/api/v1/contacts'
+'🎫 Using token (age:', '928ms, expires in:', '2449s)'
+
+🎣 [usePaywallConfig] Hook mounted - Loading config...
+📥 [usePaywallConfig] Loading config...
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔄 [PaywallConfig] FETCH STARTED @ 2025-11-24T00:39:22.177Z
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Platform: mobile
+   API Base: http://localhost:3000
+[Entitlements] Fetching from backend...
+'🎫 Using token (age:', '938ms, expires in:', '2449s)'
+[SubscriptionProvider] Loading subscription state from backend...
+[SubscriptionRepo] Using BACKEND
+'🎫 Using token (age:', '941ms, expires in:', '2449s)'
+[OnboardingProvider] Loading onboarding state...
+'[OnboardingProvider] EXPO_PUBLIC_DISABLE_ONBOARDING:', 'true'
+[OnboardingProvider] Onboarding disabled via environment variable - setting completed to true
+
+========== API REQUEST ==========
+'🌐 URL:', 'http://localhost:3000/api/v1/contacts?limit=1000'
+'📤 Method:', 'GET'
+'🔗 Base:', 'http://localhost:3000'
+'📍 Path:', '/api/v1/contacts?limit=1000'
+'🔐 Needs Auth:', true
+'🎫 Has Token:', true
+'🔄 Is Retry:', false
+'🎫 Token Preview:', 'Bearer eyJhbGciOiJIUzI1NiIsImt...'
+'📋 Headers:', '{\n  "Content-Type": "application/json",\n  "Authorization": "Bearer eyJhbG…"\n}'
+=================================
+🚀 [apiFetch] About to call fetch()...
+🚀 [apiFetch] fetch() called, promise created
+⏳ [apiFetch] Waiting for response...
+
+========== API REQUEST ==========
+'🌐 URL:', 'http://localhost:3000/api/v1/me/persona-notes?type=voice'
+'📤 Method:', 'GET'
+'🔗 Base:', 'http://localhost:3000'
+'📍 Path:', '/api/v1/me/persona-notes?type=voice'
+'🔐 Needs Auth:', true
+'🎫 Has Token:', true
+'🔄 Is Retry:', false
+'🎫 Token Preview:', 'Bearer eyJhbGciOiJIUzI1NiIsImt...'
+'📋 Headers:', '{\n  "Content-Type": "application/json",\n  "Authorization": "Bearer eyJhbG…"\n}'
+=================================
+🚀 [apiFetch] About to call fetch()...
+🚀 [apiFetch] fetch() called, promise created
+⏳ [apiFetch] Waiting for response...
+
+========== API REQUEST ==========
+'🌐 URL:', 'http://localhost:3000/api/v1/interactions'
+'📤 Method:', 'GET'
+'🔗 Base:', 'http://localhost:3000'
+'📍 Path:', '/api/v1/interactions'
+'🔐 Needs Auth:', true
+'🎫 Has Token:', true
+'🔄 Is Retry:', false
+'🎫 Token Preview:', 'Bearer eyJhbGciOiJIUzI1NiIsImt...'
+'📋 Headers:', '{\n  "Content-Type": "application/json",\n  "Authorization": "Bearer eyJhbG…"\n}'
+=================================
+🚀 [apiFetch] About to call fetch()...
+🚀 [apiFetch] fetch() called, promise created
+⏳ [apiFetch] Waiting for response...
+
+========== API REQUEST ==========
+'🌐 URL:', 'http://localhost:3000/api/v1/contacts?limit=1000'
+'📤 Method:', 'GET'
+'🔗 Base:', 'http://localhost:3000'
+'📍 Path:', '/api/v1/contacts?limit=1000'
+'🔐 Needs Auth:', true
+'🎫 Has Token:', true
+'🔄 Is Retry:', false
+'🎫 Token Preview:', 'Bearer eyJhbGciOiJIUzI1NiIsImt...'
+'📋 Headers:', '{\n  "Content-Type": "application/json",\n  "Authorization": "Bearer eyJhbG…"\n}'
+=================================
+🚀 [apiFetch] About to call fetch()...
+🚀 [apiFetch] fetch() called, promise created
+⏳ [apiFetch] Waiting for response...
+
+========== API REQUEST ==========
+'🌐 URL:', 'http://localhost:3000/api/v1/me/entitlements'
+'📤 Method:', 'GET'
+'🔗 Base:', 'http://localhost:3000'
+'📍 Path:', '/api/v1/me/entitlements'
+'🔐 Needs Auth:', true
+'🎫 Has Token:', true
+'🔄 Is Retry:', false
+'🎫 Token Preview:', 'Bearer eyJhbGciOiJIUzI1NiIsImt...'
+'📋 Headers:', '{\n  "Content-Type": "application/json",\n  "Authorization": "Bearer eyJhbG…"\n}'
+=================================
+'🗄️  GET cache hit:', 'http://localhost:3000/api/v1/me/entitlements'
+
+========== API REQUEST ==========
+'🌐 URL:', 'http://localhost:3000/api/v1/me/entitlements'
+'📤 Method:', 'GET'
+'🔗 Base:', 'http://localhost:3000'
+'📍 Path:', '/api/v1/me/entitlements'
+'🔐 Needs Auth:', true
+'🎫 Has Token:', true
+'🔄 Is Retry:', false
+'🎫 Token Preview:', 'Bearer eyJhbGciOiJIUzI1NiIsImt...'
+'📋 Headers:', '{\n  "Content-Type": "application/json",\n  "Authorization": "Bearer eyJhbG…"\n}'
+=================================
+'🗄️  GET cache hit:', 'http://localhost:3000/api/v1/me/entitlements'
+'[Entitlements] Loaded:', { tier: 'free', status: 'trial', platform: null }
+'[SubscriptionProvider] ✅ Entitlements loaded:', { tier: 'free',
+  features: [ 'basic_crm' ],
+  subscription_status: 'trial',
+  source: 'manual',
+  plan: 'free',
+  valid_until: null,
+  stripe_customer_id: undefined,
+  stripe_subscription_id: undefined,
+  trial_started_at: '2025-11-09T00:33:43.288451+00:00',
+  trial_duration_days: 7,
+  trial_ends_at: '2025-11-16T00:33:43.288451+00:00',
+  trial_group: null,
+  trial_gate_strategy: 'calendar_days',
+  trial_usage_seconds_limit: undefined }
+'📤 [AnalyticsRepo] Sending to backend:', 'screen_viewed'
+'🎫 Using token (age:', '981ms, expires in:', '2449s)'
+[Index] rootNavigationState ready, navigating...
+
+========== API REQUEST ==========
+'🌐 URL:', 'http://localhost:3000/api/v1/events/track'
+'📤 Method:', 'POST'
+'🔗 Base:', 'http://localhost:3000'
+'📍 Path:', '/api/v1/events/track'
+'🔐 Needs Auth:', true
+'🎫 Has Token:', true
+'🔄 Is Retry:', false
+'🎫 Token Preview:', 'Bearer eyJhbGciOiJIUzI1NiIsImt...'
+'📋 Headers:', '{\n  "Content-Type": "application/json",\n  "Authorization": "Bearer eyJhbG…"\n}'
+'📦 Body:', '{"event_type":"screen_viewed","timestamp":"2025-11-24T00:39:22.225Z","metadata":{"screen_name":"/","platform":"ios","session_id":"ses_1763943098953_189pp71ug","anon_id":"anon_1763943098047_uq143ocb5","app_version":"1.0.0","timestamp":"2025-11-24T00:39:22.224Z"}}'
+'📦 Body (parsed):', '{\n  "event_type": "screen_viewed",\n  "timestamp": "2025-11-24T00:39:22.225Z",\n  "metadata": {\n    "screen_name": "/",\n    "platform": "ios",\n    "session_id": "ses_1763943098953_189pp71ug",\n    "anon_id": "anon_1763943098047_uq143ocb5",\n    "app_version": "1.0.0",\n    "timestamp": "2025-11-24T00:39:22.224Z"\n  }\n}'
+=================================
+🚀 [apiFetch] About to call fetch()...
+🚀 [apiFetch] fetch() called, promise created
+⏳ [apiFetch] Waiting for response...
+[Warmth] Daily recompute skipped (< 24h since last run)
+[Warmth] Startup recompute skipped (< 10min since last run)
+
+✅ [PaywallConfig] Using CACHED config
+   Strategy: Soft: 7-Day Trial (SOFT_AFTER_7D)
+   Mode: hard-soft
+   Can Skip: true
+   Presentation: static
+   Trial: 7 days
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[App] Paywall configuration loaded
+
+✅ [PaywallConfig] Using CACHED config
+   Strategy: Soft: 7-Day Trial (SOFT_AFTER_7D)
+   Mode: hard-soft
+   Can Skip: true
+   Presentation: static
+   Trial: 7 days
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ [usePaywallConfig] Config loaded successfully
+
+🎯 [PaywallProvider] CHECKING PAYWALL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+User State used for check:
+   isPaid: false
+   isTrialExpired: false
+   trialEndsAt: N/A
+   installDate: 2025-11-24T00:39:22.117Z
+
+Implementation:
+   Type: custom
+   Platform: ios
+
+🎯 [PaywallConfig] EVALUATING PAYWALL DISPLAY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+User State:
+   Premium: false
+   Trial Expired: false
+   Install Date: 2025-11-24T00:39:22.117Z
+   Trial End: N/A
+
+Config:
+   Strategy: Soft: 7-Day Trial
+   Mode: hard-soft
+   Trial Type: time
+   Trial Duration: 7 days
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ No triggers met - NO PAYWALL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📱 [PaywallProvider] Implementation: custom
+   Will use: Custom Paywall
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔄 [PaywallProvider] Backend config loaded: revenuecat
+   Syncing implementation: custom → revenuecat
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+'🎫 Using token (age:', '1032ms, expires in:', '2449s)'
+
+========== API REQUEST ==========
+'🌐 URL:', 'http://localhost:3000/api/v1/config/paywall-live?platform=ios'
+'📤 Method:', 'GET'
+'🔗 Base:', 'http://localhost:3000'
+'📍 Path:', '/api/v1/config/paywall-live?platform=ios'
+'🔐 Needs Auth:', true
+'🎫 Has Token:', true
+'🔄 Is Retry:', false
+'🎫 Token Preview:', 'Bearer eyJhbGciOiJIUzI1NiIsImt...'
+'📋 Headers:', '{\n  "Content-Type": "application/json",\n  "Authorization": "Bearer eyJhbG…"\n}'
+=================================
+🚀 [apiFetch] About to call fetch()...
+🚀 [apiFetch] fetch() called, promise created
+⏳ [apiFetch] Waiting for response...
+
+💳 [PaywallProvider] Implementation loaded: revenuecat
+Error setting property 'pointerEvents' of RNSScreenStackHeaderConfig with tag #93: UIView base class does not support pointerEvent value: box-none
+
+🎯 [PaywallProvider] CHECKING PAYWALL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+User State used for check:
+   isPaid: false
+   isTrialExpired: false
+   trialEndsAt: N/A
+   installDate: 2025-11-24T00:11:38.944Z
+
+Implementation:
+   Type: revenuecat
+   Platform: ios
+
+🎯 [PaywallConfig] EVALUATING PAYWALL DISPLAY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+User State:
+   Premium: false
+   Trial Expired: false
+   Install Date: 2025-11-24T00:11:38.944Z
+   Trial End: N/A
+
+Config:
+   Strategy: Soft: 7-Day Trial
+   Mode: hard-soft
+   Trial Type: time
+   Trial Duration: 7 days
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ No triggers met - NO PAYWALL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📱 [PaywallProvider] Implementation: revenuecat
+   Will use: RevenueCat
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎯 [PaywallProvider] CHECKING PAYWALL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+User State used for check:
+   isPaid: false
+   isTrialExpired: false
+   trialEndsAt: Sat Nov 15 2025 19:33:43 GMT-0500
+   installDate: 2025-11-24T00:11:38.944Z
+
+Implementation:
+   Type: revenuecat
+   Platform: ios
+
+🎯 [PaywallConfig] EVALUATING PAYWALL DISPLAY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+User State:
+   Premium: false
+   Trial Expired: false
+   Install Date: 2025-11-24T00:11:38.944Z
+   Trial End: 2025-11-16T00:33:43.288Z
+
+Config:
+   Strategy: Soft: 7-Day Trial
+   Mode: hard-soft
+   Trial Type: time
+   Trial Duration: 7 days
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ No triggers met - NO PAYWALL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📱 [PaywallProvider] Implementation: revenuecat
+   Will use: RevenueCat
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎯 [PaywallProvider] CHECKING PAYWALL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+User State used for check:
+   isPaid: false
+   isTrialExpired: true
+   trialEndsAt: Sat Nov 15 2025 19:33:43 GMT-0500
+   installDate: 2025-11-24T00:11:38.944Z
+
+Implementation:
+   Type: revenuecat
+   Platform: ios
+
+🎯 [PaywallConfig] EVALUATING PAYWALL DISPLAY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+User State:
+   Premium: false
+   Trial Expired: true
+   Install Date: 2025-11-24T00:11:38.944Z
+   Trial End: 2025-11-16T00:33:43.288Z
+
+Config:
+   Strategy: Soft: 7-Day Trial
+   Mode: hard-soft
+   Trial Type: time
+   Trial Duration: 7 days
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔒 Trial EXPIRED (from userState) + HARD mode - SHOWING PAYWALL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📱 [PaywallProvider] Implementation: revenuecat
+   Will use: RevenueCat
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+'[SubscriptionProvider] Syncing with Superwall once - isPaid:', false, 'tier:', 'free_trial'
+[SubscriptionProvider] ✅ Subscription state loaded successfully
+'📤 [AnalyticsRepo] Sending to backend:', 'app_open'
+'🎫 Using token (age:', '1113ms, expires in:', '2449s)'
+'📤 [AnalyticsRepo] Sending to backend:', 'session_start'
+'🎫 Using token (age:', '1113ms, expires in:', '2449s)'
+
+========== API REQUEST ==========
+'🌐 URL:', 'http://localhost:3000/api/v1/events/track'
+'📤 Method:', 'POST'
+'🔗 Base:', 'http://localhost:3000'
+'📍 Path:', '/api/v1/events/track'
+'🔐 Needs Auth:', true
+'🎫 Has Token:', true
+'🔄 Is Retry:', false
+'🎫 Token Preview:', 'Bearer eyJhbGciOiJIUzI1NiIsImt...'
+'📋 Headers:', '{\n  "Content-Type": "application/json",\n  "Authorization": "Bearer eyJhbG…"\n}'
+'📦 Body:', '{"event_type":"app_open","timestamp":"2025-11-24T00:39:22.357Z","metadata":{"launch_type":"cold","session_id":"ses_1763943098953_189pp71ug","anon_id":"anon_1763943098047_uq143ocb5","platform":"ios","app_version":"1.0.0","timestamp":"2025-11-24T00:39:22.357Z"}}'
+'📦 Body (parsed):', '{\n  "event_type": "app_open",\n  "timestamp": "2025-11-24T00:39:22.357Z",\n  "metadata": {\n    "launch_type": "cold",\n    "session_id": "ses_1763943098953_189pp71ug",\n    "anon_id": "anon_1763943098047_uq143ocb5",\n    "platform": "ios",\n    "app_version": "1.0.0",\n    "timestamp": "2025-11-24T00:39:22.357Z"\n  }\n}'
+=================================
+🚀 [apiFetch] About to call fetch()...
+🚀 [apiFetch] fetch() called, promise created
+⏳ [apiFetch] Waiting for response...
+
+========== API REQUEST ==========
+'🌐 URL:', 'http://localhost:3000/api/v1/events/track'
+'📤 Method:', 'POST'
+'🔗 Base:', 'http://localhost:3000'
+'📍 Path:', '/api/v1/events/track'
+'🔐 Needs Auth:', true
+'🎫 Has Token:', true
+'🔄 Is Retry:', false
+'🎫 Token Preview:', 'Bearer eyJhbGciOiJIUzI1NiIsImt...'
+'📋 Headers:', '{\n  "Content-Type": "application/json",\n  "Authorization": "Bearer eyJhbG…"\n}'
+'📦 Body:', '{"event_type":"session_start","timestamp":"2025-11-24T00:39:22.357Z","metadata":{"reason":"launch","session_id":"ses_1763943098953_189pp71ug","anon_id":"anon_1763943098047_uq143ocb5","platform":"ios","app_version":"1.0.0","timestamp":"2025-11-24T00:39:22.357Z"}}'
+'📦 Body (parsed):', '{\n  "event_type": "session_start",\n  "timestamp": "2025-11-24T00:39:22.357Z",\n  "metadata": {\n    "reason": "launch",\n    "session_id": "ses_1763943098953_189pp71ug",\n    "anon_id": "anon_1763943098047_uq143ocb5",\n    "platform": "ios",\n    "app_version": "1.0.0",\n    "timestamp": "2025-11-24T00:39:22.357Z"\n  }\n}'
+=================================
+🚀 [apiFetch] About to call fetch()...
+🚀 [apiFetch] fetch() called, promise created
+⏳ [apiFetch] Waiting for response...
+[Index] No params, redirecting to /home
+Failed to resolve host network app id to config: bundleID: com.apple.WebKit.Networking instance ID: Optional([_EXExtensionInstanceIdentifier: 1F327597-9936-46D9-8377-920F1854752F])
+
+🔐 [PaywallGate] Checking access for: general
+   ✅ GRANTED (no feature area specified - using centralized navigation)
+'📤 [AnalyticsRepo] Sending to backend:', 'screen_duration'
+'🎫 Using token (age:', '1210ms, expires in:', '2449s)'
+'📤 [AnalyticsRepo] Sending to backend:', 'screen_viewed'
+'🎫 Using token (age:', '1233ms, expires in:', '2449s)'
+'📤 [AnalyticsRepo] Sending to backend:', 'screen_viewed'
+'🎫 Using token (age:', '1246ms, expires in:', '2449s)'
+[useContacts] Fetching contacts...
+'🎫 Using token (age:', '1248ms, expires in:', '2449s)'
+[useDashboardData] Fetching interactions and voice notes...
+'🎫 Using token (age:', '1250ms, expires in:', '2449s)'
+[Dashboard] Screen focused, refreshing data...
+[PeopleProvider] Loading contacts from backend/storage...
+[PeopleRepo] Using SUPABASE
+'[SupabaseContactsRepo.all] Fetching contacts from:', '/api/v1/contacts'
+'🎫 Using token (age:', '1305ms, expires in:', '2448s)'
+
+========== API REQUEST ==========
+'🌐 URL:', 'http://localhost:3000/api/v1/events/track'
+'📤 Method:', 'POST'
+'🔗 Base:', 'http://localhost:3000'
+'📍 Path:', '/api/v1/events/track'
+'🔐 Needs Auth:', true
+'🎫 Has Token:', true
+'🔄 Is Retry:', false
+'🎫 Token Preview:', 'Bearer eyJhbGciOiJIUzI1NiIsImt...'
+'📋 Headers:', '{\n  "Content-Type": "application/json",\n  "Authorization": "Bearer eyJhbG…"\n}'
+'📦 Body:', '{"event_type":"screen_duration","timestamp":"2025-11-24T00:39:22.454Z","metadata":{"screen_name":"/","duration_ms":228,"session_id":"ses_1763943098953_189pp71ug","anon_id":"anon_1763943098047_uq143ocb5","platform":"ios","app_version":"1.0.0","timestamp":"2025-11-24T00:39:22.452Z"}}'
+'📦 Body (parsed):', '{\n  "event_type": "screen_duration",\n  "timestamp": "2025-11-24T00:39:22.454Z",\n  "metadata": {\n    "screen_name": "/",\n    "duration_ms": 228,\n    "session_id": "ses_1763943098953_189pp71ug",\n    "anon_id": "anon_1763943098047_uq143ocb5",\n    "platform": "ios",\n    "app_version": "1.0.0",\n    "timestamp": "2025-11-24T00:39:22.452Z"\n  }\n}'
+=================================
+🚀 [apiFetch] About to call fetch()...
+🚀 [apiFetch] fetch() called, promise created
+⏳ [apiFetch] Waiting for response...
+
+========== API REQUEST ==========
+'🌐 URL:', 'http://localhost:3000/api/v1/events/track'
+'📤 Method:', 'POST'
+'🔗 Base:', 'http://localhost:3000'
+'📍 Path:', '/api/v1/events/track'
+'🔐 Needs Auth:', true
+'🎫 Has Token:', true
+'🔄 Is Retry:', false
+'🎫 Token Preview:', 'Bearer eyJhbGciOiJIUzI1NiIsImt...'
+'📋 Headers:', '{\n  "Content-Type": "application/json",\n  "Authorization": "Bearer eyJhbG…"\n}'
+'📦 Body:', '{"event_type":"screen_viewed","timestamp":"2025-11-24T00:39:22.477Z","metadata":{"screen_name":"/home","platform":"ios","previous_screen":"/","session_id":"ses_1763943098953_189pp71ug","anon_id":"anon_1763943098047_uq143ocb5","app_version":"1.0.0","timestamp":"2025-11-24T00:39:22.476Z"}}'
+'📦 Body (parsed):', '{\n  "event_type": "screen_viewed",\n  "timestamp": "2025-11-24T00:39:22.477Z",\n  "metadata": {\n    "screen_name": "/home",\n    "platform": "ios",\n    "previous_screen": "/",\n    "session_id": "ses_1763943098953_189pp71ug",\n    "anon_id": "anon_1763943098047_uq143ocb5",\n    "app_version": "1.0.0",\n    "timestamp": "2025-11-24T00:39:22.476Z"\n  }\n}'
+=================================
+🚀 [apiFetch] About to call fetch()...
+🚀 [apiFetch] fetch() called, promise created
+⏳ [apiFetch] Waiting for response...
+
+========== API REQUEST ==========
+'🌐 URL:', 'http://localhost:3000/api/v1/events/track'
+'📤 Method:', 'POST'
+'🔗 Base:', 'http://localhost:3000'
+'📍 Path:', '/api/v1/events/track'
+'🔐 Needs Auth:', true
+'🎫 Has Token:', true
+'🔄 Is Retry:', false
+'🎫 Token Preview:', 'Bearer eyJhbGciOiJIUzI1NiIsImt...'
+'📋 Headers:', '{\n  "Content-Type": "application/json",\n  "Authorization": "Bearer eyJhbG…"\n}'
+'📦 Body:', '{"event_type":"screen_viewed","timestamp":"2025-11-24T00:39:22.490Z","metadata":{"screen_name":"Home","platform":"ios","session_id":"ses_1763943098953_189pp71ug","anon_id":"anon_1763943098047_uq143ocb5","app_version":"1.0.0","timestamp":"2025-11-24T00:39:22.489Z"}}'
+'📦 Body (parsed):', '{\n  "event_type": "screen_viewed",\n  "timestamp": "2025-11-24T00:39:22.490Z",\n  "metadata": {\n    "screen_name": "Home",\n    "platform": "ios",\n    "session_id": "ses_1763943098953_189pp71ug",\n    "anon_id": "anon_1763943098047_uq143ocb5",\n    "app_version": "1.0.0",\n    "timestamp": "2025-11-24T00:39:22.489Z"\n  }\n}'
+=================================
+🚀 [apiFetch] About to call fetch()...
+🚀 [apiFetch] fetch() called, promise created
+⏳ [apiFetch] Waiting for response...
+
+========== API REQUEST ==========
+'🌐 URL:', 'http://localhost:3000/api/v1/contacts?limit=1000'
+'📤 Method:', 'GET'
+'🔗 Base:', 'http://localhost:3000'
+'📍 Path:', '/api/v1/contacts?limit=1000'
+'🔐 Needs Auth:', true
+'🎫 Has Token:', true
+'🔄 Is Retry:', false
+'🎫 Token Preview:', 'Bearer eyJhbGciOiJIUzI1NiIsImt...'
+'📋 Headers:', '{\n  "Content-Type": "application/json",\n  "Authorization": "Bearer eyJhbG…"\n}'
+=================================
+'🔁 GET joined in-flight:', 'http://localhost:3000/api/v1/contacts?limit=1000'
+
+========== API REQUEST ==========
+'🌐 URL:', 'http://localhost:3000/api/v1/interactions?limit=10&sort=created_at:desc'
+'📤 Method:', 'GET'
+'🔗 Base:', 'http://localhost:3000'
+'📍 Path:', '/api/v1/interactions?limit=10&sort=created_at:desc'
+'🔐 Needs Auth:', true
+'🎫 Has Token:', true
+'🔄 Is Retry:', false
+'🎫 Token Preview:', 'Bearer eyJhbGciOiJIUzI1NiIsImt...'
+'📋 Headers:', '{\n  "Content-Type": "application/json",\n  "Authorization": "Bearer eyJhbG…"\n}'
+=================================
+🚀 [apiFetch] About to call fetch()...
+🚀 [apiFetch] fetch() called, promise created
+⏳ [apiFetch] Waiting for response...
+
+========== API REQUEST ==========
+'🌐 URL:', 'http://localhost:3000/api/v1/contacts?limit=1000'
+'📤 Method:', 'GET'
+'🔗 Base:', 'http://localhost:3000'
+'📍 Path:', '/api/v1/contacts?limit=1000'
+'🔐 Needs Auth:', true
+'🎫 Has Token:', true
+'🔄 Is Retry:', false
+'🎫 Token Preview:', 'Bearer eyJhbGciOiJIUzI1NiIsImt...'
+'📋 Headers:', '{\n  "Content-Type": "application/json",\n  "Authorization": "Bearer eyJhbG…"\n}'
+=================================
+🚀 [apiFetch] About to call fetch()...
+🚀 [apiFetch] fetch() called, promise created
+⏳ [apiFetch] Waiting for response...
+✅ [apiFetch] Response received!
+
+========== API RESPONSE ==========
+'⏱️  Duration:', '373ms'
+'📊 Status:', 200, ''
+'✅ OK:', true
+'🏷️  Status Code:', 200
+Error setting property 'pointerEvents' of RNSScreenStackHeaderConfig with tag #123: UIView base class does not support pointerEvent value: box-none
+'📥 Response Body:', '{"contacts":[{"id":"d1f14368-aad6-4758-a25f-115ef5feb06e","display_name":"new","emails":["new@email.com"],"phones":[],"tags":[],"warmth":30,"warmth_band":"cool","last_interaction_at":null,"created_at":"2025-11-04T04:02:58.912591+00:00","updated_at":"2025-11-23T02:24:39.499438+00:00","photo_url":null}],"items":[{"id":"d1f14368-aad6-4758-a25f-115ef5feb06e","display_name":"new","emails":["new@email.com"],"phones":[],"tags":[],"warmth":30,"warmth_band":"cool","last_interaction_at":null,"created_at":'
+'📥 Response (parsed):', '{\n  "contacts": [\n    {\n      "id": "d1f14368-aad6-4758-a25f-115ef5feb06e",\n      "display_name": "new",\n      "emails": [\n        "new@email.com"\n      ],\n      "phones": [],\n      "tags": [],\n      "warmth": 30,\n      "warmth_band": "cool",\n      "last_interaction_at": null,\n      "created_at": "2025-11-04T04:02:58.912591+00:00",\n      "updated_at": "2025-11-23T02:24:39.499438+00:00",\n      "photo_url": null\n    }\n  ],\n  "items": [\n    {\n      "id": "d1f14368-aad6-4758-a25f-115ef5feb06e",\n    '
+==================================
+'[useContacts] Fetched:', 1, 'contacts'
+[SubscriptionProvider] ✅ Superwall synced successfully
+'📤 [AnalyticsRepo] Sending to backend:', 'performance_measured'
+'🎫 Using token (age:', '1359ms, expires in:', '2448s)'
+
+========== API REQUEST ==========
+'🌐 URL:', 'http://localhost:3000/api/v1/events/track'
+'📤 Method:', 'POST'
+'🔗 Base:', 'http://localhost:3000'
+'📍 Path:', '/api/v1/events/track'
+'🔐 Needs Auth:', true
+'🎫 Has Token:', true
+'🔄 Is Retry:', false
+'🎫 Token Preview:', 'Bearer eyJhbGciOiJIUzI1NiIsImt...'
+'📋 Headers:', '{\n  "Content-Type": "application/json",\n  "Authorization": "Bearer eyJhbG…"\n}'
+'📦 Body:', '{"event_type":"performance_measured","timestamp":"2025-11-24T00:39:22.603Z","metadata":{"metric":"cold_start","duration_ms":478,"launch_type":"cold","session_id":"ses_1763943098953_189pp71ug","anon_id":"anon_1763943098047_uq143ocb5","platform":"ios","app_version":"1.0.0","timestamp":"2025-11-24T00:39:22.603Z"}}'
+'📦 Body (parsed):', '{\n  "event_type": "performance_measured",\n  "timestamp": "2025-11-24T00:39:22.603Z",\n  "metadata": {\n    "metric": "cold_start",\n    "duration_ms": 478,\n    "launch_type": "cold",\n    "session_id": "ses_1763943098953_189pp71ug",\n    "anon_id": "anon_1763943098047_uq143ocb5",\n    "platform": "ios",\n    "app_version": "1.0.0",\n    "timestamp": "2025-11-24T00:39:22.603Z"\n  }\n}'
+=================================
+🚀 [apiFetch] About to call fetch()...
+🚀 [apiFetch] fetch() called, promise created
+⏳ [apiFetch] Waiting for response...
+✅ [Avatars] Prefetched 0 avatars out of 1 contacts
+'[useDashboardData] Warmth summary calculated:', { total_contacts: 1,
+  by_band: { hot: 0, warm: 0, cooling: 1, cold: 0 },
+  average_score: 30,
+  contacts_needing_attention: 1,
+  last_updated_at: '2025-11-24T00:39:22.672Z' }
+[Dashboard] Screen focused, skipping refresh (too recent)
+[Dashboard] Screen focused, skipping refresh (too recent)
+nw_connection_copy_protocol_metadata_internal_block_invoke [C25] Client called nw_connection_copy_protocol_metadata_internal on unconnected nw_connection
+nw_connection_copy_protocol_metadata_internal_block_invoke [C25] Client called nw_connection_copy_protocol_metadata_internal on unconnected nw_connection
+nw_connection_copy_connected_local_endpoint_block_invoke [C25] Client called nw_connection_copy_connected_local_endpoint on unconnected nw_connection
+nw_connection_copy_connected_remote_endpoint_block_invoke [C25] Client called nw_connection_copy_connected_remote_endpoint on unconnected nw_connection
+✅ [apiFetch] Response received!
+
+========== API RESPONSE ==========
+'⏱️  Duration:', '594ms'
+'📊 Status:', 200, ''
+'✅ OK:', true
+'🏷️  Status Code:', 200
+[Dashboard] Screen focused, skipping refresh (too recent)
+'📥 Response Body:', '{"items":[{"id":"c07d8c27-f122-413c-8d00-2759cdb91308","type":"voice","status":"pending","title":null,"body_text":null,"file_url":"https://utasetfxiqcrnwyfforx.supabase.co/storage/v1/object/public/attachments/voice-notes/1762222128523-mpq32n.m4a","duration_sec":null,"transcript":null,"tags":[],"linked_contacts":null,"created_at":"2025-11-04T02:08:50.867246+00:00","updated_at":"2025-11-04T02:08:50.867246+00:00","contact_id":null},{"id":"a491b1f4-72f4-4dc4-8f54-0a231c6e8a03","type":"voice","status'
+'📥 Response (parsed):', '{\n  "items": [\n    {\n      "id": "c07d8c27-f122-413c-8d00-2759cdb91308",\n      "type": "voice",\n      "status": "pending",\n      "title": null,\n      "body_text": null,\n      "file_url": "https://utasetfxiqcrnwyfforx.supabase.co/storage/v1/object/public/attachments/voice-notes/1762222128523-mpq32n.m4a",\n      "duration_sec": null,\n      "transcript": null,\n      "tags": [],\n      "linked_contacts": null,\n      "created_at": "2025-11-04T02:08:50.867246+00:00",\n      "updated_at": "2025-11-04T02:0'
+==================================
+'[SupabaseVoiceNotesRepo] Fetched', 4, 'voice notes'
+'[VoiceNotesProvider] Loaded', 4, 'voice notes'
+✅ [apiFetch] Response received!
+
+========== API RESPONSE ==========
+'⏱️  Duration:', '622ms'
+'📊 Status:', 200, ''
+'✅ OK:', true
+'🏷️  Status Code:', 200
+'📥 Response Body:', '{"contacts":[{"id":"d1f14368-aad6-4758-a25f-115ef5feb06e","display_name":"new","emails":["new@email.com"],"phones":[],"tags":[],"warmth":30,"warmth_band":"cool","last_interaction_at":null,"created_at":"2025-11-04T04:02:58.912591+00:00","updated_at":"2025-11-23T02:24:39.499438+00:00","photo_url":null}],"items":[{"id":"d1f14368-aad6-4758-a25f-115ef5feb06e","display_name":"new","emails":["new@email.com"],"phones":[],"tags":[],"warmth":30,"warmth_band":"cool","last_interaction_at":null,"created_at":'
+'📥 Response (parsed):', '{\n  "contacts": [\n    {\n      "id": "d1f14368-aad6-4758-a25f-115ef5feb06e",\n      "display_name": "new",\n      "emails": [\n        "new@email.com"\n      ],\n      "phones": [],\n      "tags": [],\n      "warmth": 30,\n      "warmth_band": "cool",\n      "last_interaction_at": null,\n      "created_at": "2025-11-04T04:02:58.912591+00:00",\n      "updated_at": "2025-11-23T02:24:39.499438+00:00",\n      "photo_url": null\n    }\n  ],\n  "items": [\n    {\n      "id": "d1f14368-aad6-4758-a25f-115ef5feb06e",\n    '
+==================================
+'[SupabaseContactsRepo.all] Response status:', 200, true
+'[SupabaseContactsRepo.all] Response data:', { contacts: 
+   [ { id: 'd1f14368-aad6-4758-a25f-115ef5feb06e',
+       display_name: 'new',
+       emails: [ 'new@email.com' ],
+       phones: [],
+       tags: [],
+       warmth: 30,
+       warmth_band: 'cool',
+       last_interaction_at: null,
+       created_at: '2025-11-04T04:02:58.912591+00:00',
+       updated_at: '2025-11-23T02:24:39.499438+00:00',
+       photo_url: null } ],
+  items: 
+   [ { id: 'd1f14368-aad6-4758-a25f-115ef5feb06e',
+       display_name: 'new',
+       emails: [ 'new@email.com' ],
+       phones: [],
+       tags: [],
+       warmth: 30,
+       warmth_band: 'cool',
+       last_interaction_at: null,
+       created_at: '2025-11-04T04:02:58.912591+00:00',
+       updated_at: '2025-11-23T02:24:39.499438+00:00',
+       photo_url: null } ],
+  limit: 1000,
+  nextCursor: null }
+'[SupabaseContactsRepo.all] Found', 1, 'contacts'
+'[mapSupabaseContactToPerson] Contact d1f14368-aad6-4758-a25f-115ef5feb06e: photo_url =', null, 'avatar_url =', undefined
+'[PeopleProvider] Loaded', 1, 'contacts'
+[PeopleProvider] Syncing warmth data to WarmthProvider...
+[Dashboard] Screen focused, skipping refresh (too recent)
+'[WarmthProvider] Refreshing warmth for all contacts:', 1
+[Dashboard] Screen focused, skipping refresh (too recent)
+'[WarmthProvider] Warmth cache updated for', 1, 'contacts'
+[Dashboard] Screen focused, skipping refresh (too recent)
+[PeopleProvider] Warmth data synced
+[Dashboard] Screen focused, skipping refresh (too recent)
+[Dashboard] Screen focused, skipping refresh (too recent)
+[Warmth] Daily recompute skipped (< 24h since last run)
+[Warmth] Daily recompute skipped (< 24h since last run)
+[Warmth] Daily recompute skipped (< 24h since last run)
+✅ [apiFetch] Response received!
+
+========== API RESPONSE ==========
+'⏱️  Duration:', '819ms'
+'📊 Status:', 200, ''
+'✅ OK:', true
+'🏷️  Status Code:', 200
+'📥 Response Body:', '{"items":[],"limit":20,"nextCursor":null,"sort":"created_at:desc"}'
+'📥 Response (parsed):', '{\n  "items": [],\n  "limit": 20,\n  "nextCursor": null,\n  "sort": "created_at:desc"\n}'
+==================================
+'[InteractionsProvider] Loaded', 0, 'interactions'
+[Dashboard] Screen focused, skipping refresh (too recent)
+✅ [apiFetch] Response received!
+
+========== API RESPONSE ==========
+'⏱️  Duration:', '865ms'
+'📊 Status:', 200, ''
+'✅ OK:', true
+'🏷️  Status Code:', 200
+'📥 Response Body:', '{"tracked":true,"event_type":"screen_viewed"}'
+'📥 Response (parsed):', '{\n  "tracked": true,\n  "event_type": "screen_viewed"\n}'
+==================================
+'✅ [AnalyticsRepo] Event sent successfully:', 'screen_viewed'
+'[Analytics] Event tracked:', 'screen_viewed', { session: 'ses_17639430...', hasUtm: false, experiments: 0 }
+'[Analytics] Screen tracked:', '/'
+WebContent[63759] Could not register system wide server: -25204
+WebContent[63759] _AXAddToElementCache was called even though the element was in the cache: <WKAccessibilityWebPageObject: 0x6000021055e0>
+WebContent[63759] Unable to hide query parameters from script (missing data)
+WebContent[63759] makeImagePlus:3798: *** ERROR: 'WEBP'-_reader->initImage[0] failed err=-50
+✅ [apiFetch] Response received!
+
+========== API RESPONSE ==========
+'⏱️  Duration:', '1046ms'
+'📊 Status:', 200, ''
+'✅ OK:', true
+'🏷️  Status Code:', 200
+'📥 Response Body:', '{"tracked":true,"event_type":"app_open"}'
+'📥 Response (parsed):', '{\n  "tracked": true,\n  "event_type": "app_open"\n}'
+==================================
+'✅ [AnalyticsRepo] Event sent successfully:', 'app_open'
+'[Analytics] Event tracked:', 'app_open', { session: 'ses_17639430...', hasUtm: false, experiments: 0 }
+[Prefetch] Background prefetch ready
+✅ [apiFetch] Response received!
+
+========== API RESPONSE ==========
+'⏱️  Duration:', '1279ms'
+'📊 Status:', 200, ''
+'✅ OK:', true
+'🏷️  Status Code:', 200
+'📥 Response Body:', '{"tracked":true,"event_type":"session_start"}'
+'📥 Response (parsed):', '{\n  "tracked": true,\n  "event_type": "session_start"\n}'
+==================================
+'✅ [AnalyticsRepo] Event sent successfully:', 'session_start'
+'[Analytics] Event tracked:', 'session_start', { session: 'ses_17639430...', hasUtm: false, experiments: 0 }
+✅ [apiFetch] Response received!
+
+========== API RESPONSE ==========
+'⏱️  Duration:', '1133ms'
+'📊 Status:', 200, ''
+'✅ OK:', true
+'🏷️  Status Code:', 200
+'📥 Response Body:', '{"tracked":true,"event_type":"screen_duration"}'
+'📥 Response (parsed):', '{\n  "tracked": true,\n  "event_type": "screen_duration"\n}'
+==================================
+'✅ [AnalyticsRepo] Event sent successfully:', 'screen_duration'
+'[Analytics] Event tracked:', 'screen_duration', { session: 'ses_17639430...', hasUtm: false, experiments: 0 }
+✅ [apiFetch] Response received!
+
+========== API RESPONSE ==========
+'⏱️  Duration:', '1165ms'
+'📊 Status:', 200, ''
+'✅ OK:', true
+'🏷️  Status Code:', 200
+'📥 Response Body:', '{"tracked":true,"event_type":"screen_viewed"}'
+'📥 Response (parsed):', '{\n  "tracked": true,\n  "event_type": "screen_viewed"\n}'
+==================================
+'✅ [AnalyticsRepo] Event sent successfully:', 'screen_viewed'
+'[Analytics] Event tracked:', 'screen_viewed', { session: 'ses_17639430...', hasUtm: false, experiments: 0 }
+'[Analytics] Screen tracked:', '/home'
+✅ [apiFetch] Response received!
+
+========== API RESPONSE ==========
+'⏱️  Duration:', '1203ms'
+'📊 Status:', 200, ''
+'✅ OK:', true
+'🏷️  Status Code:', 200
+'📥 Response Body:', '{"tracked":true,"event_type":"screen_viewed"}'
+'📥 Response (parsed):', '{\n  "tracked": true,\n  "event_type": "screen_viewed"\n}'
+==================================
+'✅ [AnalyticsRepo] Event sent successfully:', 'screen_viewed'
+'[Analytics] Event tracked:', 'screen_viewed', { session: 'ses_17639430...', hasUtm: false, experiments: 0 }
+'[Analytics] Screen tracked:', 'Home'
+✅ [apiFetch] Response received!
+
+========== API RESPONSE ==========
+'⏱️  Duration:', '1211ms'
+'📊 Status:', 200, ''
+'✅ OK:', true
+'🏷️  Status Code:', 200
+'📥 Response Body:', '{"items":[],"limit":10,"nextCursor":null,"sort":"created_at:desc"}'
+'📥 Response (parsed):', '{\n  "items": [],\n  "limit": 10,\n  "nextCursor": null,\n  "sort": "created_at:desc"\n}'
+==================================
+[VoiceNotesRepo] Using SUPABASE
+'[useDashboardData] Interactions + Voice Notes:', { regularInteractions: 0,
+  totalVoiceNotes: 4,
+  merged: 0,
+  firstItem: undefined }
+[Dashboard] Screen focused, skipping refresh (too recent)
+'[Dashboard] Interactions loaded:', 0
+✅ [apiFetch] Response received!
+
+========== API RESPONSE ==========
+'⏱️  Duration:', '1522ms'
+'📊 Status:', 200, ''
+'✅ OK:', true
+'🏷️  Status Code:', 200
+'📥 Response Body:', '{"platform":"ios","paywall_id":"rc_premium_paywall","provider":"revenuecat","configuration":{"offering_id":"default"},"updated_at":"2025-11-16T17:59:04.515743+00:00","permissions":[{"feature_area":"screenshot_analysis","access_level":"premium","can_access":false,"requires_trial_or_paid":true},{"feature_area":"contact_context","access_level":"premium","can_access":false,"requires_trial_or_paid":true},{"feature_area":"ai_messages","access_level":"premium","can_access":false,"requires_trial_or_paid'
+'📥 Response (parsed):', '{\n  "platform": "ios",\n  "paywall_id": "rc_premium_paywall",\n  "provider": "revenuecat",\n  "configuration": {\n    "offering_id": "default"\n  },\n  "updated_at": "2025-11-16T17:59:04.515743+00:00",\n  "permissions": [\n    {\n      "feature_area": "screenshot_analysis",\n      "access_level": "premium",\n      "can_access": false,\n      "requires_trial_or_paid": true\n    },\n    {\n      "feature_area": "contact_context",\n      "access_level": "premium",\n      "can_access": false,\n      "requires_trial_o'
+==================================
+
+🔄 [PaywallProvider] Backend config loaded: revenuecat
+   Already synced with backend: revenuecat
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+'📤 [AnalyticsRepo] Sending to backend:', 'remote_paywall_resolved'
+'🎫 Using token (age:', '2560ms, expires in:', '2447s)'
+
+========== API REQUEST ==========
+'🌐 URL:', 'http://localhost:3000/api/v1/events/track'
+'📤 Method:', 'POST'
+'🔗 Base:', 'http://localhost:3000'
+'📍 Path:', '/api/v1/events/track'
+'🔐 Needs Auth:', true
+'🎫 Has Token:', true
+'🔄 Is Retry:', false
+'🎫 Token Preview:', 'Bearer eyJhbGciOiJIUzI1NiIsImt...'
+'📋 Headers:', '{\n  "Content-Type": "application/json",\n  "Authorization": "Bearer eyJhbG…"\n}'
+'📦 Body:', '{"event_type":"remote_paywall_resolved","timestamp":"2025-11-24T00:39:23.804Z","metadata":{"platform":"ios","provider":"revenuecat","paywall_id":"rc_premium_paywall","updated_at":"2025-11-16T17:59:04.515743+00:00","session_id":"ses_1763943098953_189pp71ug","anon_id":"anon_1763943098047_uq143ocb5","app_version":"1.0.0","timestamp":"2025-11-24T00:39:23.804Z"}}'
+'📦 Body (parsed):', '{\n  "event_type": "remote_paywall_resolved",\n  "timestamp": "2025-11-24T00:39:23.804Z",\n  "metadata": {\n    "platform": "ios",\n    "provider": "revenuecat",\n    "paywall_id": "rc_premium_paywall",\n    "updated_at": "2025-11-16T17:59:04.515743+00:00",\n    "session_id": "ses_1763943098953_189pp71ug",\n    "anon_id": "anon_1763943098047_uq143ocb5",\n    "app_version": "1.0.0",\n    "timestamp": "2025-11-24T00:39:23.804Z"\n  }\n}'
+=================================
+🚀 [apiFetch] About to call fetch()...
+🚀 [apiFetch] fetch() called, promise created
+⏳ [apiFetch] Waiting for response...
+✅ [apiFetch] Response received!
+
+========== API RESPONSE ==========
+'⏱️  Duration:', '1264ms'
+'📊 Status:', 200, ''
+'✅ OK:', true
+'🏷️  Status Code:', 200
+'📥 Response Body:', '{"contacts":[{"id":"d1f14368-aad6-4758-a25f-115ef5feb06e","display_name":"new","emails":["new@email.com"],"phones":[],"tags":[],"warmth":30,"warmth_band":"cool","last_interaction_at":null,"created_at":"2025-11-04T04:02:58.912591+00:00","updated_at":"2025-11-23T02:24:39.499438+00:00","photo_url":null}],"items":[{"id":"d1f14368-aad6-4758-a25f-115ef5feb06e","display_name":"new","emails":["new@email.com"],"phones":[],"tags":[],"warmth":30,"warmth_band":"cool","last_interaction_at":null,"created_at":'
+'📥 Response (parsed):', '{\n  "contacts": [\n    {\n      "id": "d1f14368-aad6-4758-a25f-115ef5feb06e",\n      "display_name": "new",\n      "emails": [\n        "new@email.com"\n      ],\n      "phones": [],\n      "tags": [],\n      "warmth": 30,\n      "warmth_band": "cool",\n      "last_interaction_at": null,\n      "created_at": "2025-11-04T04:02:58.912591+00:00",\n      "updated_at": "2025-11-23T02:24:39.499438+00:00",\n      "photo_url": null\n    }\n  ],\n  "items": [\n    {\n      "id": "d1f14368-aad6-4758-a25f-115ef5feb06e",\n    '
+==================================
+'[SupabaseContactsRepo.all] Response status:', 200, true
+'[SupabaseContactsRepo.all] Response data:', { contacts: 
+   [ { id: 'd1f14368-aad6-4758-a25f-115ef5feb06e',
+       display_name: 'new',
+       emails: [ 'new@email.com' ],
+       phones: [],
+       tags: [],
+       warmth: 30,
+       warmth_band: 'cool',
+       last_interaction_at: null,
+       created_at: '2025-11-04T04:02:58.912591+00:00',
+       updated_at: '2025-11-23T02:24:39.499438+00:00',
+       photo_url: null } ],
+  items: 
+   [ { id: 'd1f14368-aad6-4758-a25f-115ef5feb06e',
+       display_name: 'new',
+       emails: [ 'new@email.com' ],
+       phones: [],
+       tags: [],
+       warmth: 30,
+       warmth_band: 'cool',
+       last_interaction_at: null,
+       created_at: '2025-11-04T04:02:58.912591+00:00',
+       updated_at: '2025-11-23T02:24:39.499438+00:00',
+       photo_url: null } ],
+  limit: 1000,
+  nextCursor: null }
+'[SupabaseContactsRepo.all] Found', 1, 'contacts'
+'[mapSupabaseContactToPerson] Contact d1f14368-aad6-4758-a25f-115ef5feb06e: photo_url =', null, 'avatar_url =', undefined
+'[PeopleProvider] Loaded', 1, 'contacts'
+[PeopleProvider] Syncing warmth data to WarmthProvider...
+[Dashboard] Screen focused, skipping refresh (too recent)
+'[WarmthProvider] Refreshing warmth for all contacts:', 1
+[Dashboard] Screen focused, skipping refresh (too recent)
+'[WarmthProvider] Warmth cache updated for', 1, 'contacts'
+[Dashboard] Screen focused, skipping refresh (too recent)
+[PeopleProvider] Warmth data synced
+[Dashboard] Screen focused, skipping refresh (too recent)
+[Warmth] Daily recompute skipped (< 24h since last run)
+[Warmth] Daily recompute skipped (< 24h since last run)
+[Warmth] Daily recompute skipped (< 24h since last run)
+✅ [apiFetch] Response received!
+
+========== API RESPONSE ==========
+'⏱️  Duration:', '1320ms'
+'📊 Status:', 200, ''
+'✅ OK:', true
+'🏷️  Status Code:', 200
+✅ [apiFetch] Response received!
+
+========== API RESPONSE ==========
+'⏱️  Duration:', '121ms'
+'📊 Status:', 200, ''
+'✅ OK:', true
+'🏷️  Status Code:', 200
+'📥 Response Body:', '{"tracked":true,"event_type":"performance_measured"}'
+'📥 Response (parsed):', '{\n  "tracked": true,\n  "event_type": "performance_measured"\n}'
+==================================
+'✅ [AnalyticsRepo] Event sent successfully:', 'performance_measured'
+'[Analytics] Event tracked:', 'performance_measured', { session: 'ses_17639430...', hasUtm: false, experiments: 0 }
+'📥 Response Body:', '{"tracked":true,"event_type":"remote_paywall_resolved"}'
+'📥 Response (parsed):', '{\n  "tracked": true,\n  "event_type": "remote_paywall_resolved"\n}'
+==================================
+'✅ [AnalyticsRepo] Event sent successfully:', 'remote_paywall_resolved'
+'[Analytics] Event tracked:', 'remote_paywall_resolved', { session: 'ses_17639430...', hasUtm: false, experiments: 0 }
+Error acquiring assertion: <Error Domain=RBSAssertionErrorDomain Code=2 "Could not find attribute name in domain plist" UserInfo={NSLocalizedFailureReason=Could not find attribute name in domain plist}>
+ [App] Forcing splash screen hide after 3 seconds
+[App] Splash screen hidden
+Failed to change to usage state 2: (null)
+nw_protocol_socket_set_no_wake_from_sleep [C1.1.1:2] setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+nw_protocol_socket_set_no_wake_from_sleep setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+nw_protocol_socket_set_no_wake_from_sleep [C1.1.1:2] setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+nw_protocol_socket_set_no_wake_from_sleep setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+'[RevenueCat] Starting initialization...', { platform: 'ios', appOwnership: null, hasKeys: true }
+[RevenueCat] Loading Purchases module...
+[Superwall] initializeSuperwall() is deprecated. Superwall is now initialized automatically via SuperwallProvider.
+[App] Superwall initialized successfully
+[RevenueCat] Purchases module loaded successfully
+[RevenueCat] Debug logging enabled
+[RevenueCat] Purchases module loaded successfully
+[RevenueCat] Debug logging enabled
+'✅ [RevenueCat] Successfully configured with API key:', 'appl_vFMuK...'
+'✅ [RevenueCat] Initialized successfully', { platform: 'ios',
+  appOwnership: null,
+  bundleId: 'com.everreach.app',
+  userId: 'anonymous' }
+'✅ [RevenueCat] Successfully configured with API key:', 'appl_vFMuK...'
+'✅ [RevenueCat] Initialized successfully', { platform: 'ios',
+  appOwnership: null,
+  bundleId: 'com.everreach.app',
+  userId: '33888a02-9407-4fb9-ac59-c14032095ed2' }
+[App] RevenueCat initialized successfully
+[App] RevenueCat customer info listener added
+'[Backend Analytics] Session ID generated:', 'session_1763944765579_el2n0jpke'
+'[App] Backend analytics session initialized:', 'session_1763944765579_el2n0jpke'
+[RevenueCat] ℹ️ Configuring SDK using RevenueCat's UserDefaults suite.
+[RevenueCat] 👤 Identifying App User ID
+[RevenueCat] ℹ️ Observing StoreKit.Transaction.updates
+[RevenueCat] ℹ️ Debug logging enabled
+[RevenueCat] ℹ️ SDK Version - 5.48.0
+[RevenueCat] ℹ️ Bundle ID - com.everreach.app
+[RevenueCat] ℹ️ System Version - Version 26.0.1 (Build 23A8464)
+[RevenueCat] ℹ️ Using a simulator. Ensure you have a StoreKit Config file set up before trying to fetch products or make purchases.
+See https://errors.rev.cat/testing-in-simulator for more details.
+[RevenueCat] 👤 No initial App User ID
+[RevenueCat] ℹ️ Purchases is configured with response verification disabled
+[RevenueCat] ℹ️ Purchases is configured with StoreKit version 2
+[RevenueCat] ℹ️ Delegate set
+[RevenueCat] ℹ️ Observing StoreKit.PurchaseIntent.intents
+[RC] Customer info updated, refreshing entitlements
+[Entitlements] Fetching from backend...
+'🎫 Using token (age:', '4340ms, expires in:', '2445s)'
+'[App] RevenueCat customer info updated:', { latestExpirationDateMillis: 1766535623000,
+  requestDate: '2025-11-24T00:34:55Z',
+  subscriptionsByProductIdentifier: 
+   { 'com.everreach.core.monthly': 
+      { purchaseDate: '2025-11-24T00:20:23Z',
+        willRenew: true,
+        ownershipType: 'PURCHASED',
+        periodType: 'NORMAL',
+        store: 'APP_STORE',
+        unsubscribeDetectedAt: null,
+        isActive: true,
+        billingIssuesDetectedAt: null,
+        productIdentifier: 'com.everreach.core.monthly',
+        isSandbox: true,
+        price: { amount: 14.99, currency: 'USD' },
+        originalPurchaseDate: '2025-11-24T00:20:23Z',
+        gracePeriodExpiresDate: null,
+        expiresDate: '2025-12-24T00:20:23Z',
+        refundedAt: null,
+        storeTransactionId: '0' } },
+  originalPurchaseDate: '1970-01-01T00:00:00Z',
+  nonSubscriptionTransactions: [],
+  allExpirationDates: { 'com.everreach.core.monthly': '2025-12-24T00:20:23Z' },
+  originalAppUserId: '33888a02-9407-4fb9-ac59-c14032095ed2',
+  allPurchaseDates: { 'com.everreach.core.monthly': '2025-11-24T00:20:23Z' },
+  managementURL: 'https://apps.apple.com/account/subscriptions',
+  originalPurchaseDateMillis: 0,
+  allExpirationDatesMillis: { 'com.everreach.core.monthly': 1766535623000 },
+  latestExpirationDate: '2025-12-24T00:20:23Z',
+  requestDateMillis: 1763944495000,
+  firstSeenMillis: 1763270054000,
+  allPurchaseDatesMillis: { 'com.everreach.core.monthly': 1763943623000 },
+  allPurchasedProductIdentifiers: [ 'com.everreach.core.monthly' ],
+  activeSubscriptions: [ 'com.everreach.core.monthly' ],
+  originalApplicationVersion: '1',
+  entitlements: 
+   { all: 
+      { 'EverReach Core': 
+         { ownershipType: 'PURCHASED',
+           willRenew: true,
+           billingIssueDetectedAt: null,
+           unsubscribeDetectedAtMillis: null,
+           latestPurchaseDate: '2025-11-24T00:20:23Z',
+           isSandbox: true,
+           latestPurchaseDateMillis: 1763943623000,
+           expirationDateMillis: 1766535623000,
+           unsubscribeDetectedAt: null,
+           periodType: 'NORMAL',
+           store: 'APP_STORE',
+           productPlanIdentifier: null,
+           identifier: 'EverReach Core',
+           isActive: true,
+           originalPurchaseDate: '2025-11-24T00:20:23Z',
+           verification: 'NOT_REQUESTED',
+           originalPurchaseDateMillis: 1763943623000,
+           billingIssueDetectedAtMillis: null,
+           expirationDate: '2025-12-24T00:20:23Z',
+           productIdentifier: 'com.everreach.core.monthly' } },
+     verification: 'NOT_REQUESTED',
+     active: 
+      { 'EverReach Core': 
+         { expirationDateMillis: 1766535623000,
+           latestPurchaseDate: '2025-11-24T00:20:23Z',
+           expirationDate: '2025-12-24T00:20:23Z',
+           productPlanIdentifier: null,
+           identifier: 'EverReach Core',
+           store: 'APP_STORE',
+           periodType: 'NORMAL',
+           isActive: true,
+           unsubscribeDetectedAt: null,
+           unsubscribeDetectedAtMillis: null,
+           billingIssueDetectedAt: null,
+           productIdentifier: 'com.everreach.core.monthly',
+           billingIssueDetectedAtMillis: null,
+           originalPurchaseDateMillis: 1763943623000,
+           willRenew: true,
+           ownershipType: 'PURCHASED',
+           verification: 'NOT_REQUESTED',
+           originalPurchaseDate: '2025-11-24T00:20:23Z',
+           isSandbox: true,
+           latestPurchaseDateMillis: 1763943623000 } } },
+  firstSeen: '2025-11-16T05:14:14Z' }
+[Entitlements] Fetching from backend...
+'🎫 Using token (age:', '4349ms, expires in:', '2445s)'
+
+========== API REQUEST ==========
+'🌐 URL:', 'http://localhost:3000/api/v1/me/entitlements'
+'📤 Method:', 'GET'
+'🔗 Base:', 'http://localhost:3000'
+'📍 Path:', '/api/v1/me/entitlements'
+'🔐 Needs Auth:', true
+'🎫 Has Token:', true
+'🔄 Is Retry:', false
+'🎫 Token Preview:', 'Bearer eyJhbGciOiJIUzI1NiIsImt...'
+'📋 Headers:', '{\n  "Content-Type": "application/json",\n  "Authorization": "Bearer eyJhbG…"\n}'
+=================================
+🚀 [apiFetch] About to call fetch()...
+🚀 [apiFetch] fetch() called, promise created
+⏳ [apiFetch] Waiting for response...
+
+========== API REQUEST ==========
+'🌐 URL:', 'http://localhost:3000/api/v1/me/entitlements'
+'📤 Method:', 'GET'
+'🔗 Base:', 'http://localhost:3000'
+'📍 Path:', '/api/v1/me/entitlements'
+'🔐 Needs Auth:', true
+'🎫 Has Token:', true
+'🔄 Is Retry:', false
+'🎫 Token Preview:', 'Bearer eyJhbGciOiJIUzI1NiIsImt...'
+'📋 Headers:', '{\n  "Content-Type": "application/json",\n  "Authorization": "Bearer eyJhbG…"\n}'
+=================================
+'🔁 GET joined in-flight:', 'http://localhost:3000/api/v1/me/entitlements'
+[RevenueCat] ℹ️ Purchases instance already set. Did you mean to configure two Purchases objects?
+[RevenueCat] ℹ️ Configuring SDK using RevenueCat's UserDefaults suite.
+[RevenueCat] 👤 Identifying App User ID
+[RevenueCat] ℹ️ Debug logging enabled
+[RevenueCat] ℹ️ SDK Version - 5.48.0
+[RevenueCat] ℹ️ Bundle ID - com.everreach.app
+[RevenueCat] ℹ️ Observing StoreKit.Transaction.updates
+[RevenueCat] ℹ️ System Version - Version 26.0.1 (Build 23A8464)
+[RevenueCat] ℹ️ Using a simulator. Ensure you have a StoreKit Config file set up before trying to fetch products or make purchases.
+See https://errors.rev.cat/testing-in-simulator for more details.
+[RevenueCat] 👤 Initial App User ID set
+[RevenueCat] ℹ️ Purchases is configured with response verification disabled
+[RevenueCat] ℹ️ Purchases is configured with StoreKit version 2
+[RevenueCat] ℹ️ Delegate set
+[RevenueCat] ℹ️ Observing StoreKit.PurchaseIntent.intents
+[RC] Customer info updated, refreshing entitlements
+[Entitlements] Fetching from backend...
+'🎫 Using token (age:', '4356ms, expires in:', '2445s)'
+'[App] RevenueCat customer info updated:', { originalAppUserId: '33888a02-9407-4fb9-ac59-c14032095ed2',
+  allExpirationDates: { 'com.everreach.core.monthly': '2025-12-24T00:20:23Z' },
+  firstSeen: '2025-11-16T05:14:14Z',
+  firstSeenMillis: 1763270054000,
+  allPurchasedProductIdentifiers: [ 'com.everreach.core.monthly' ],
+  originalApplicationVersion: '1',
+  activeSubscriptions: [ 'com.everreach.core.monthly' ],
+  allExpirationDatesMillis: { 'com.everreach.core.monthly': 1766535623000 },
+  requestDateMillis: 1763944495000,
+  latestExpirationDate: '2025-12-24T00:20:23Z',
+  originalPurchaseDateMillis: 0,
+  allPurchaseDates: { 'com.everreach.core.monthly': '2025-11-24T00:20:23Z' },
+  managementURL: 'https://apps.apple.com/account/subscriptions',
+  subscriptionsByProductIdentifier: 
+   { 'com.everreach.core.monthly': 
+      { expiresDate: '2025-12-24T00:20:23Z',
+        ownershipType: 'PURCHASED',
+        willRenew: true,
+        storeTransactionId: '0',
+        originalPurchaseDate: '2025-11-24T00:20:23Z',
+        gracePeriodExpiresDate: null,
+        purchaseDate: '2025-11-24T00:20:23Z',
+        isActive: true,
+        store: 'APP_STORE',
+        unsubscribeDetectedAt: null,
+        periodType: 'NORMAL',
+        refundedAt: null,
+        billingIssuesDetectedAt: null,
+        productIdentifier: 'com.everreach.core.monthly',
+        price: { amount: 14.99, currency: 'USD' },
+        isSandbox: true } },
+  requestDate: '2025-11-24T00:34:55Z',
+  originalPurchaseDate: '1970-01-01T00:00:00Z',
+  nonSubscriptionTransactions: [],
+  allPurchaseDatesMillis: { 'com.everreach.core.monthly': 1763943623000 },
+  entitlements: 
+   { active: 
+      { 'EverReach Core': 
+         { billingIssueDetectedAtMillis: null,
+           expirationDateMillis: 1766535623000,
+           willRenew: true,
+           ownershipType: 'PURCHASED',
+           billingIssueDetectedAt: null,
+           unsubscribeDetectedAtMillis: null,
+           isActive: true,
+           unsubscribeDetectedAt: null,
+           store: 'APP_STORE',
+           identifier: 'EverReach Core',
+           productPlanIdentifier: null,
+           periodType: 'NORMAL',
+           originalPurchaseDateMillis: 1763943623000,
+           expirationDate: '2025-12-24T00:20:23Z',
+           verification: 'NOT_REQUESTED',
+           originalPurchaseDate: '2025-11-24T00:20:23Z',
+           latestPurchaseDateMillis: 1763943623000,
+           isSandbox: true,
+           productIdentifier: 'com.everreach.core.monthly',
+           latestPurchaseDate: '2025-11-24T00:20:23Z' } },
+     verification: 'NOT_REQUESTED',
+     all: 
+      { 'EverReach Core': 
+         { productIdentifier: 'com.everreach.core.monthly',
+           expirationDate: '2025-12-24T00:20:23Z',
+           unsubscribeDetectedAtMillis: null,
+           billingIssueDetectedAt: null,
+           expirationDateMillis: 1766535623000,
+           productPlanIdentifier: null,
+           unsubscribeDetectedAt: null,
+           isActive: true,
+           periodType: 'NORMAL',
+           identifier: 'EverReach Core',
+           store: 'APP_STORE',
+           latestPurchaseDate: '2025-11-24T00:20:23Z',
+           verification: 'NOT_REQUESTED',
+           originalPurchaseDate: '2025-11-24T00:20:23Z',
+           originalPurchaseDateMillis: 1763943623000,
+           billingIssueDetectedAtMillis: null,
+           willRenew: true,
+           ownershipType: 'PURCHASED',
+           latestPurchaseDateMillis: 1763943623000,
+           isSandbox: true } } },
+  latestExpirationDateMillis: 1766535623000 }
+[Entitlements] Fetching from backend...
+'🎫 Using token (age:', '4360ms, expires in:', '2445s)'
+
+========== API REQUEST ==========
+'🌐 URL:', 'http://localhost:3000/api/v1/me/entitlements'
+'📤 Method:', 'GET'
+'🔗 Base:', 'http://localhost:3000'
+'📍 Path:', '/api/v1/me/entitlements'
+'🔐 Needs Auth:', true
+'🎫 Has Token:', true
+'🔄 Is Retry:', false
+'🎫 Token Preview:', 'Bearer eyJhbGciOiJIUzI1NiIsImt...'
+'📋 Headers:', '{\n  "Content-Type": "application/json",\n  "Authorization": "Bearer eyJhbG…"\n}'
+=================================
+'🔁 GET joined in-flight:', 'http://localhost:3000/api/v1/me/entitlements'
+
+========== API REQUEST ==========
+'🌐 URL:', 'http://localhost:3000/api/v1/me/entitlements'
+'📤 Method:', 'GET'
+'🔗 Base:', 'http://localhost:3000'
+'📍 Path:', '/api/v1/me/entitlements'
+'🔐 Needs Auth:', true
+'🎫 Has Token:', true
+'🔄 Is Retry:', false
+'🎫 Token Preview:', 'Bearer eyJhbGciOiJIUzI1NiIsImt...'
+'📋 Headers:', '{\n  "Content-Type": "application/json",\n  "Authorization": "Bearer eyJhbG…"\n}'
+=================================
+'🔁 GET joined in-flight:', 'http://localhost:3000/api/v1/me/entitlements'
+[RevenueCat] ℹ️ HealthReportAvailabilityOperation: Started
+[RevenueCat] ℹ️ Offerings cache is stale, updating from network in foreground
+[RevenueCat] ℹ️ Offerings cache is stale, updating from network in foreground
+[RevenueCat] ℹ️ GetOfferingsOperation: Started
+[RevenueCat] ℹ️ There are no requests currently running, starting request GET /v1/subscribers/33888a02-9407-4fb9-ac59-c14032095ed2/offerings
+[RevenueCat] ℹ️ API request started: GET '/v1/subscribers/33888a02-9407-4fb9-ac59-c14032095ed2/offerings'
+[RevenueCat] ℹ️ There are no requests currently running, starting request GET /v1/subscribers/33888a02-9407-4fb9-ac59-c14032095ed2/health_report_availability
+[RevenueCat] ℹ️ API request started: GET '/v1/subscribers/33888a02-9407-4fb9-ac59-c14032095ed2/health_report_availability'
+[RevenueCat] ℹ️ API request completed: GET '/v1/subscribers/33888a02-9407-4fb9-ac59-c14032095ed2/health_report_availability' (200)
+[RevenueCat] ℹ️ API request completed: GET '/v1/subscribers/33888a02-9407-4fb9-ac59-c14032095ed2/offerings' (304)
+[RevenueCat] ℹ️ HealthReportAvailabilityOperation: Finished
+[RevenueCat] ℹ️ Serial request done: GET /v1/subscribers/33888a02-9407-4fb9-ac59-c14032095ed2/health_report_availability, 0 requests left in the queue
+[RevenueCat] ℹ️ GetOfferingsOperation: Started
+[RevenueCat] ℹ️ There are no requests currently running, starting request GET /v1/subscribers/33888a02-9407-4fb9-ac59-c14032095ed2/offerings
+[RevenueCat] ℹ️ API request started: GET '/v1/subscribers/33888a02-9407-4fb9-ac59-c14032095ed2/offerings'
+[RevenueCat] ℹ️ API request completed: GET '/v1/subscribers/33888a02-9407-4fb9-ac59-c14032095ed2/offerings' (304)
+[RevenueCat] ℹ️ No existing products cached, starting store products request for: ["com.everreach.core.yearly", "com.everreach.core.monthly"]
+[RevenueCat] ℹ️ No existing products cached, starting store products request for: ["com.everreach.core.monthly", "com.everreach.core.yearly"]
+[RevenueCat] ℹ️ GetOfferingsOperation: Finished
+[RevenueCat] ℹ️ GetOfferingsOperation: Finished
+[RevenueCat] ℹ️ GetCustomerInfoOperation: Started
+[RevenueCat] ℹ️ Serial request done: GET /v1/subscribers/33888a02-9407-4fb9-ac59-c14032095ed2/offerings, 0 requests left in the queue
+[RevenueCat] ℹ️ Serial request done: GET /v1/subscribers/33888a02-9407-4fb9-ac59-c14032095ed2/offerings, 0 requests left in the queue
+[RevenueCat] ℹ️ There are no requests currently running, starting request GET /v1/subscribers/33888a02-9407-4fb9-ac59-c14032095ed2
+[RevenueCat] ℹ️ API request started: GET '/v1/subscribers/33888a02-9407-4fb9-ac59-c14032095ed2'
+[RevenueCat] ℹ️ HealthReportAvailabilityOperation: Started
+[RevenueCat] ℹ️ There are no requests currently running, starting request GET /v1/subscribers/33888a02-9407-4fb9-ac59-c14032095ed2/health_report_availability
+[RevenueCat] ℹ️ API request started: GET '/v1/subscribers/33888a02-9407-4fb9-ac59-c14032095ed2/health_report_availability'
+[RevenueCat] 😻 Store products request received response
+[RevenueCat] ℹ️ Store products request finished
+[RevenueCat] 😻 Offerings updated from network.
+[RevenueCat] 😻 Store products request received response
+[RevenueCat] ℹ️ Store products request finished
+[RevenueCat] 😻 Offerings updated from network.
+[RevenueCat] ℹ️ API request completed: GET '/v1/subscribers/33888a02-9407-4fb9-ac59-c14032095ed2' (304)
+[RevenueCat] ℹ️ API request completed: GET '/v1/subscribers/33888a02-9407-4fb9-ac59-c14032095ed2/health_report_availability' (200)
+[RevenueCat] ℹ️ HealthReportAvailabilityOperation: Finished
+[RevenueCat] ℹ️ Serial request done: GET /v1/subscribers/33888a02-9407-4fb9-ac59-c14032095ed2/health_report_availability, 0 requests left in the queue
+[RevenueCat] ℹ️ GetCustomerInfoOperation: Started
+[RevenueCat] ℹ️ There are no requests currently running, starting request GET /v1/subscribers/33888a02-9407-4fb9-ac59-c14032095ed2
+[RevenueCat] ℹ️ API request started: GET '/v1/subscribers/33888a02-9407-4fb9-ac59-c14032095ed2'
+[RevenueCat] ℹ️ API request completed: GET '/v1/subscribers/33888a02-9407-4fb9-ac59-c14032095ed2' (304)
+✅ [apiFetch] Response received!
+
+========== API RESPONSE ==========
+'⏱️  Duration:', '362ms'
+'📊 Status:', 200, ''
+'✅ OK:', true
+'🏷️  Status Code:', 200
+'📥 Response Body:', '{"plan":"free","valid_until":null,"source":"manual","features":{"compose_runs":50,"voice_minutes":30,"messages":200},"tier":"free","subscription_status":"trial","trial_started_at":"2025-11-09T00:33:43.288451+00:00","trial_ends_at":"2025-11-16T00:33:43.288451+00:00","status":"trial","current_period_end":null,"payment_platform":null,"core_features":true}'
+'📥 Response (parsed):', '{\n  "plan": "free",\n  "valid_until": null,\n  "source": "manual",\n  "features": {\n    "compose_runs": 50,\n    "voice_minutes": 30,\n    "messages": 200\n  },\n  "tier": "free",\n  "subscription_status": "trial",\n  "trial_started_at": "2025-11-09T00:33:43.288451+00:00",\n  "trial_ends_at": "2025-11-16T00:33:43.288451+00:00",\n  "status": "trial",\n  "current_period_end": null,\n  "payment_platform": null,\n  "core_features": true\n}'
+==================================
+'[Entitlements] Loaded:', { tier: 'free', status: 'trial', platform: null }
+'[Entitlements] Loaded:', { tier: 'free', status: 'trial', platform: null }
+'[Entitlements] Loaded:', { tier: 'free', status: 'trial', platform: null }
+[App] Entitlements refreshed after purchase
+[App] Entitlements refreshed after purchase
+'[Entitlements] Loaded:', { tier: 'free', status: 'trial', platform: null }
+[RevenueCat] 😻 CustomerInfo updated from network.
+[RevenueCat] ℹ️ GetCustomerInfoOperation: Finished
+[RevenueCat] ℹ️ Serial request done: GET /v1/subscribers/33888a02-9407-4fb9-ac59-c14032095ed2, 0 requests left in the queue
+[RevenueCat] 😻 CustomerInfo updated from network.
+[RevenueCat] ℹ️ GetCustomerInfoOperation: Finished
+[RevenueCat] ℹ️ Serial request done: GET /v1/subscribers/33888a02-9407-4fb9-ac59-c14032095ed2, 0 requests left in the queue
+[RevenueCat] ℹ️ HealthReportOperation: Started
+[RevenueCat] ℹ️ HealthReportOperation: Started
+[RevenueCat] ℹ️ There are no requests currently running, starting request GET /v1/subscribers/33888a02-9407-4fb9-ac59-c14032095ed2/health_report
+[RevenueCat] ℹ️ There are no requests currently running, starting request GET /v1/subscribers/33888a02-9407-4fb9-ac59-c14032095ed2/health_report
+[RevenueCat] ℹ️ API request started: GET '/v1/subscribers/33888a02-9407-4fb9-ac59-c14032095ed2/health_report'
+[RevenueCat] ℹ️ API request started: GET '/v1/subscribers/33888a02-9407-4fb9-ac59-c14032095ed2/health_report'
+[RevenueCat] ℹ️ API request completed: GET '/v1/subscribers/33888a02-9407-4fb9-ac59-c14032095ed2/health_report' (304)
+[RevenueCat] ℹ️ API request completed: GET '/v1/subscribers/33888a02-9407-4fb9-ac59-c14032095ed2/health_report' (304)
+[RevenueCat] ℹ️ HealthReportOperation: Finished
+[RevenueCat] ℹ️ Serial request done: GET /v1/subscribers/33888a02-9407-4fb9-ac59-c14032095ed2/health_report, 0 requests left in the queue
+[RevenueCat] ℹ️ HealthReportOperation: Finished
+[RevenueCat] ℹ️ Serial request done: GET /v1/subscribers/33888a02-9407-4fb9-ac59-c14032095ed2/health_report, 0 requests left in the queue
+[RevenueCat] ⚠️ RevenueCat SDK is configured correctly, but contains some issues you might want to address
+
+Warnings:
+  • Your products are configured in RevenueCat but aren't approved in App Store Connect yet. This prevents users from making purchases in production. Please ensure all products are approved and available for sale in App Store Connect.
+  • The offerings 'default' have configuration issues that may prevent users from seeing product options or making purchases.
+
+Product Issues:
+  ⚠️ com.everreach.core.yearly (Core Annual): This product's status (READY_TO_SUBMIT) requires you to take action in App Store Connect before using it in production purchases.
+  ⚠️ com.everreach.core.monthly (Core Monthly): This product's status (READY_TO_SUBMIT) requires you to take action in App Store Connect before using it in production purchases.
+
+Offering Issues:
+  ⚠️ default
+    ⚠️ $rc_annual (com.everreach.core.yearly): This product's status (READY_TO_SUBMIT) requires you to take action in App Store Connect before using it in production purchases.
+    ⚠️ $rc_monthly (com.everreach.core.monthly): This product's status (READY_TO_SUBMIT) requires you to take action in App Store Connect before using it in production purchases.
+[RevenueCat] ⚠️ RevenueCat SDK is configured correctly, but contains some issues you might want to address
+
+Warnings:
+  • Your products are configured in RevenueCat but aren't approved in App Store Connect yet. This prevents users from making purchases in production. Please ensure all products are approved and available for sale in App Store Connect.
+  • The offerings 'default' have configuration issues that may prevent users from seeing product options or making purchases.
+
+Product Issues:
+  ⚠️ com.everreach.core.yearly (Core Annual): This product's status (READY_TO_SUBMIT) requires you to take action in App Store Connect before using it in production purchases.
+  ⚠️ com.everreach.core.monthly (Core Monthly): This product's status (READY_TO_SUBMIT) requires you to take action in App Store Connect before using it in production purchases.
+
+Offering Issues:
+  ⚠️ default
+    ⚠️ $rc_annual (com.everreach.core.yearly): This product's status (READY_TO_SUBMIT) requires you to take action in App Store Connect before using it in production purchases.
+    ⚠️ $rc_monthly (com.everreach.core.monthly): This product's status (READY_TO_SUBMIT) requires you to take action in App Store Connect before using it in production purchases.
+Failed to change to usage state 0: Error Domain=NSCocoaErrorDomain Code=4099 "The connection to service named com.apple.coreduetd.knowledge was invalidated: failed at lookup with error 3 - No such process." UserInfo={NSDebugDescription=The connection to service named com.apple.coreduetd.knowledge was invalidated: failed at lookup with error 3 - No such process.}
+WebContent[63759] 0x111050100 - [sessionID=1] WebProcess::updateFreezerStatus: isFreezable=1, error=-1
+nw_protocol_socket_set_no_wake_from_sleep [C19.1.1:2] setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+nw_protocol_socket_set_no_wake_from_sleep setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+nw_protocol_socket_set_no_wake_from_sleep [C19.1.1:2] setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+nw_protocol_socket_set_no_wake_from_sleep setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+nw_protocol_socket_set_no_wake_from_sleep [C21.1.1:2] setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+nw_protocol_socket_set_no_wake_from_sleep setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+nw_protocol_socket_set_no_wake_from_sleep [C21.1.1:2] setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+nw_protocol_socket_set_no_wake_from_sleep setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+nw_protocol_socket_set_no_wake_from_sleep [C22.1.1:2] setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+nw_protocol_socket_set_no_wake_from_sleep setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+nw_protocol_socket_set_no_wake_from_sleep [C22.1.1:2] setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+nw_protocol_socket_set_no_wake_from_sleep setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+nw_protocol_socket_set_no_wake_from_sleep [C13.1.1:2] setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+nw_protocol_socket_set_no_wake_from_sleep setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+nw_protocol_socket_set_no_wake_from_sleep [C13.1.1:2] setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+nw_protocol_socket_set_no_wake_from_sleep setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+nw_protocol_socket_set_no_wake_from_sleep [C20.1.1:2] setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+nw_protocol_socket_set_no_wake_from_sleep setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+nw_protocol_socket_set_no_wake_from_sleep [C20.1.1:2] setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+nw_protocol_socket_set_no_wake_from_sleep setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+nw_protocol_socket_set_no_wake_from_sleep [C11.1.1:2] setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+nw_protocol_socket_set_no_wake_from_sleep setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+nw_protocol_socket_set_no_wake_from_sleep [C11.1.1:2] setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+nw_protocol_socket_set_no_wake_from_sleep setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+nw_protocol_socket_set_no_wake_from_sleep [C17.1.1:2] setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+nw_protocol_socket_set_no_wake_from_sleep setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+nw_protocol_socket_set_no_wake_from_sleep [C17.1.1:2] setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+nw_protocol_socket_set_no_wake_from_sleep setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+nw_protocol_socket_set_no_wake_from_sleep [C8.1.1:2] setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+nw_protocol_socket_set_no_wake_from_sleep setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+nw_protocol_socket_set_no_wake_from_sleep [C8.1.1:2] setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+nw_protocol_socket_set_no_wake_from_sleep setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+nw_protocol_socket_set_no_wake_from_sleep [C7.1.1:2] setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+nw_protocol_socket_set_no_wake_from_sleep setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+nw_protocol_socket_set_no_wake_from_sleep [C7.1.1:2] setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+nw_protocol_socket_set_no_wake_from_sleep setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+nw_protocol_socket_set_no_wake_from_sleep [C9.1.1:2] setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+nw_protocol_socket_set_no_wake_from_sleep setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+nw_protocol_socket_set_no_wake_from_sleep [C9.1.1:2] setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+nw_protocol_socket_set_no_wake_from_sleep setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+nw_protocol_socket_set_no_wake_from_sleep [C12.1.1:2] setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+nw_protocol_socket_set_no_wake_from_sleep setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+nw_protocol_socket_set_no_wake_from_sleep [C12.1.1:2] setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
+nw_protocol_socket_set_no_wake_from_sleep setsockopt SO_NOWAKEFROMSLEEP failed [22: Invalid argument]
