@@ -31,6 +31,7 @@ import {
   setConsent as setUserConsent,
 } from './eventEnvelope';
 import { addDebugEvent } from '@/lib/debugEvents';
+import { autoTrackToMeta } from '@/lib/metaAppEvents';
 
 // ============================================================================
 // Event Constants
@@ -258,6 +259,9 @@ export async function track(
 
     // Send to PostHog
     await PostHog.captureEvent(event, enrichedProps);
+
+    // Send to Meta App Events (Conversions API + native SDK if available)
+    autoTrackToMeta(event, enrichedProps);
 
     // Test-mode: locally capture events for E2E assertions
     if (process.env.EXPO_PUBLIC_TEST_TELEMETRY === 'true') {

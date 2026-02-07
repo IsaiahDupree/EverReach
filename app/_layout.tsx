@@ -58,6 +58,7 @@ import { initializeEnvelope } from "@/lib/eventEnvelope";
 import { initializeMarketingFunnel } from "@/lib/marketingFunnel";
 import { initializePerformanceMonitoring } from "@/lib/performanceMonitor";
 import { initializePostHog, identifyUser } from "@/lib/posthog";
+import { initializeMetaAppEvents, identifyMetaUser, resetMetaUser } from "@/lib/metaAppEvents";
 import { useScreenTracking } from "@/hooks/useScreenTracking";
 import { initializeRevenueCat } from "@/lib/revenuecat";
 import { useSubscription } from "@/providers/SubscriptionProvider";
@@ -88,6 +89,9 @@ console.log('[App] Performance monitoring initialized');
 
 // Initialize PostHog analytics (no-op if API key missing)
 initializePostHog();
+
+// Initialize Meta App Events (Conversions API + native SDK if available)
+initializeMetaAppEvents();
 
 // Initialize RevenueCat (IAP subscriptions)
 initializeRevenueCat().then((success) => {
@@ -252,17 +256,23 @@ function RootLayoutNav() {
     };
   }, [isAuthenticated, queryClient]);
 
-  // Identify user with PostHog once authenticated
+  // Identify user with PostHog + Meta once authenticated
   useEffect(() => {
     if (!isAuthenticated || !user) return;
+    const userId = (user as any)?.id;
+    const userEmail = (user as any)?.email;
     try {
-      identifyUser((user as any).id, {
+      identifyUser(userId, {
         plan: isPaid ? 'paid' : 'free',
         platform: Platform.OS,
       });
     } catch (e) {
       console.warn('[App] PostHog identify skipped:', (e as any)?.message || e);
     }
+    // Identify with Meta App Events for better Conversions API matching
+    identifyMetaUser(userId, userEmail).catch((e) => {
+      console.warn('[App] Meta identify skipped:', (e as any)?.message || e);
+    });
   }, [isAuthenticated, user, isPaid]);
 
   // ✅ REFACTORED: Get centralized warmth methods
