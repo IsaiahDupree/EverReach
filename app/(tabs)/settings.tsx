@@ -911,6 +911,14 @@ export default function SettingsScreen() {
             router.push('/settings/developer' as any);
           },
         },
+        {
+          icon: Activity,
+          label: 'Meta Pixel Test',
+          type: 'link' as const,
+          onPress: () => {
+            router.push('/meta-pixel-test' as any);
+          },
+        },
       ],
     }] : []),
     ...(SHOW_DEV_SETTINGS ? [{

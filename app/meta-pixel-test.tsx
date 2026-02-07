@@ -8,7 +8,7 @@
  * https://business.facebook.com/events_manager → Techmestuff pixel → Test Events
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -20,6 +20,7 @@ import {
   Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { SHOW_DEV_SETTINGS } from '@/config/dev';
 
 const PIXEL_ID = process.env.EXPO_PUBLIC_META_PIXEL_ID || '';
 const TOKEN = process.env.EXPO_PUBLIC_META_CONVERSIONS_API_TOKEN || '';
@@ -39,6 +40,13 @@ export default function MetaPixelTestScreen() {
   const router = useRouter();
   const [results, setResults] = useState<TestResult[]>([]);
   const [testing, setTesting] = useState(false);
+
+  // Gate behind dev settings
+  useEffect(() => {
+    if (!SHOW_DEV_SETTINGS) {
+      router.replace('/(tabs)/settings');
+    }
+  }, []);
 
   const addResult = useCallback((result: TestResult) => {
     setResults((prev) => [result, ...prev]);
