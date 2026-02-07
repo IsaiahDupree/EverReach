@@ -58,7 +58,8 @@ import { initializeEnvelope } from "@/lib/eventEnvelope";
 import { initializeMarketingFunnel } from "@/lib/marketingFunnel";
 import { initializePerformanceMonitoring } from "@/lib/performanceMonitor";
 import { initializePostHog, identifyUser } from "@/lib/posthog";
-import { initializeMetaAppEvents, identifyMetaUser, resetMetaUser } from "@/lib/metaAppEvents";
+import { initializeMetaAppEvents, identifyMetaUser, resetMetaUser, captureClickId } from "@/lib/metaAppEvents";
+import * as Linking from "expo-linking";
 import { useScreenTracking } from "@/hooks/useScreenTracking";
 import { initializeRevenueCat } from "@/lib/revenuecat";
 import { useSubscription } from "@/providers/SubscriptionProvider";
@@ -92,6 +93,14 @@ initializePostHog();
 
 // Initialize Meta App Events (Conversions API + native SDK if available)
 initializeMetaAppEvents();
+
+// Capture fbclid from deep links (Facebook ad attribution)
+Linking.getInitialURL().then((url) => {
+  if (url) captureClickId(url);
+}).catch(() => {});
+Linking.addEventListener('url', ({ url }) => {
+  if (url) captureClickId(url);
+});
 
 // Initialize RevenueCat (IAP subscriptions)
 initializeRevenueCat().then((success) => {
@@ -270,7 +279,8 @@ function RootLayoutNav() {
       console.warn('[App] PostHog identify skipped:', (e as any)?.message || e);
     }
     // Identify with Meta App Events for better Conversions API matching
-    identifyMetaUser(userId, userEmail).catch((e) => {
+    const userPhone = (user as any)?.phone || (user as any)?.user_metadata?.phone;
+    identifyMetaUser(userId, userEmail, userPhone).catch((e) => {
       console.warn('[App] Meta identify skipped:', (e as any)?.message || e);
     });
   }, [isAuthenticated, user, isPaid]);
@@ -564,6 +574,7 @@ function RootLayoutNav() {
           <Stack.Screen name="api-test-suite" />
           <Stack.Screen name="trpc-test" />
           <Stack.Screen name="payment-events-test" />
+          <Stack.Screen name="meta-pixel-test" />
         </Stack>
       </PaywallGuard>
     </>

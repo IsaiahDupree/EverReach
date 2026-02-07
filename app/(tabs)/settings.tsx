@@ -14,6 +14,7 @@ import {
   Linking,
 } from "react-native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { resetMetaUser } from "@/lib/metaAppEvents";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   LogOut,
@@ -543,6 +544,9 @@ export default function SettingsScreen() {
         await signOut();
         console.log('[Settings] Sign out completed successfully');
         screenAnalytics.track('sign_out_completed');
+        
+        // Reset Meta user identity for Conversions API
+        try { resetMetaUser(); } catch {};
 
         // Navigate to onboarding-v2 which will show S1 (Welcome) screen
         try { router.replace('/onboarding-v2'); } catch { /**/ }

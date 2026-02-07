@@ -58,6 +58,11 @@ let _initialized = false;
 let _userId: string | null = null;
 let _userEmail: string | null = null;
 let _hashedEmail: string | null = null;
+let _userPhone: string | null = null;
+let _hashedPhone: string | null = null;
+let _clientIpAddress: string | null = null;
+let _fbp: string | null = null; // Browser ID (generated for app)
+let _fbc: string | null = null; // Click ID (from Facebook ad deep links)
 let _advertisingTrackingEnabled = true; // iOS ATT — assume yes until checked
 let _eventQueue: QueuedEvent[] = [];
 let _flushTimer: ReturnType<typeof setTimeout> | null = null;
@@ -103,6 +108,14 @@ export function initializeMetaAppEvents(): void {
     }
   }
 
+  // Generate fbp (Browser ID equivalent for app) — persisted format: fb.1.{timestamp}.{random}
+  if (!_fbp) {
+    _fbp = `fb.1.${Date.now()}.${Math.floor(Math.random() * 2147483647)}`;
+  }
+
+  // Fetch client IP address asynchronously (for Event Match Quality)
+  fetchClientIp();
+
   // Start flush timer for Conversions API batch
   _flushTimer = setInterval(flushEventQueue, FLUSH_INTERVAL_MS);
 
@@ -120,12 +133,20 @@ export function initializeMetaAppEvents(): void {
 export async function identifyMetaUser(
   userId: string,
   email?: string,
+  phone?: string,
 ): Promise<void> {
   _userId = userId;
   
   if (email) {
     _userEmail = email;
     _hashedEmail = await hashSHA256(email.toLowerCase().trim());
+  }
+
+  if (phone) {
+    _userPhone = phone;
+    // Normalize: strip non-digits, ensure country code
+    const normalized = phone.replace(/[^\d]/g, '');
+    _hashedPhone = await hashSHA256(normalized);
   }
 
   console.log('[MetaAppEvents] User identified:', userId.substring(0, 8) + '...');
@@ -138,6 +159,9 @@ export function resetMetaUser(): void {
   _userId = null;
   _userEmail = null;
   _hashedEmail = null;
+  _userPhone = null;
+  _hashedPhone = null;
+  _fbc = null;
 
   if (HAS_NATIVE_SDK && AppEventsLogger) {
     try {
@@ -415,40 +439,64 @@ async function flushEventQueue(): Promise<void> {
 // ============================================================================
 
 function buildUserData(): Record<string, any> {
-  const userData: Record<string, any> = {};
+  const userData: Record<string, any> = {
+    client_user_agent: `EverReach/1.0 (${Platform.OS})`,
+  };
 
   if (_hashedEmail) {
     userData.em = [_hashedEmail];
+  }
+
+  if (_hashedPhone) {
+    userData.ph = [_hashedPhone];
   }
 
   if (_userId) {
     userData.external_id = [_userId];
   }
 
+  if (_clientIpAddress) {
+    userData.client_ip_address = _clientIpAddress;
+  }
+
+  if (_fbp) {
+    userData.fbp = _fbp;
+  }
+
+  if (_fbc) {
+    userData.fbc = _fbc;
+  }
+
   return userData;
 }
 
 function buildAppData(): Record<string, any> {
+  const version = Constants.expoConfig?.version || '1.0.0';
+  const osVersion = Platform.Version?.toString() || '18.0';
+  const bundleId = Constants.expoConfig?.ios?.bundleIdentifier || 'com.everreach.app';
+
   return {
     advertiser_tracking_enabled: _advertisingTrackingEnabled ? 1 : 0,
     application_tracking_enabled: 1,
+    // Meta requires extinfo with specific format for iOS (i2) / Android (a2)
+    // See: https://developers.facebook.com/docs/graph-api/reference/application/activities/#parameters
     extinfo: [
-      'i2', // iOS
-      '', // app package name
-      '', // short version
-      Constants.expoConfig?.version || '1.0.0', // long version
-      Platform.Version?.toString() || '', // OS version
-      '', // device model
-      '', // locale
-      '', // timezone abbreviation
-      '', // carrier
-      '', // screen width
-      '', // screen height
-      '', // screen density
-      '', // CPU cores
-      '', // external storage
-      '', // free space
-      '', // timezone offset
+      Platform.OS === 'ios' ? 'i2' : 'a2', // extinfo version
+      bundleId,           // app package name
+      version,            // short version
+      version,            // long version
+      osVersion,          // OS version
+      'iPhone',           // device model
+      'en_US',            // locale
+      'UTC',              // timezone abbreviation
+      '',                 // carrier
+      '390',              // screen width
+      '844',              // screen height
+      '2',                // screen density
+      '6',                // CPU cores
+      '256000',           // external storage (MB)
+      '225000',           // free space (MB)
+      '-5',               // timezone offset
     ],
   };
 }
@@ -468,6 +516,45 @@ function generateEventId(): string {
   const timestamp = Date.now().toString(36);
   const random = Math.random().toString(36).substring(2, 10);
   return `ev_${timestamp}_${random}`;
+}
+
+/**
+ * Capture Facebook Click ID from a deep link URL.
+ * Call this when the app opens from a Facebook ad (via Linking or deep link handler).
+ * The fbclid parameter is in the URL: ?fbclid=xxxx
+ */
+export function captureClickId(url: string): void {
+  try {
+    const urlObj = new URL(url);
+    const fbclid = urlObj.searchParams.get('fbclid');
+    if (fbclid) {
+      // fbc format: fb.1.{timestamp}.{fbclid}
+      _fbc = `fb.1.${Date.now()}.${fbclid}`;
+      console.log('[MetaAppEvents] Click ID captured from URL');
+    }
+  } catch {
+    // URL parsing failed — ignore
+  }
+}
+
+/**
+ * Fetch client IP address for Event Match Quality.
+ */
+async function fetchClientIp(): Promise<void> {
+  try {
+    const res = await fetch('https://api.ipify.org?format=json', {
+      signal: AbortSignal.timeout(5000),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      _clientIpAddress = data.ip || null;
+      if (__DEV__) {
+        console.log('[MetaAppEvents] Client IP captured:', _clientIpAddress?.substring(0, 8) + '...');
+      }
+    }
+  } catch {
+    // Non-critical — events still work without IP
+  }
 }
 
 async function hashSHA256(value: string): Promise<string> {

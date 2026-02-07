@@ -13,4 +13,24 @@ config.resolver.blockList = [
   /.*\.next\/.*/,
 ];
 
+// Redirect native-only modules to web shims on web platform
+const nativeOnlyShims = {
+  'expo-superwall': path.resolve(__dirname, 'lib/shims/expo-superwall.web.js'),
+  'react-native-purchases': path.resolve(__dirname, 'lib/shims/react-native-purchases.web.js'),
+};
+
+const originalResolveRequest = config.resolver.resolveRequest;
+config.resolver.resolveRequest = (context, moduleName, platform) => {
+  if (platform === 'web' && nativeOnlyShims[moduleName]) {
+    return {
+      filePath: nativeOnlyShims[moduleName],
+      type: 'sourceFile',
+    };
+  }
+  if (originalResolveRequest) {
+    return originalResolveRequest(context, moduleName, platform);
+  }
+  return context.resolveRequest(context, moduleName, platform);
+};
+
 module.exports = config;
