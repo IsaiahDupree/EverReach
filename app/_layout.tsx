@@ -59,6 +59,7 @@ import { initializeMarketingFunnel } from "@/lib/marketingFunnel";
 import { initializePerformanceMonitoring } from "@/lib/performanceMonitor";
 import { initializePostHog, identifyUser } from "@/lib/posthog";
 import { initializeMetaAppEvents, identifyMetaUser, resetMetaUser, captureClickId } from "@/lib/metaAppEvents";
+import { supabase } from "@/lib/supabase";
 import * as Linking from "expo-linking";
 import { useScreenTracking } from "@/hooks/useScreenTracking";
 import { initializeRevenueCat } from "@/lib/revenuecat";
@@ -278,19 +279,41 @@ function RootLayoutNav() {
     } catch (e) {
       console.warn('[App] PostHog identify skipped:', (e as any)?.message || e);
     }
-    // Identify with Meta App Events for better Conversions API matching
-    const userPhone = (user as any)?.phone || (user as any)?.user_metadata?.phone;
-    const meta = (user as any)?.user_metadata || {};
-    identifyMetaUser(userId, userEmail, userPhone, {
-      firstName: meta.first_name || meta.full_name?.split(' ')[0],
-      lastName: meta.last_name || meta.full_name?.split(' ').slice(1).join(' '),
-      city: meta.city,
-      state: meta.state,
-      zip: meta.zip || meta.postal_code,
-      country: meta.country || 'us',
-    }).catch((e) => {
-      console.warn('[App] Meta identify skipped:', (e as any)?.message || e);
-    });
+    // Identify with Meta App Events — query profiles table for rich data
+    (async () => {
+      try {
+        const { data: profile } = await supabase
+          ?.from('profiles')
+          .select('display_name, first_name, phone_e164, country, timezone')
+          .eq('user_id', userId)
+          .single();
+
+        const displayName = profile?.display_name || '';
+        const nameParts = displayName.split(' ').filter(Boolean);
+        const firstName = profile?.first_name || nameParts[0] || '';
+        const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+        const phone = profile?.phone_e164 || (user as any)?.phone || (user as any)?.user_metadata?.phone;
+
+        // Infer country from timezone if not explicitly set
+        let country = profile?.country || (user as any)?.user_metadata?.country;
+        if (!country && profile?.timezone) {
+          const tz = profile.timezone.toLowerCase();
+          if (tz.startsWith('america/')) country = 'us';
+          else if (tz.startsWith('europe/london')) country = 'gb';
+          else if (tz.startsWith('europe/')) country = tz.split('/')[1]?.substring(0, 2) || '';
+          else if (tz.startsWith('asia/')) country = '';
+          else if (tz.startsWith('australia/')) country = 'au';
+        }
+
+        await identifyMetaUser(userId, userEmail, phone, {
+          firstName,
+          lastName,
+          country: country || 'us',
+        });
+      } catch (e) {
+        console.warn('[App] Meta identify skipped:', (e as any)?.message || e);
+      }
+    })();
   }, [isAuthenticated, user, isPaid]);
 
   // ✅ REFACTORED: Get centralized warmth methods
