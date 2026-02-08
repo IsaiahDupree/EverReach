@@ -280,7 +280,15 @@ function RootLayoutNav() {
     }
     // Identify with Meta App Events for better Conversions API matching
     const userPhone = (user as any)?.phone || (user as any)?.user_metadata?.phone;
-    identifyMetaUser(userId, userEmail, userPhone).catch((e) => {
+    const meta = (user as any)?.user_metadata || {};
+    identifyMetaUser(userId, userEmail, userPhone, {
+      firstName: meta.first_name || meta.full_name?.split(' ')[0],
+      lastName: meta.last_name || meta.full_name?.split(' ').slice(1).join(' '),
+      city: meta.city,
+      state: meta.state,
+      zip: meta.zip || meta.postal_code,
+      country: meta.country || 'us',
+    }).catch((e) => {
       console.warn('[App] Meta identify skipped:', (e as any)?.message || e);
     });
   }, [isAuthenticated, user, isPaid]);

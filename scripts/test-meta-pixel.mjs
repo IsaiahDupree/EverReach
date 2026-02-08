@@ -52,6 +52,12 @@ function sha256(str) {
 
 const EMAIL_HASH = sha256('isaiahdupree33@gmail.com');
 const PHONE_HASH = sha256('15551234567'); // normalized test phone
+const FN_HASH = sha256('isaiah'); // first name
+const LN_HASH = sha256('dupree'); // last name
+const CT_HASH = sha256('newyork'); // city (no spaces, lowercase)
+const ST_HASH = sha256('ny'); // state
+const ZP_HASH = sha256('10001'); // zip (first 5)
+const COUNTRY_HASH = sha256('us'); // country
 const FBP = `fb.1.${Date.now()}.${Math.floor(Math.random() * 2147483647)}`;
 
 // Fetch client IP for Event Match Quality
@@ -88,6 +94,12 @@ async function sendEvent(eventName, customData = {}) {
         user_data: {
           em: [EMAIL_HASH],
           ph: [PHONE_HASH],
+          fn: [FN_HASH],
+          ln: [LN_HASH],
+          ct: [CT_HASH],
+          st: [ST_HASH],
+          zp: [ZP_HASH],
+          country: [COUNTRY_HASH],
           external_id: ['everreach_cli_test'],
           client_user_agent: 'EverReach/1.0 (ios)',
           ...(CLIENT_IP && { client_ip_address: CLIENT_IP }),
