@@ -3,6 +3,18 @@
 // Mock global variables
 global.__DEV__ = true;
 
+// Polyfill window.dispatchEvent for node test environment
+// (react-test-renderer calls this but node env doesn't have it)
+if (typeof window !== 'undefined' && !window.dispatchEvent) {
+  window.dispatchEvent = function () { return true; };
+}
+if (typeof window !== 'undefined' && !window.addEventListener) {
+  window.addEventListener = function () {};
+}
+if (typeof window !== 'undefined' && !window.removeEventListener) {
+  window.removeEventListener = function () {};
+}
+
 // Set test environment variables
 process.env.EXPO_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
 // Valid JWT format for testing (not a real key, just valid format)

@@ -83,7 +83,8 @@ describe('uploadContactAvatarToApi - NEW Simplified Flow', () => {
 
       // Verify success log
       expect(console.log).toHaveBeenCalledWith(
-        expect.stringContaining('Avatar uploaded successfully')
+        expect.stringContaining('Avatar uploaded successfully'),
+        expect.anything()
       );
     });
 
@@ -192,7 +193,8 @@ describe('uploadContactAvatarToApi - NEW Simplified Flow', () => {
 
       expect(result).toBeNull();
       expect(console.error).toHaveBeenCalledWith(
-        expect.stringContaining('No URL returned from server')
+        expect.stringContaining('No URL returned from server'),
+        expect.anything()
       );
     });
 
