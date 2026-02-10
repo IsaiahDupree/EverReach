@@ -17,18 +17,15 @@
 - [x] ✅ App icons configured (icon.png, adaptive-icon.png)
 - [x] ✅ Splash screen configured
 - [x] ✅ Required plugins added (router, AV, image-picker, contacts, notifications)
+- [x] ✅ `expo-tracking-transparency` plugin added with ATT description
 - [ ] ❌ Add `react-native-purchases` config plugin for IAP support
 
 ### 1.2 EAS Build Configuration
-- [ ] ❌ Create `eas.json` with build profiles:
-  - [ ] Development profile (dev client builds)
-  - [ ] Preview/Internal profile (TestFlight/Internal Testing)
-  - [ ] Production profile (App Store/Play Store)
-- [ ] ❌ Configure build settings:
-  - [ ] Node version
-  - [ ] React Native version
-  - [ ] Build cache options
-  - [ ] Set `cli.appVersionSource=remote`
+- [x] ✅ `eas.json` created with build profiles:
+  - [x] ✅ Development profile (dev client builds)
+  - [x] ✅ Preview/Internal profile (TestFlight/Internal Testing)
+  - [x] ✅ Production profile (App Store/Play Store, autoIncrement)
+- [x] ✅ Build settings configured (iOS submit: Apple ID, ASC App ID, Team ID)
 
 ### 1.3 Environment Variables
 - [ ] ❌ Add to EAS Secrets:
@@ -187,10 +184,10 @@
   - [ ] Terms of Use URL (public)
   - [ ] Support URL
   - [ ] Marketing URL (optional)
-- [ ] ❌ **App Privacy**
-  - [ ] Complete Privacy Nutrition Label questionnaire
-  - [ ] List all data types collected
-  - [ ] Specify data usage purposes
+- [ ] 🔄 **App Privacy**
+  - [ ] Complete Privacy Nutrition Label questionnaire in App Store Connect
+  - [x] ✅ All data types listed in PrivacyInfo.xcprivacy (10 types declared)
+  - [x] ✅ Data usage purposes specified per type
 
 ### 4.2 Google Play Store (Android)
 - [ ] ❌ **App Icons**
@@ -219,7 +216,9 @@
   - [ ] Specify security practices
 
 ### 4.3 Legal Documents
-- [x] ✅ Privacy Policy drafted (`docs/policies/PRIVACY_POLICY.md`)
+- [x] ✅ Privacy Policy drafted and updated for Meta Pixel (`docs/policies/PRIVACY_POLICY.md`)
+- [x] ✅ Privacy Manifest updated: NSPrivacyTracking=true, 10 collected data types, tracking domains
+- [x] ✅ ATT (App Tracking Transparency) implemented and gated on user consent
 - [ ] ❌ Host Privacy Policy publicly (web URL)
 - [ ] ❌ Create Terms of Service document
 - [ ] ❌ Host Terms of Service publicly (web URL)

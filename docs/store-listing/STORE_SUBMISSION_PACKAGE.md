@@ -172,18 +172,25 @@ Provide 6–8 screenshots per platform that tell a story. Include captions to ex
 # Privacy & Data Safety
 
 - **Data collected**
-  - Personal info: email, display name (account setup)
+  - Personal info: email, display name, phone (optional) (account setup)
   - Contacts: imported contacts (optional, permission-based)
   - App activity: usage events (analytics)
   - Diagnostics: crash reports and performance metrics
+  - Coarse location: city, state, zip (from profile, for ad attribution)
+  - Device identifiers: fbp (Facebook app ID), client IP
 - **Data handling**
   - Data is encrypted in transit
   - You can request account deletion via in-app support
   - No data is sold to third parties
-  - Used to provide app features, analytics, and support
+  - Used to provide app features, analytics, ad measurement, and support
 - **Tracking / ATT**
-  - No third‑party advertising or IDFA tracking
-  - ATT prompt not required
+  - Meta Conversions API used for ad attribution (hashed PII only, with user consent)
+  - ATT prompt is shown on iOS; tracking is gated on user permission
+  - If user denies tracking, only anonymous aggregate events are sent
+- **Third-party SDKs that collect data**
+  - PostHog: product analytics (pseudonymous)
+  - RevenueCat: subscription management
+  - Meta Conversions API: ad measurement and attribution (with ATT consent)
 
 ---
 

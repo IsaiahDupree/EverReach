@@ -71,7 +71,7 @@ Notes:
 
 - **Contacts & Notes**: Contacts may include generated demo content for demonstration.
 - **Voice Notes**: First‑time microphone permission request explains usage clearly.
-- **Privacy**: No third‑party advertising or tracking. Data is encrypted in transit. Users can request account deletion.
+- **Privacy**: Data is encrypted in transit. Users can request account deletion. Meta Conversions API is used for ad attribution only with user consent (ATT prompt shown on first launch). If denied, no user‑identifying data is sent.
 - **Notifications**: Not required for core usage. No background tracking.
 
 ---
