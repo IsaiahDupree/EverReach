@@ -18,7 +18,7 @@
 - [x] ✅ Splash screen configured
 - [x] ✅ Required plugins added (router, AV, image-picker, contacts, notifications)
 - [x] ✅ `expo-tracking-transparency` plugin added with ATT description
-- [ ] ❌ Add `react-native-purchases` config plugin for IAP support
+- [x] ✅ `react-native-purchases` v9.6.5 installed (auto-linked via CocoaPods, no config plugin needed)
 
 ### 1.2 EAS Build Configuration
 - [x] ✅ `eas.json` created with build profiles:
