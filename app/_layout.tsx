@@ -58,7 +58,8 @@ import { initializeEnvelope } from "@/lib/eventEnvelope";
 import { initializeMarketingFunnel } from "@/lib/marketingFunnel";
 import { initializePerformanceMonitoring } from "@/lib/performanceMonitor";
 import { initializePostHog, identifyUser } from "@/lib/posthog";
-import { initializeMetaAppEvents, identifyMetaUser, resetMetaUser, captureClickId } from "@/lib/metaAppEvents";
+import { initializeMetaAppEvents, identifyMetaUser, resetMetaUser, captureClickId, setTrackingConsent } from '@/lib/metaAppEvents';
+import { requestTrackingPermissionsAsync } from 'expo-tracking-transparency';
 import { supabase } from "@/lib/supabase";
 import * as Linking from "expo-linking";
 import { useScreenTracking } from "@/hooks/useScreenTracking";
@@ -92,8 +93,27 @@ console.log('[App] Performance monitoring initialized');
 // Initialize PostHog analytics (no-op if API key missing)
 initializePostHog();
 
-// Initialize Meta App Events (Conversions API + native SDK if available)
-initializeMetaAppEvents();
+// Request ATT permission on iOS, then initialize Meta App Events
+// Apple requires ATT prompt BEFORE sending user-identifying data to Meta
+(async () => {
+  try {
+    if (Platform.OS === 'ios') {
+      const { status } = await requestTrackingPermissionsAsync();
+      const granted = status === 'granted';
+      setTrackingConsent(granted);
+      console.log('[App] ATT permission:', status);
+    } else {
+      // Android: no ATT required, enable tracking
+      setTrackingConsent(true);
+    }
+  } catch (e) {
+    // ATT request failed — default to denied for safety
+    setTrackingConsent(false);
+    console.warn('[App] ATT request failed, defaulting to denied:', e);
+  }
+  // Initialize Meta AFTER consent is resolved
+  initializeMetaAppEvents();
+})();
 
 // Capture fbclid from deep links (Facebook ad attribution)
 Linking.getInitialURL().then((url) => {

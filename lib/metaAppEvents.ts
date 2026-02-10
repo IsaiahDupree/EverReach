@@ -94,6 +94,7 @@ let _hashedSt: string | null = null; // state
 let _hashedZp: string | null = null; // zip
 let _hashedCountry: string | null = null; // country
 let _advertisingTrackingEnabled = true; // iOS ATT — assume yes until checked
+let _trackingConsentResolved = false; // Whether ATT prompt has been shown
 let _eventQueue: QueuedEvent[] = [];
 let _flushTimer: ReturnType<typeof setTimeout> | null = null;
 let _ipReady: Promise<void> | null = null; // resolves when IP is available or timed out
@@ -116,9 +117,36 @@ interface QueuedEvent {
 // ============================================================================
 
 /**
+ * Set tracking consent based on iOS ATT (App Tracking Transparency) result.
+ * Call this AFTER requesting ATT permission and BEFORE or AFTER initializeMetaAppEvents().
+ * If the user denies tracking, we still send events but without user-identifying data.
+ * 
+ * @param granted - true if user granted ATT permission, false if denied
+ */
+export function setTrackingConsent(granted: boolean): void {
+  _advertisingTrackingEnabled = granted;
+  _trackingConsentResolved = true;
+
+  // Update native SDK tracking flag if available
+  if (HAS_NATIVE_SDK && Settings) {
+    try {
+      Settings.setAdvertiserTrackingEnabled(granted);
+    } catch (e) {
+      console.warn('[MetaAppEvents] Failed to update native SDK tracking:', e);
+    }
+  }
+
+  console.log('[MetaAppEvents] Tracking consent set:', granted ? 'granted' : 'denied');
+}
+
+/**
  * Initialize Meta App Events tracking.
  * Call this once at app startup (in _layout.tsx).
  * Loads persisted parameters from AsyncStorage for immediate availability.
+ * 
+ * Note: Call setTrackingConsent() after ATT prompt resolves to gate user-level tracking.
+ * Events are always queued (for aggregate measurement), but user_data fields
+ * are only populated when tracking consent is granted.
  */
 export function initializeMetaAppEvents(): void {
   if (_initialized) return;
@@ -130,10 +158,10 @@ export function initializeMetaAppEvents(): void {
 
   _initialized = true;
 
-  // Initialize native SDK if available
+  // Initialize native SDK if available (ATT value updated later via setTrackingConsent)
   if (HAS_NATIVE_SDK && Settings) {
     try {
-      Settings.setAdvertiserTrackingEnabled(true);
+      Settings.setAdvertiserTrackingEnabled(_advertisingTrackingEnabled);
       console.log('[MetaAppEvents] Native Facebook SDK initialized');
     } catch (e) {
       console.warn('[MetaAppEvents] Native SDK init failed:', e);
@@ -626,23 +654,27 @@ function buildUserData(): Record<string, any> {
     client_user_agent: `EverReach/1.0 (${Platform.OS})`,
   };
 
-  // Core identifiers
-  if (_hashedEmail) userData.em = [_hashedEmail];
-  if (_hashedPhone) userData.ph = [_hashedPhone];
-  if (_userId) userData.external_id = [_userId];
-
-  // Network / device
-  if (_clientIpAddress) userData.client_ip_address = _clientIpAddress;
+  // Device-level identifiers (always included — not gated by ATT)
   if (_fbp) userData.fbp = _fbp;
-  if (_fbc) userData.fbc = _fbc;
+  if (_clientIpAddress) userData.client_ip_address = _clientIpAddress;
 
-  // Profile data (hashed) — improves Event Match Quality score
-  if (_hashedFn) userData.fn = [_hashedFn];
-  if (_hashedLn) userData.ln = [_hashedLn];
-  if (_hashedCt) userData.ct = [_hashedCt];
-  if (_hashedSt) userData.st = [_hashedSt];
-  if (_hashedZp) userData.zp = [_hashedZp];
-  if (_hashedCountry) userData.country = [_hashedCountry];
+  // User-identifying data — ONLY included when ATT consent is granted (Apple requirement)
+  // Per Apple FAQ: hashed emails, phone numbers, and cross-app identifiers
+  // require ATT permission before being sent to third parties for tracking.
+  if (_advertisingTrackingEnabled) {
+    if (_hashedEmail) userData.em = [_hashedEmail];
+    if (_hashedPhone) userData.ph = [_hashedPhone];
+    if (_userId) userData.external_id = [_userId];
+    if (_fbc) userData.fbc = _fbc;
+
+    // Profile data (hashed) — improves Event Match Quality score
+    if (_hashedFn) userData.fn = [_hashedFn];
+    if (_hashedLn) userData.ln = [_hashedLn];
+    if (_hashedCt) userData.ct = [_hashedCt];
+    if (_hashedSt) userData.st = [_hashedSt];
+    if (_hashedZp) userData.zp = [_hashedZp];
+    if (_hashedCountry) userData.country = [_hashedCountry];
+  }
 
   return userData;
 }
@@ -836,6 +868,16 @@ export function mapToMetaEvent(
     'qualified_signup': {
       metaEvent: 'Lead',
       mapper: (p) => ({ content_name: 'qualified_signup', value: p.lead_score || 0, currency: 'USD' }),
+    },
+    
+    // Purchases (critical for ROAS measurement)
+    'purchase_completed': {
+      metaEvent: 'Purchase',
+      mapper: (p) => ({ value: p.amount || p.value || 0, currency: p.currency || 'USD', content_name: p.plan || p.product_id, content_type: 'subscription' }),
+    },
+    'payment_info_added': {
+      metaEvent: 'AddPaymentInfo',
+      mapper: (p) => ({ content_category: p.payment_method || 'apple_pay', currency: 'USD', value: 0 }),
     },
     
     // AI features (custom events)
