@@ -441,9 +441,9 @@ export default function Auth() {
                   style={styles.footerLink}
                   onPress={() => {
                     if (Platform.OS === 'web' && typeof window !== 'undefined') {
-                      window.open('/terms', '_blank');
+                      window.open('/terms-of-service', '_blank');
                     } else {
-                      router.push('/terms' as any);
+                      router.push('/terms-of-service' as any);
                     }
                   }}
                 >

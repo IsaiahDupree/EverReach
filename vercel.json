@@ -32,6 +32,18 @@
       ]
     }
   ],
+  "redirects": [
+    {
+      "source": "/privacy",
+      "destination": "/privacy-policy",
+      "statusCode": 301
+    },
+    {
+      "source": "/terms",
+      "destination": "/terms-of-service",
+      "statusCode": 301
+    }
+  ],
   "rewrites": [
     {
       "source": "/(.*)",
