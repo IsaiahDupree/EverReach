@@ -22,6 +22,7 @@
         "NSPhotoLibraryUsageDescription": "EverReach needs photo access to let you add profile pictures and share images with your contacts.",
         "NSCameraUsageDescription": "EverReach needs camera access to take photos for contact profiles and capture moments.",
         "NSContactsUsageDescription": "EverReach needs contacts access to import your existing contacts into your personal CRM.",
+        "ITSAppUsesNonExemptEncryption": false,
         "LSApplicationQueriesSchemes": [
           "mailto",
           "tel",
