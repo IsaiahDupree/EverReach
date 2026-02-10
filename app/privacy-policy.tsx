@@ -19,7 +19,7 @@ export default function PrivacyPolicyScreen() {
 
   // Analytics tracking
   useAnalytics('PrivacyPolicy');
-  const lastUpdated = 'Oct 30, 2025';
+  const lastUpdated = 'Feb 9, 2026';
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -80,16 +80,27 @@ export default function PrivacyPolicyScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>4. Data Sharing</Text>
             <Text style={styles.paragraph}>
-              We do not sell personal data and we do not share data with advertising networks or use advertising SDKs.
-              We share data with service providers only as needed to operate EverReach:
+              We do not sell personal data. We share data with service providers as needed to operate EverReach:
             </Text>
-            <Text style={styles.bulletPoint}>• With your explicit consent</Text>
+            <Text style={styles.bulletPoint}>• Supabase: hosting, authentication, storage</Text>
+            <Text style={styles.bulletPoint}>• RevenueCat / Apple / Google: subscription management</Text>
+            <Text style={styles.bulletPoint}>• PostHog: product analytics (pseudonymous)</Text>
+            <Text style={styles.bulletPoint}>• Meta Conversions API: ad measurement (with your consent)</Text>
             <Text style={styles.bulletPoint}>• To comply with legal obligations</Text>
-            <Text style={styles.bulletPoint}>• To protect our rights and safety</Text>
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>5. Your Rights</Text>
+            <Text style={styles.sectionTitle}>5. Advertising & Attribution</Text>
+            <Text style={styles.paragraph}>
+              With your consent (via Apple's App Tracking Transparency prompt on iOS), we share certain hashed data with Meta (Facebook) to measure ad effectiveness. This includes hashed email, name, phone, and location data. If you deny tracking, no user-identifying data is sent.
+            </Text>
+            <Text style={styles.paragraph}>
+              You can change your preference anytime in iOS Settings → Privacy & Security → Tracking.
+            </Text>
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>6. Your Rights</Text>
             <Text style={styles.paragraph}>
               You have the right to:
             </Text>

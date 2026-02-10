@@ -19,7 +19,7 @@ export default function TermsOfServiceScreen() {
 
   // Analytics tracking
   useAnalytics('TermsOfService');
-  const lastUpdated = 'Oct 22, 2025';
+  const lastUpdated = 'Feb 9, 2026';
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -90,7 +90,8 @@ export default function TermsOfServiceScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>6. Third‑Party Services</Text>
             <Text style={styles.paragraph}>
-              Integrations (email, analytics, purchases, LLMs) are provided by third parties under their terms.
+              Integrations (email, analytics, purchases, ad measurement, LLMs) are provided by third parties under their terms.
+              These include Supabase, RevenueCat, PostHog, Meta Conversions API, and Apple/Google platform services.
               We are not responsible for third‑party services.
             </Text>
           </View>
