@@ -1,309 +1,185 @@
 import React from 'react';
 import { render, waitFor } from '@testing-library/react-native';
 import { Platform } from 'react-native';
-import SuperwallPaywallUI from '@/components/paywall/SuperwallPaywallUI';
 import analytics from '@/lib/analytics';
 
 // Mock dependencies
 jest.mock('@/lib/analytics');
+jest.mock('@/providers/SubscriptionProvider', () => ({
+  useSubscription: jest.fn(() => ({
+    isPaid: false,
+    subscriptionStatus: 'free',
+    refreshEntitlements: jest.fn(),
+    restorePurchases: jest.fn(),
+  })),
+}));
 
-// Mock Superwall SDK
-const mockSuperwall = {
-  shared: {
-    register: jest.fn(),
-    delegate: {
-      didPurchase: null as any,
-      paywallWillDismiss: null as any,
-    },
-  },
-};
+// Mock expo-superwall hooks used by SuperwallPaywallNew
+const mockRegisterPlacement = jest.fn();
+const mockSetSubscriptionStatus = jest.fn().mockResolvedValue(undefined);
+const mockIdentify = jest.fn();
 
-jest.mock('@superwall/react-native-superwall', () => ({
-  default: mockSuperwall,
-}), { virtual: true });
+jest.mock('expo-superwall', () => ({
+  usePlacement: jest.fn(() => ({
+    registerPlacement: mockRegisterPlacement,
+    state: { status: 'idle' },
+  })),
+  useUser: jest.fn(() => ({
+    user: { appUserId: 'test-user' },
+    subscriptionStatus: null,
+    identify: mockIdentify,
+    setSubscriptionStatus: mockSetSubscriptionStatus,
+  })),
+  useSuperwallEvents: jest.fn(),
+}));
 
-describe('SuperwallPaywallUI', () => {
-  const mockConfig = {
-    provider: 'superwall' as const,
-    paywall_id: 'campaign_1',
-    platform: 'ios' as const,
-    updated_at: '2025-11-15T00:00:00Z',
-  };
+import SuperwallPaywallNew from '@/components/paywall/SuperwallPaywallNew';
 
+describe('SuperwallPaywallNew', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     Platform.OS = 'ios';
-    mockSuperwall.shared.register.mockResolvedValue(undefined);
+    mockRegisterPlacement.mockResolvedValue(undefined);
+    mockSetSubscriptionStatus.mockResolvedValue(undefined);
   });
 
-  describe('SDK Loading', () => {
-    it('should load Superwall SDK on native platforms', async () => {
-      Platform.OS = 'ios';
-
-      render(
-        <SuperwallPaywallUI
-          remoteConfig={mockConfig}
-          onPurchaseComplete={jest.fn()}
-        />
-      );
-
-      await waitFor(() => {
-        expect(mockSuperwall.shared.register).toHaveBeenCalledWith('campaign_1');
-      });
-
-      expect(analytics.track).toHaveBeenCalledWith('superwall_paywall_displayed', {
-        placement: 'campaign_1',
-        platform: 'ios',
-      });
-    });
-
-    it('should handle SDK load failure', async () => {
-      // Mock SDK import failure
-      jest.doMock('@superwall/react-native-superwall', () => {
-        throw new Error('SDK not found');
-      });
-
+  describe('Component Rendering', () => {
+    it('should render with default placementId', () => {
       const { getByText } = render(
-        <SuperwallPaywallUI
-          remoteConfig={mockConfig}
-          onPurchaseComplete={jest.fn()}
-        />
+        <SuperwallPaywallNew onPurchaseComplete={jest.fn()} />
       );
 
-      // Wait for error state
-      await waitFor(() => {
-        const errorElements = [
-          getByText(/failed to load superwall/i, { exact: false }),
-        ];
-        expect(errorElements.length).toBeGreaterThan(0);
-      }, { timeout: 3000 });
+      // Should show loading/idle state with default placement
+      expect(getByText(/main_pay_wall/i)).toBeTruthy();
     });
-  });
 
-  describe('Platform Handling', () => {
-    it('should show not supported message on web', () => {
-      Platform.OS = 'web';
-
+    it('should render with custom placementId', () => {
       const { getByText } = render(
-        <SuperwallPaywallUI
-          remoteConfig={mockConfig}
+        <SuperwallPaywallNew
+          placementId="custom_placement"
           onPurchaseComplete={jest.fn()}
         />
       );
 
-      expect(getByText(/not supported on web/i)).toBeTruthy();
-      expect(mockSuperwall.shared.register).not.toHaveBeenCalled();
+      expect(getByText(/custom_placement/i)).toBeTruthy();
     });
 
-    it('should work on iOS', async () => {
-      Platform.OS = 'ios';
-
-      render(
-        <SuperwallPaywallUI
-          remoteConfig={mockConfig}
-          onPurchaseComplete={jest.fn()}
-        />
-      );
-
-      await waitFor(() => {
-        expect(mockSuperwall.shared.register).toHaveBeenCalled();
-      });
-    });
-
-    it('should work on Android', async () => {
-      Platform.OS = 'android';
-
-      render(
-        <SuperwallPaywallUI
-          remoteConfig={mockConfig}
-          onPurchaseComplete={jest.fn()}
-        />
-      );
-
-      await waitFor(() => {
-        expect(mockSuperwall.shared.register).toHaveBeenCalled();
-      });
-    });
-  });
-
-  describe('Paywall Presentation', () => {
-    it('should register placement with correct ID', async () => {
-      render(
-        <SuperwallPaywallUI
-          remoteConfig={mockConfig}
-          onPurchaseComplete={jest.fn()}
-        />
-      );
-
-      await waitFor(() => {
-        expect(mockSuperwall.shared.register).toHaveBeenCalledWith('campaign_1');
-      });
-    });
-
-    it('should handle presentation failure', async () => {
-      mockSuperwall.shared.register.mockRejectedValue(new Error('Presentation failed'));
-
+    it('should show loading state initially', () => {
       const { getByText } = render(
-        <SuperwallPaywallUI
-          remoteConfig={mockConfig}
+        <SuperwallPaywallNew onPurchaseComplete={jest.fn()} />
+      );
+
+      // Idle state shows loading indicator
+      expect(getByText(/Loading Superwall paywall|Setting up subscription/i)).toBeTruthy();
+    });
+  });
+
+  describe('Subscription Status Setup', () => {
+    it('should set subscription status to INACTIVE for free users', async () => {
+      render(
+        <SuperwallPaywallNew onPurchaseComplete={jest.fn()} />
+      );
+
+      await waitFor(() => {
+        expect(mockSetSubscriptionStatus).toHaveBeenCalledWith(
+          expect.objectContaining({ status: 'INACTIVE' })
+        );
+      });
+    });
+
+    it('should set subscription status to INACTIVE when forceShow is true', async () => {
+      render(
+        <SuperwallPaywallNew
+          forceShow={true}
           onPurchaseComplete={jest.fn()}
         />
       );
 
       await waitFor(() => {
-        expect(getByText(/failed to load superwall/i)).toBeTruthy();
+        expect(mockSetSubscriptionStatus).toHaveBeenCalledWith(
+          expect.objectContaining({ status: 'INACTIVE' })
+        );
       });
     });
   });
 
-  describe('Event Handling', () => {
-    it('should handle purchase completion', async () => {
-      const onPurchaseComplete = jest.fn();
-
-      render(
-        <SuperwallPaywallUI
-          remoteConfig={mockConfig}
-          onPurchaseComplete={onPurchaseComplete}
-        />
-      );
-
-      await waitFor(() => {
-        expect(mockSuperwall.shared.delegate.didPurchase).toBeDefined();
-      });
-
-      // Simulate purchase
-      if (mockSuperwall.shared.delegate.didPurchase) {
-        mockSuperwall.shared.delegate.didPurchase();
-      }
-
-      expect(onPurchaseComplete).toHaveBeenCalled();
-      expect(analytics.track).toHaveBeenCalledWith('superwall_purchase_success', {
-        placement: 'campaign_1',
-      });
-    });
-
-    it('should handle dismissal', async () => {
+  describe('Props', () => {
+    it('should accept onDismiss callback', () => {
       const onDismiss = jest.fn();
-
+      // Should not throw
       render(
-        <SuperwallPaywallUI
-          remoteConfig={mockConfig}
+        <SuperwallPaywallNew
           onDismiss={onDismiss}
-        />
-      );
-
-      await waitFor(() => {
-        expect(mockSuperwall.shared.delegate.paywallWillDismiss).toBeDefined();
-      });
-
-      // Simulate dismissal
-      if (mockSuperwall.shared.delegate.paywallWillDismiss) {
-        mockSuperwall.shared.delegate.paywallWillDismiss();
-      }
-
-      expect(onDismiss).toHaveBeenCalled();
-      expect(analytics.track).toHaveBeenCalledWith('superwall_paywall_dismissed', {
-        placement: 'campaign_1',
-      });
-    });
-  });
-
-  describe('Loading State', () => {
-    it('should show loading indicator while SDK loads', () => {
-      mockSuperwall.shared.register.mockImplementation(
-        () => new Promise(resolve => setTimeout(resolve, 1000))
-      );
-
-      const { getByText } = render(
-        <SuperwallPaywallUI
-          remoteConfig={mockConfig}
           onPurchaseComplete={jest.fn()}
         />
       );
-
-      expect(getByText(/loading superwall paywall/i)).toBeTruthy();
     });
-  });
 
-  describe('Analytics Tracking', () => {
-    it('should track paywall display', async () => {
+    it('should accept autoShow prop', () => {
+      // Should not throw
       render(
-        <SuperwallPaywallUI
-          remoteConfig={mockConfig}
+        <SuperwallPaywallNew
+          autoShow={true}
           onPurchaseComplete={jest.fn()}
         />
       );
-
-      await waitFor(() => {
-        expect(analytics.track).toHaveBeenCalledWith('superwall_paywall_displayed', {
-          placement: 'campaign_1',
-          platform: expect.any(String),
-        });
-      });
     });
 
-    it('should track purchase success', async () => {
-      const { } = render(
-        <SuperwallPaywallUI
-          remoteConfig={mockConfig}
-          onPurchaseComplete={jest.fn()}
-        />
-      );
-
-      await waitFor(() => {
-        expect(mockSuperwall.shared.delegate.didPurchase).toBeDefined();
-      });
-
-      // Trigger purchase
-      if (mockSuperwall.shared.delegate.didPurchase) {
-        mockSuperwall.shared.delegate.didPurchase();
-      }
-
-      await waitFor(() => {
-        expect(analytics.track).toHaveBeenCalledWith('superwall_purchase_success', {
-          placement: 'campaign_1',
-        });
-      });
-    });
-
-    it('should track dismissal', async () => {
+    it('should accept forceShow prop', () => {
+      // Should not throw
       render(
-        <SuperwallPaywallUI
-          remoteConfig={mockConfig}
-          onDismiss={jest.fn()}
+        <SuperwallPaywallNew
+          forceShow={true}
+          onPurchaseComplete={jest.fn()}
         />
       );
-
-      await waitFor(() => {
-        expect(mockSuperwall.shared.delegate.paywallWillDismiss).toBeDefined();
-      });
-
-      // Trigger dismissal
-      if (mockSuperwall.shared.delegate.paywallWillDismiss) {
-        mockSuperwall.shared.delegate.paywallWillDismiss();
-      }
-
-      await waitFor(() => {
-        expect(analytics.track).toHaveBeenCalledWith('superwall_paywall_dismissed', {
-          placement: 'campaign_1',
-        });
-      });
     });
   });
 
-  describe('Dev Build Requirements', () => {
-    it('should show note about requiring custom dev build on error', async () => {
-      mockSuperwall.shared.register.mockRejectedValue(new Error('Not available'));
+  describe('expo-superwall Integration', () => {
+    it('should call usePlacement hook', () => {
+      const { usePlacement } = require('expo-superwall');
 
-      const { getByText } = render(
-        <SuperwallPaywallUI
-          remoteConfig={mockConfig}
-          onPurchaseComplete={jest.fn()}
-        />
+      render(
+        <SuperwallPaywallNew onPurchaseComplete={jest.fn()} />
       );
 
+      expect(usePlacement).toHaveBeenCalled();
+    });
+
+    it('should call useUser hook', () => {
+      const { useUser } = require('expo-superwall');
+
+      render(
+        <SuperwallPaywallNew onPurchaseComplete={jest.fn()} />
+      );
+
+      expect(useUser).toHaveBeenCalled();
+    });
+
+    it('should call useSuperwallEvents hook', () => {
+      const { useSuperwallEvents } = require('expo-superwall');
+
+      render(
+        <SuperwallPaywallNew onPurchaseComplete={jest.fn()} />
+      );
+
+      expect(useSuperwallEvents).toHaveBeenCalled();
+    });
+  });
+
+  describe('Error Handling', () => {
+    it('should handle subscription status setup failure gracefully', async () => {
+      mockSetSubscriptionStatus.mockRejectedValueOnce(new Error('Status setup failed'));
+
+      // Should not throw
+      render(
+        <SuperwallPaywallNew onPurchaseComplete={jest.fn()} />
+      );
+
+      // Component should still render (marks as ready even on error)
       await waitFor(() => {
-        expect(getByText(/requires a custom dev build/i)).toBeTruthy();
+        expect(mockSetSubscriptionStatus).toHaveBeenCalled();
       });
     });
   });

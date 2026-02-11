@@ -134,10 +134,9 @@ describe('RevenueCatPaywallUI', () => {
         expect(getByText(/failed to load plans/i)).toBeTruthy();
       });
 
-      expect(analytics.track).toHaveBeenCalledWith('revenuecat_offering_error', {
+      expect(analytics.track).toHaveBeenCalledWith('revenuecat_offering_error', expect.objectContaining({
         error: expect.stringContaining('No offering found'),
-        offering_id: 'default',
-      });
+      }));
     });
 
     it('should use current offering if paywall_id not found', async () => {

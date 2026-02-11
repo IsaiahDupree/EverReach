@@ -23,7 +23,9 @@ module.exports = {
     '^@/(.*)$': '<rootDir>/$1',
     '^expo-constants$': '<rootDir>/__mocks__/expo-constants.js',
     '^expo-superwall$': '<rootDir>/__mocks__/expo-superwall.js',
-    '^@react-native-async-storage/async-storage$': '<rootDir>/__mocks__/async-storage.js'
+    '^@react-native-async-storage/async-storage$': '<rootDir>/__mocks__/async-storage.js',
+    '^expo-file-system/legacy$': '<rootDir>/__mocks__/expo-file-system-legacy.js',
+    '^expo-router$': '<rootDir>/__mocks__/expo-router.js'
   },
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   globals: {

@@ -7,9 +7,18 @@ import { SubscriptionRepo } from '@/repos/SubscriptionRepo';
 // Mock dependencies
 jest.mock('@/repos/SubscriptionRepo');
 jest.mock('@react-native-async-storage/async-storage', () => ({
-  setItem: jest.fn(),
-  getItem: jest.fn(),
-  removeItem: jest.fn(),
+  setItem: jest.fn().mockResolvedValue(undefined),
+  getItem: jest.fn().mockResolvedValue(null),
+  removeItem: jest.fn().mockResolvedValue(undefined),
+}));
+jest.mock('@/hooks/useSubscriptionBilling', () => ({
+  useSubscription: jest.fn(() => ({ data: null, isLoading: false, error: null })),
+  useStartCheckout: jest.fn(() => ({ mutateAsync: jest.fn() })),
+  useOpenBillingPortal: jest.fn(() => ({ mutateAsync: jest.fn() })),
+  useCancelSubscription: jest.fn(() => ({ mutateAsync: jest.fn() })),
+  useLinkAppleReceipt: jest.fn(() => ({ mutateAsync: jest.fn(), isPending: false })),
+  useLinkGooglePurchase: jest.fn(() => ({ mutateAsync: jest.fn(), isPending: false })),
+  useFeatureAccess: jest.fn(() => ({ hasFeature: jest.fn(() => true) })),
 }));
 
 // Create a test QueryClient
@@ -119,8 +128,8 @@ describe('SubscriptionProvider', () => {
         expect(result.current.subscriptionStatus).toBe('active');
       });
 
-      act(() => {
-        result.current.refreshEntitlements();
+      await act(async () => {
+        await result.current.refreshEntitlements();
       });
 
       await waitFor(() => {
@@ -145,8 +154,8 @@ describe('SubscriptionProvider', () => {
         await result.current.refreshEntitlements();
       });
 
-      // Should maintain previous state on error
-      expect(result.current.tier).toBe('paid');
+      // After error, provider blocks access (anti-piracy: sets tier to 'expired')
+      expect(result.current.tier).toBe('expired');
     });
   });
 

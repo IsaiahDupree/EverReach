@@ -35,3 +35,8 @@ global.console = {
 
 // Mock fetch
 global.fetch = jest.fn();
+
+// Mock Alert for node test environment (react-native Alert is not available)
+jest.mock('react-native/Libraries/Alert/Alert', () => ({
+  alert: jest.fn(),
+}), { virtual: true });
