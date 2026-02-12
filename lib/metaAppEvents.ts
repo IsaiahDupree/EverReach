@@ -870,6 +870,12 @@ export function mapToMetaEvent(
       mapper: (p) => ({ content_name: 'qualified_signup', value: p.lead_score || 0, currency: 'USD' }),
     },
     
+    // Paywall funnel
+    'paywall_viewed': {
+      metaEvent: 'ViewContent',
+      mapper: (p) => ({ content_name: 'paywall', content_type: 'paywall', content_category: p.source || p.trigger }),
+    },
+    
     // Purchases (critical for ROAS measurement)
     'purchase_completed': {
       metaEvent: 'Purchase',

@@ -57,8 +57,8 @@ class SubscriptionEvents {
             ...data,
         });
 
-        // Send to analytics
-        analytics.capture(event, {
+        // Send to analytics (track() → Backend + PostHog + Meta)
+        analytics.track(event, {
             timestamp,
             ...data,
         });

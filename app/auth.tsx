@@ -106,6 +106,12 @@ export default function Auth() {
 
         if (signUpError) throw signUpError;
 
+        // Track signup → Meta CompleteRegistration
+        try {
+          const analyticsModule = await import('@/lib/analytics');
+          analyticsModule.default.track('auth_sign_up', { method: 'email' });
+        } catch {}
+
         // Show success message
         setError(null);
         setMagicLinkSent(true);
