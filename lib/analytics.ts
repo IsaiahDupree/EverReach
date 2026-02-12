@@ -263,8 +263,8 @@ export async function track(
     // Send to Meta App Events (Conversions API + native SDK if available)
     autoTrackToMeta(event, enrichedProps);
 
-    // Test-mode: locally capture events for E2E assertions
-    if (process.env.EXPO_PUBLIC_TEST_TELEMETRY === 'true') {
+    // Capture events for E2E assertions and Event Dashboard (dev + test mode)
+    if (__DEV__ || process.env.EXPO_PUBLIC_TEST_TELEMETRY === 'true') {
       try {
         addDebugEvent({ event: String(event), ts: new Date().toISOString(), props: enrichedProps });
       } catch {}

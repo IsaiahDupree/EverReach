@@ -919,6 +919,22 @@ export default function SettingsScreen() {
             router.push('/meta-pixel-test' as any);
           },
         },
+        {
+          icon: Activity,
+          label: 'RevenueCat Event Test',
+          type: 'link' as const,
+          onPress: () => {
+            router.push('/revenuecat-event-test' as any);
+          },
+        },
+        {
+          icon: Activity,
+          label: 'Event Dashboard (Live)',
+          type: 'link' as const,
+          onPress: () => {
+            router.push('/event-dashboard' as any);
+          },
+        },
       ],
     }] : []),
     ...(SHOW_DEV_SETTINGS ? [{
