@@ -2,8 +2,10 @@
  * RevenueCat Webhook Event Test Screen
  * 
  * Accessible at /revenuecat-event-test in the app.
- * Simulates RevenueCat webhook events sent to your backend,
- * showing which Meta CAPI events they map to and delivery status.
+ * Two modes:
+ * 1. Direct Meta CAPI (default) — sends events directly to Meta's Conversions API
+ *    simulating what the server-side emitter would do. Works without backend deploy.
+ * 2. Backend Webhook — sends to your deployed backend (requires redeploy).
  */
 
 import React, { useState, useCallback, useEffect } from 'react';
@@ -23,6 +25,10 @@ import { SHOW_DEV_SETTINGS } from '@/config/dev';
 import { paymentEventLogger, type PaymentEvent } from '@/lib/paymentEventLogger';
 
 const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'https://ever-reach-be.vercel.app';
+const PIXEL_ID = process.env.EXPO_PUBLIC_META_PIXEL_ID || '';
+const TOKEN = process.env.EXPO_PUBLIC_META_CONVERSIONS_API_TOKEN || '';
+const TEST_EVENT_CODE = process.env.EXPO_PUBLIC_META_TEST_EVENT_CODE || 'TEST48268';
+const GRAPH_API_VERSION = 'v21.0';
 
 // RevenueCat event types and their Meta CAPI mappings
 const RC_EVENT_TYPES = [
@@ -56,6 +62,8 @@ export default function RevenueCatEventTestScreen() {
   const [monitorOnline, setMonitorOnline] = useState<boolean | null>(null);
   const [liveEvents, setLiveEvents] = useState<PaymentEvent[]>([]);
   const [showLive, setShowLive] = useState(false);
+  // Default to Direct Meta CAPI mode (works without backend deploy)
+  const [mode, setMode] = useState<'direct' | 'backend'>('direct');
 
   const MONITOR_URL = 'http://localhost:3457';
 
@@ -144,8 +152,99 @@ export default function RevenueCatEventTestScreen() {
     };
   };
 
-  // Send a simulated webhook event
-  const sendTestWebhook = async (eventConfig: typeof RC_EVENT_TYPES[number]) => {
+  // Send event directly to Meta Conversions API (simulating server-side emitter)
+  const sendDirectMetaCAPI = async (eventConfig: typeof RC_EVENT_TYPES[number]) => {
+    const id = `test_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+    const eventId = `rc_test_${Date.now()}`;
+
+    addResult({
+      id,
+      eventType: eventConfig.label,
+      metaEvent: eventConfig.metaEvent,
+      status: 'pending',
+      message: `Sending ${eventConfig.metaEvent} to Meta CAPI...`,
+      timestamp: new Date().toLocaleTimeString(),
+    });
+
+    try {
+      // Build the same payload the server-side meta-capi emitter would construct
+      const isTrial = eventConfig.type === 'INITIAL_PURCHASE_TRIAL';
+      const customData: Record<string, any> = {
+        content_name: eventConfig.metaEvent,
+        content_type: 'subscription',
+        product_id: 'com.everreach.core.monthly',
+        event_source: 'revenuecat_test',
+      };
+      // Add value/currency for purchase-type events
+      if (['Purchase', 'Subscribe', 'StartTrial'].includes(eventConfig.metaEvent)) {
+        customData.value = isTrial ? 0 : 4.99;
+        customData.currency = 'USD';
+      }
+
+      const payload = {
+        data: [
+          {
+            event_name: eventConfig.metaEvent,
+            event_time: Math.floor(Date.now() / 1000),
+            event_id: eventId,
+            action_source: 'app',
+            user_data: {
+              client_user_agent: `EverReach/1.0 (${Platform.OS})`,
+              external_id: ['everreach_test_user_001'],
+            },
+            custom_data: customData,
+            app_data: {
+              advertiser_tracking_enabled: 1,
+              application_tracking_enabled: 1,
+              extinfo: [
+                'i2', 'com.everreach.app', '1.0.0', '1.0.0', '18.0',
+                'iPhone', 'en_US', 'UTC', '', '390', '844', '2', '6',
+                '256000', '225000', '-5',
+              ],
+            },
+          },
+        ],
+        test_event_code: TEST_EVENT_CODE,
+      };
+
+      const url = useMonitor
+        ? `${MONITOR_URL}/events`
+        : `https://graph.facebook.com/${GRAPH_API_VERSION}/${PIXEL_ID}/events?access_token=${TOKEN}`;
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const responseData = await response.json();
+
+      if (response.ok && responseData.events_received > 0) {
+        updateResult(id, {
+          status: 'success',
+          message: `✅ Meta received ${eventConfig.metaEvent}! (events_received: ${responseData.events_received})`,
+          responseData,
+        });
+        trackEventCount(eventConfig.type, true);
+      } else {
+        updateResult(id, {
+          status: 'error',
+          message: `❌ ${responseData.error?.message || JSON.stringify(responseData)}`,
+          responseData,
+        });
+        trackEventCount(eventConfig.type, false);
+      }
+    } catch (error: any) {
+      updateResult(id, {
+        status: 'error',
+        message: `❌ Network error: ${error.message}`,
+      });
+      trackEventCount(eventConfig.type, false);
+    }
+  };
+
+  // Send via backend webhook
+  const sendBackendWebhook = async (eventConfig: typeof RC_EVENT_TYPES[number]) => {
     const id = `test_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
     const payload = buildWebhookPayload(eventConfig.type);
 
@@ -159,7 +258,6 @@ export default function RevenueCatEventTestScreen() {
     });
 
     try {
-      // Route through monitor proxy or directly to backend
       const url = useMonitor
         ? `${MONITOR_URL}/webhook`
         : `${BACKEND_URL}/api/webhooks/revenuecat`;
@@ -183,9 +281,12 @@ export default function RevenueCatEventTestScreen() {
         });
         trackEventCount(eventConfig.type, true);
       } else {
+        const hint = response.status === 405
+          ? ' (Backend needs redeploy — run: vercel --prod in backend-vercel/)'
+          : '';
         updateResult(id, {
           status: 'error',
-          message: `❌ HTTP ${response.status}: ${responseData?.error || responseData?.message || JSON.stringify(responseData)}`,
+          message: `❌ HTTP ${response.status}${hint}`,
           responseData,
         });
         trackEventCount(eventConfig.type, false);
@@ -199,27 +300,43 @@ export default function RevenueCatEventTestScreen() {
     }
   };
 
-  // Run all webhook tests
+  // Dispatch to the right sender based on mode
+  const sendTestEvent = async (eventConfig: typeof RC_EVENT_TYPES[number]) => {
+    if (mode === 'direct') {
+      await sendDirectMetaCAPI(eventConfig);
+    } else {
+      await sendBackendWebhook(eventConfig);
+    }
+  };
+
+  // Run all tests
   const runAllTests = async () => {
     setTesting(true);
     setResults([]);
 
     // Config check
+    const configOk = mode === 'direct' ? !!(PIXEL_ID && TOKEN) : !!BACKEND_URL;
+    const configMsg = mode === 'direct'
+      ? (PIXEL_ID && TOKEN
+          ? `✅ Pixel: ${PIXEL_ID.substring(0, 8)}... | Token: ${TOKEN.substring(0, 10)}...`
+          : `❌ Missing ${!PIXEL_ID ? 'PIXEL_ID' : ''} ${!TOKEN ? 'TOKEN' : ''}`)
+      : (BACKEND_URL
+          ? `✅ Backend: ${BACKEND_URL.substring(0, 35)}...`
+          : '❌ Missing EXPO_PUBLIC_BACKEND_URL');
+
     addResult({
       id: 'config_check',
       eventType: 'Configuration',
       metaEvent: '—',
-      status: BACKEND_URL ? 'success' : 'error',
-      message: BACKEND_URL
-        ? `✅ Backend: ${BACKEND_URL.substring(0, 35)}...`
-        : '❌ Missing EXPO_PUBLIC_BACKEND_URL',
+      status: configOk ? 'success' : 'error',
+      message: configMsg,
       timestamp: new Date().toLocaleTimeString(),
     });
 
-    if (!BACKEND_URL) { setTesting(false); return; }
+    if (!configOk) { setTesting(false); return; }
 
     for (const eventConfig of RC_EVENT_TYPES) {
-      await sendTestWebhook(eventConfig);
+      await sendTestEvent(eventConfig);
       await delay(600);
     }
 
@@ -238,11 +355,33 @@ export default function RevenueCatEventTestScreen() {
         </TouchableOpacity>
         <Text style={styles.title}>RevenueCat Event Test</Text>
         <Text style={styles.subtitle}>
-          Backend: {BACKEND_URL || 'NOT SET'}
+          Mode: {mode === 'direct' ? 'Direct Meta CAPI' : `Backend: ${BACKEND_URL}`}
         </Text>
         <Text style={styles.subtitle}>
-          Environment: SANDBOX (test mode)
+          {mode === 'direct'
+            ? `Pixel: ${PIXEL_ID ? PIXEL_ID.substring(0, 8) + '...' : 'NOT SET'} | Test: ${TEST_EVENT_CODE}`
+            : 'Environment: SANDBOX (test mode)'}
         </Text>
+      </View>
+
+      {/* Mode Toggle */}
+      <View style={styles.modeRow}>
+        <TouchableOpacity
+          style={[styles.modeButton, mode === 'direct' && styles.modeButtonActive]}
+          onPress={() => setMode('direct')}
+        >
+          <Text style={[styles.modeButtonText, mode === 'direct' && styles.modeButtonTextActive]}>
+            🎯 Direct Meta CAPI
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.modeButton, mode === 'backend' && styles.modeButtonActiveBackend]}
+          onPress={() => setMode('backend')}
+        >
+          <Text style={[styles.modeButtonText, mode === 'backend' && styles.modeButtonTextActive]}>
+            🖥 Backend Webhook
+          </Text>
+        </TouchableOpacity>
       </View>
 
       {/* Run All Tests */}
@@ -254,18 +393,22 @@ export default function RevenueCatEventTestScreen() {
         {testing ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Text style={styles.primaryButtonText}>Run All Webhook Tests</Text>
+          <Text style={styles.primaryButtonText}>
+            {mode === 'direct' ? 'Run All Meta CAPI Tests' : 'Run All Webhook Tests'}
+          </Text>
         )}
       </TouchableOpacity>
 
       {/* Individual Event Buttons */}
-      <Text style={styles.sectionTitle}>Send Individual Webhooks</Text>
+      <Text style={styles.sectionTitle}>
+        {mode === 'direct' ? 'Send Events to Meta' : 'Send Webhooks to Backend'}
+      </Text>
       <View style={styles.buttonGrid}>
         {RC_EVENT_TYPES.map((evt) => (
           <TouchableOpacity
             key={evt.type}
             style={[styles.eventButton, { borderColor: evt.color + '60' }]}
-            onPress={() => sendTestWebhook(evt)}
+            onPress={() => sendTestEvent(evt)}
           >
             <Text style={styles.eventIcon}>{evt.icon}</Text>
             <View>
@@ -380,13 +523,13 @@ export default function RevenueCatEventTestScreen() {
 
       {/* Info Box */}
       <View style={styles.infoBox}>
-        <Text style={styles.infoTitle}>How This Works</Text>
+        <Text style={styles.infoTitle}>
+          {mode === 'direct' ? 'How Direct Meta CAPI Works' : 'How Backend Webhook Works'}
+        </Text>
         <Text style={styles.infoText}>
-          1. Each button sends a simulated RevenueCat webhook to your backend{'\n'}
-          2. Backend processes it → updates Supabase → fires Meta CAPI{'\n'}
-          3. Meta CAPI event mapping shown next to each button{'\n'}
-          4. SANDBOX events are filtered in production (only test here){'\n'}
-          5. Enable Monitor to route through local proxy for full logging
+          {mode === 'direct'
+            ? `1. Each button sends the Meta event directly to Conversions API\n2. Simulates exactly what the server-side emitter does\n3. Events appear in Meta Events Manager → Test Events\n4. Test code: ${TEST_EVENT_CODE}\n5. No backend deploy needed — tests Meta pipeline directly`
+            : `1. Each button sends a simulated RevenueCat webhook to your backend\n2. Backend processes it → updates Supabase → fires Meta CAPI\n3. Requires backend to be deployed with latest code\n4. If you get HTTP 405, run: vercel --prod in backend-vercel/\n5. Enable Monitor to route through local proxy for full logging`}
         </Text>
       </View>
 
@@ -651,6 +794,36 @@ const styles = StyleSheet.create({
     color: '#aaa',
     fontSize: 12,
     lineHeight: 18,
+  },
+  modeRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 16,
+  },
+  modeButton: {
+    flex: 1,
+    backgroundColor: '#1A1A2E',
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  modeButtonActive: {
+    backgroundColor: '#1B2B4E',
+    borderColor: '#3B82F6',
+  },
+  modeButtonActiveBackend: {
+    backgroundColor: '#2D1B0E',
+    borderColor: '#F97316',
+  },
+  modeButtonText: {
+    color: '#888',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  modeButtonTextActive: {
+    color: '#fff',
   },
   rcButton: {
     backgroundColor: '#F97316',
