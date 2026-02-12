@@ -8,7 +8,7 @@
  * https://business.facebook.com/events_manager → Techmestuff pixel → Test Events
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -18,6 +18,7 @@ import {
   ActivityIndicator,
   Alert,
   Platform,
+  Linking,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SHOW_DEV_SETTINGS } from '@/config/dev';
@@ -40,6 +41,11 @@ export default function MetaPixelTestScreen() {
   const router = useRouter();
   const [results, setResults] = useState<TestResult[]>([]);
   const [testing, setTesting] = useState(false);
+  const [liveStats, setLiveStats] = useState<Record<string, number>>({});
+  const [statsLoading, setStatsLoading] = useState(false);
+  const [autoRefresh, setAutoRefresh] = useState(false);
+  const [lastRefresh, setLastRefresh] = useState<string>('');
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Gate behind dev settings
   useEffect(() => {
@@ -47,6 +53,59 @@ export default function MetaPixelTestScreen() {
       router.replace('/(tabs)/settings');
     }
   }, []);
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, []);
+
+  // Fetch live event stats from Meta Graph API
+  const fetchLiveStats = useCallback(async () => {
+    if (!PIXEL_ID || !TOKEN) return;
+    setStatsLoading(true);
+    try {
+      const now = Math.floor(Date.now() / 1000);
+      const oneHourAgo = now - 3600;
+      const url = `https://graph.facebook.com/${GRAPH_API_VERSION}/${PIXEL_ID}/stats?aggregation=event&start=${oneHourAgo}&end=${now}&access_token=${TOKEN}`;
+      const response = await fetch(url);
+      const data = await response.json();
+      if (data.data) {
+        const stats: Record<string, number> = {};
+        for (const item of data.data) {
+          if (item.aggregation && item.count !== undefined) {
+            stats[item.aggregation] = (stats[item.aggregation] || 0) + parseInt(item.count, 10);
+          }
+        }
+        setLiveStats(stats);
+      } else if (data.error) {
+        console.warn('[MetaPixelTest] Stats API error:', data.error.message);
+      }
+      setLastRefresh(new Date().toLocaleTimeString());
+    } catch (error: any) {
+      console.warn('[MetaPixelTest] Stats fetch failed:', error.message);
+    } finally {
+      setStatsLoading(false);
+    }
+  }, []);
+
+  // Toggle auto-refresh polling
+  const toggleAutoRefresh = useCallback(() => {
+    if (autoRefresh) {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      intervalRef.current = null;
+      setAutoRefresh(false);
+    } else {
+      fetchLiveStats();
+      intervalRef.current = setInterval(fetchLiveStats, 5000);
+      setAutoRefresh(true);
+    }
+  }, [autoRefresh, fetchLiveStats]);
+
+  const openMetaEventsManager = () => {
+    Linking.openURL(`https://business.facebook.com/events_manager2/list/pixel/${PIXEL_ID}/test_events`);
+  };
 
   const addResult = useCallback((result: TestResult) => {
     setResults((prev) => [result, ...prev]);
@@ -193,10 +252,16 @@ export default function MetaPixelTestScreen() {
       Alert.alert('Missing Config', 'Set EXPO_PUBLIC_META_PIXEL_ID and EXPO_PUBLIC_META_CONVERSIONS_API_TOKEN in .env');
       return;
     }
-    await sendTestEvent(eventName, {
+    // Purchase and Subscribe require value + currency per Meta's API
+    const baseData: Record<string, any> = {
       content_name: `manual_test_${eventName}`,
       test: true,
-    });
+    };
+    if (eventName === 'Purchase' || eventName === 'Subscribe') {
+      baseData.value = 9.99;
+      baseData.currency = 'USD';
+    }
+    await sendTestEvent(eventName, baseData);
   };
 
   return (
@@ -243,6 +308,52 @@ export default function MetaPixelTestScreen() {
           )
         )}
       </View>
+
+      {/* Live Stats Dashboard */}
+      <Text style={styles.sectionTitle}>Live Event Stats (Last Hour)</Text>
+      <View style={styles.statsContainer}>
+        <View style={styles.statsHeader}>
+          <TouchableOpacity
+            style={[styles.statsButton, autoRefresh && styles.statsButtonActive]}
+            onPress={toggleAutoRefresh}
+          >
+            <Text style={styles.statsButtonText}>
+              {autoRefresh ? 'Stop Auto-Refresh' : 'Start Auto-Refresh (5s)'}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.statsButton}
+            onPress={fetchLiveStats}
+            disabled={statsLoading}
+          >
+            <Text style={styles.statsButtonText}>
+              {statsLoading ? 'Loading...' : 'Refresh Now'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+        {lastRefresh ? (
+          <Text style={styles.statsTimestamp}>Last updated: {lastRefresh}{autoRefresh ? ' (auto)' : ''}</Text>
+        ) : null}
+        {Object.keys(liveStats).length > 0 ? (
+          <View style={styles.statsGrid}>
+            {Object.entries(liveStats).sort((a, b) => b[1] - a[1]).map(([event, count]) => (
+              <View key={event} style={styles.statItem}>
+                <Text style={styles.statCount}>{count}</Text>
+                <Text style={styles.statLabel}>{event}</Text>
+              </View>
+            ))}
+          </View>
+        ) : (
+          <Text style={styles.statsEmpty}>
+            {lastRefresh ? 'No events in the last hour' : 'Tap Refresh to load stats'}
+          </Text>
+        )}
+      </View>
+
+      {/* Open in Meta */}
+      <TouchableOpacity style={styles.metaButton} onPress={openMetaEventsManager}>
+        <Text style={styles.metaButtonText}>Open Meta Events Manager</Text>
+      </TouchableOpacity>
 
       {/* Verification Instructions */}
       <View style={styles.infoBox}>
@@ -422,5 +533,84 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
     marginTop: 6,
+  },
+  statsContainer: {
+    backgroundColor: '#1A1A2E',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  statsHeader: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 12,
+  },
+  statsButton: {
+    flex: 1,
+    backgroundColor: '#252540',
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#444',
+  },
+  statsButtonActive: {
+    backgroundColor: '#2D1B69',
+    borderColor: '#7C3AED',
+  },
+  statsButtonText: {
+    color: '#7C3AED',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  statsTimestamp: {
+    color: '#666',
+    fontSize: 11,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  statItem: {
+    backgroundColor: '#252540',
+    borderRadius: 8,
+    padding: 10,
+    minWidth: 80,
+    alignItems: 'center',
+  },
+  statCount: {
+    color: '#7C3AED',
+    fontSize: 22,
+    fontWeight: '800',
+  },
+  statLabel: {
+    color: '#aaa',
+    fontSize: 10,
+    fontWeight: '500',
+    marginTop: 2,
+    textAlign: 'center',
+  },
+  statsEmpty: {
+    color: '#666',
+    fontSize: 13,
+    textAlign: 'center',
+    paddingVertical: 12,
+  },
+  metaButton: {
+    backgroundColor: '#1877F2',
+    padding: 14,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  metaButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '700',
   },
 });
