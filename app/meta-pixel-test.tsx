@@ -42,6 +42,10 @@ export default function MetaPixelTestScreen() {
   const [results, setResults] = useState<TestResult[]>([]);
   const [testing, setTesting] = useState(false);
   const [eventCounts, setEventCounts] = useState<Record<string, { success: number; error: number }>>({});
+  const [useMonitor, setUseMonitor] = useState(false);
+  const [monitorOnline, setMonitorOnline] = useState<boolean | null>(null);
+
+  const MONITOR_URL = 'http://localhost:3456';
 
   // Gate behind dev settings
   useEffect(() => {
@@ -65,6 +69,22 @@ export default function MetaPixelTestScreen() {
   }, []);
 
   const clearStats = useCallback(() => setEventCounts({}), []);
+
+  // Check if monitor proxy is running
+  const checkMonitor = useCallback(async () => {
+    try {
+      const res = await fetch(`http://localhost:3456/health`, { method: 'GET' });
+      const data = await res.json();
+      setMonitorOnline(data.status === 'ok');
+    } catch {
+      setMonitorOnline(false);
+    }
+  }, []);
+
+  // Check monitor when toggled on
+  useEffect(() => {
+    if (useMonitor) checkMonitor();
+  }, [useMonitor]);
 
   const openMetaEventsManager = () => {
     Linking.openURL(`https://business.facebook.com/events_manager2/list/pixel/${PIXEL_ID}/test_events`);
@@ -123,7 +143,10 @@ export default function MetaPixelTestScreen() {
         test_event_code: TEST_EVENT_CODE,
       };
 
-      const url = `https://graph.facebook.com/${GRAPH_API_VERSION}/${PIXEL_ID}/events?access_token=${TOKEN}`;
+      // Route through monitor proxy or directly to Meta
+      const url = useMonitor
+        ? `${MONITOR_URL}/events`
+        : `https://graph.facebook.com/${GRAPH_API_VERSION}/${PIXEL_ID}/events?access_token=${TOKEN}`;
 
       const response = await fetch(url, {
         method: 'POST',
@@ -297,6 +320,36 @@ export default function MetaPixelTestScreen() {
             </View>
           </View>
         </>
+      )}
+
+      {/* Monitor Toggle */}
+      <View style={styles.monitorRow}>
+        <TouchableOpacity
+          style={[styles.monitorToggle, useMonitor && styles.monitorToggleActive]}
+          onPress={() => setUseMonitor(!useMonitor)}
+        >
+          <Text style={styles.monitorToggleText}>
+            {useMonitor ? '● Monitor ON' : '○ Monitor OFF'}
+          </Text>
+        </TouchableOpacity>
+        {useMonitor && (
+          <Text style={[
+            styles.monitorStatus,
+            { color: monitorOnline ? '#22C55E' : '#EF4444' },
+          ]}>
+            {monitorOnline === null ? 'Checking...' : monitorOnline ? 'Connected' : 'Not running'}
+          </Text>
+        )}
+      </View>
+      {useMonitor && (
+        <View style={styles.monitorInfo}>
+          <Text style={styles.monitorInfoText}>
+            Run in terminal:{' '}
+            <Text style={{ color: '#7C3AED', fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' }}>
+              node scripts/meta-event-monitor.mjs
+            </Text>
+          </Text>
+        </View>
       )}
 
       {/* Open in Meta */}
@@ -525,6 +578,46 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginTop: 2,
     textAlign: 'center',
+  },
+  monitorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 8,
+  },
+  monitorToggle: {
+    backgroundColor: '#1A1A2E',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  monitorToggleActive: {
+    backgroundColor: '#1B3A1B',
+    borderColor: '#22C55E',
+  },
+  monitorToggleText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  monitorStatus: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  monitorInfo: {
+    backgroundColor: '#1A1A2E',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  monitorInfoText: {
+    color: '#aaa',
+    fontSize: 12,
+    lineHeight: 18,
   },
   metaButton: {
     backgroundColor: '#1877F2',
