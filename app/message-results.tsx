@@ -212,7 +212,7 @@ export default function MessageResultsScreen() {
       }
 
       // Track successful message generation
-      screenAnalytics.track('Message Generated', {
+      screenAnalytics.track('message_generated', {
         contactId: person.id,
         goal: goal,
         goalId: params.goalId || 'custom',
@@ -501,7 +501,7 @@ export default function MessageResultsScreen() {
       })();
 
       // Track and run backend side-effects in the background
-      screenAnalytics.track('Message Sent', {
+      screenAnalytics.track('message_sent', {
         contactId: person.id,
         goal: params.customGoal || params.goalId,
         goalId: params.goalId || 'custom',

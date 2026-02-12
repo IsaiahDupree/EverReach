@@ -891,6 +891,10 @@ export function mapToMetaEvent(
       metaEvent: 'CustomizeProduct',
       mapper: (p) => ({ content_name: 'ai_message', content_category: p.goal_type }),
     },
+    'message_generated': {
+      metaEvent: 'CustomizeProduct',
+      mapper: (p) => ({ content_name: 'ai_message', content_category: p.goal || p.goalId, content_type: p.channel }),
+    },
   };
 
   return mapping[internalEvent] || null;
