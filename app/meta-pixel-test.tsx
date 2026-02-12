@@ -8,7 +8,7 @@
  * https://business.facebook.com/events_manager → Techmestuff pixel → Test Events
  */
 
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -41,11 +41,7 @@ export default function MetaPixelTestScreen() {
   const router = useRouter();
   const [results, setResults] = useState<TestResult[]>([]);
   const [testing, setTesting] = useState(false);
-  const [liveStats, setLiveStats] = useState<Record<string, number>>({});
-  const [statsLoading, setStatsLoading] = useState(false);
-  const [autoRefresh, setAutoRefresh] = useState(false);
-  const [lastRefresh, setLastRefresh] = useState<string>('');
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [eventCounts, setEventCounts] = useState<Record<string, { success: number; error: number }>>({});
 
   // Gate behind dev settings
   useEffect(() => {
@@ -54,54 +50,21 @@ export default function MetaPixelTestScreen() {
     }
   }, []);
 
-  // Cleanup polling on unmount
-  useEffect(() => {
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
+  // Track event counts locally
+  const trackEventCount = useCallback((eventName: string, success: boolean) => {
+    setEventCounts((prev) => {
+      const existing = prev[eventName] || { success: 0, error: 0 };
+      return {
+        ...prev,
+        [eventName]: {
+          success: existing.success + (success ? 1 : 0),
+          error: existing.error + (success ? 0 : 1),
+        },
+      };
+    });
   }, []);
 
-  // Fetch live event stats from Meta Graph API
-  const fetchLiveStats = useCallback(async () => {
-    if (!PIXEL_ID || !TOKEN) return;
-    setStatsLoading(true);
-    try {
-      const now = Math.floor(Date.now() / 1000);
-      const oneHourAgo = now - 3600;
-      const url = `https://graph.facebook.com/${GRAPH_API_VERSION}/${PIXEL_ID}/stats?aggregation=event&start=${oneHourAgo}&end=${now}&access_token=${TOKEN}`;
-      const response = await fetch(url);
-      const data = await response.json();
-      if (data.data) {
-        const stats: Record<string, number> = {};
-        for (const item of data.data) {
-          if (item.aggregation && item.count !== undefined) {
-            stats[item.aggregation] = (stats[item.aggregation] || 0) + parseInt(item.count, 10);
-          }
-        }
-        setLiveStats(stats);
-      } else if (data.error) {
-        console.warn('[MetaPixelTest] Stats API error:', data.error.message);
-      }
-      setLastRefresh(new Date().toLocaleTimeString());
-    } catch (error: any) {
-      console.warn('[MetaPixelTest] Stats fetch failed:', error.message);
-    } finally {
-      setStatsLoading(false);
-    }
-  }, []);
-
-  // Toggle auto-refresh polling
-  const toggleAutoRefresh = useCallback(() => {
-    if (autoRefresh) {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      intervalRef.current = null;
-      setAutoRefresh(false);
-    } else {
-      fetchLiveStats();
-      intervalRef.current = setInterval(fetchLiveStats, 5000);
-      setAutoRefresh(true);
-    }
-  }, [autoRefresh, fetchLiveStats]);
+  const clearStats = useCallback(() => setEventCounts({}), []);
 
   const openMetaEventsManager = () => {
     Linking.openURL(`https://business.facebook.com/events_manager2/list/pixel/${PIXEL_ID}/test_events`);
@@ -173,15 +136,17 @@ export default function MetaPixelTestScreen() {
       if (response.ok && responseData.events_received > 0) {
         updateResult(id, {
           status: 'success',
-          message: `✅ Event received by Meta! (events_received: ${responseData.events_received})`,
+          message: `\u2705 Event received by Meta! (events_received: ${responseData.events_received})`,
           responseData,
         });
+        trackEventCount(eventName, true);
       } else {
         updateResult(id, {
           status: 'error',
-          message: `❌ ${responseData.error?.message || JSON.stringify(responseData)}`,
+          message: `\u274C ${responseData.error?.message || JSON.stringify(responseData)}`,
           responseData,
         });
+        trackEventCount(eventName, false);
       }
     } catch (error: any) {
       updateResult(id, {
@@ -309,46 +274,30 @@ export default function MetaPixelTestScreen() {
         )}
       </View>
 
-      {/* Live Stats Dashboard */}
-      <Text style={styles.sectionTitle}>Live Event Stats (Last Hour)</Text>
-      <View style={styles.statsContainer}>
-        <View style={styles.statsHeader}>
-          <TouchableOpacity
-            style={[styles.statsButton, autoRefresh && styles.statsButtonActive]}
-            onPress={toggleAutoRefresh}
-          >
-            <Text style={styles.statsButtonText}>
-              {autoRefresh ? 'Stop Auto-Refresh' : 'Start Auto-Refresh (5s)'}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.statsButton}
-            onPress={fetchLiveStats}
-            disabled={statsLoading}
-          >
-            <Text style={styles.statsButtonText}>
-              {statsLoading ? 'Loading...' : 'Refresh Now'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-        {lastRefresh ? (
-          <Text style={styles.statsTimestamp}>Last updated: {lastRefresh}{autoRefresh ? ' (auto)' : ''}</Text>
-        ) : null}
-        {Object.keys(liveStats).length > 0 ? (
-          <View style={styles.statsGrid}>
-            {Object.entries(liveStats).sort((a, b) => b[1] - a[1]).map(([event, count]) => (
-              <View key={event} style={styles.statItem}>
-                <Text style={styles.statCount}>{count}</Text>
-                <Text style={styles.statLabel}>{event}</Text>
-              </View>
-            ))}
+      {/* Event Stats Dashboard */}
+      {Object.keys(eventCounts).length > 0 && (
+        <>
+          <View style={styles.statsHeaderRow}>
+            <Text style={styles.sectionTitle}>Event Stats (This Session)</Text>
+            <TouchableOpacity onPress={clearStats}>
+              <Text style={styles.clearText}>Clear</Text>
+            </TouchableOpacity>
           </View>
-        ) : (
-          <Text style={styles.statsEmpty}>
-            {lastRefresh ? 'No events in the last hour' : 'Tap Refresh to load stats'}
-          </Text>
-        )}
-      </View>
+          <View style={styles.statsContainer}>
+            <View style={styles.statsGrid}>
+              {Object.entries(eventCounts).sort((a, b) => (b[1].success + b[1].error) - (a[1].success + a[1].error)).map(([event, counts]) => (
+                <View key={event} style={styles.statItem}>
+                  <Text style={styles.statCount}>
+                    <Text style={{ color: '#22C55E' }}>{counts.success}</Text>
+                    {counts.error > 0 && <Text style={{ color: '#EF4444' }}> / {counts.error}</Text>}
+                  </Text>
+                  <Text style={styles.statLabel}>{event}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        </>
+      )}
 
       {/* Open in Meta */}
       <TouchableOpacity style={styles.metaButton} onPress={openMetaEventsManager}>
@@ -542,34 +491,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#333',
   },
-  statsHeader: {
+  statsHeaderRow: {
     flexDirection: 'row',
-    gap: 8,
-    marginBottom: 12,
-  },
-  statsButton: {
-    flex: 1,
-    backgroundColor: '#252540',
-    paddingVertical: 10,
-    borderRadius: 8,
+    justifyContent: 'space-between',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#444',
+    marginBottom: 0,
   },
-  statsButtonActive: {
-    backgroundColor: '#2D1B69',
-    borderColor: '#7C3AED',
-  },
-  statsButtonText: {
+  clearText: {
     color: '#7C3AED',
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
-  },
-  statsTimestamp: {
-    color: '#666',
-    fontSize: 11,
-    marginBottom: 12,
-    textAlign: 'center',
   },
   statsGrid: {
     flexDirection: 'row',
@@ -594,12 +525,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginTop: 2,
     textAlign: 'center',
-  },
-  statsEmpty: {
-    color: '#666',
-    fontSize: 13,
-    textAlign: 'center',
-    paddingVertical: 12,
   },
   metaButton: {
     backgroundColor: '#1877F2',
