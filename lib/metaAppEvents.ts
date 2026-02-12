@@ -876,6 +876,16 @@ export function mapToMetaEvent(
       mapper: (p) => ({ content_name: 'paywall', content_type: 'paywall', content_category: p.source || p.trigger }),
     },
     
+    // RevenueCat-specific events
+    'revenuecat_purchase_started': {
+      metaEvent: 'InitiateCheckout',
+      mapper: (p) => ({ content_name: p.plan_id || 'subscription', content_type: 'subscription', content_category: p.offering_id }),
+    },
+    'revenuecat_restore_success': {
+      metaEvent: 'Subscribe',
+      mapper: (p) => ({ content_name: 'restore', content_type: 'subscription', content_category: 'restore' }),
+    },
+    
     // Purchases (critical for ROAS measurement)
     'purchase_completed': {
       metaEvent: 'Purchase',

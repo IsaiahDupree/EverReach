@@ -26,7 +26,9 @@ type RevenueCatEventType =
     | 'SUBSCRIPTION_PAUSED'
     | 'EXPIRATION'
     | 'BILLING_ISSUE'
-    | 'PRODUCT_CHANGE';
+    | 'PRODUCT_CHANGE'
+    | 'REFUND'
+    | 'SUBSCRIBER_ALIAS';
 
 interface RevenueCatWebhookEvent {
     api_version: string;
@@ -78,12 +80,27 @@ export async function POST(req: NextRequest) {
             tier = 'team';
         }
 
+        // SUBSCRIBER_ALIAS is informational only — no DB update needed
+        if (event.type === 'SUBSCRIBER_ALIAS' as RevenueCatEventType) {
+            console.log('[RevenueCat Webhook] SUBSCRIBER_ALIAS event, skipping DB update');
+            return NextResponse.json({ success: true, skipped: 'subscriber_alias' });
+        }
+
         // Determine subscription status
         let subscriptionStatus: 'active' | 'trial' | 'canceled' | 'expired' = 'active';
         if (event.type === 'CANCELLATION') {
             subscriptionStatus = 'canceled';
         } else if (event.type === 'EXPIRATION') {
             subscriptionStatus = 'expired';
+        } else if (event.type === 'REFUND') {
+            subscriptionStatus = 'expired';
+            tier = 'free'; // Refund revokes access
+        } else if (event.type === 'UNCANCELLATION') {
+            subscriptionStatus = 'active'; // User re-enabled auto-renew
+        } else if (event.type === 'BILLING_ISSUE') {
+            // Keep current tier but flag billing issue via status
+            // Don't downgrade immediately — grace period applies
+            subscriptionStatus = 'active';
         } else if (event.period_type === 'TRIAL') {
             subscriptionStatus = 'trial';
         }

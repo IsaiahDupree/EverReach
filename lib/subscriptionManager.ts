@@ -9,6 +9,7 @@
 import { Platform } from 'react-native';
 import analytics from './analytics';
 import { apiFetch } from './api';
+import { logRevenueCatEvent } from './paymentEventLogger';
 import type { SubscriptionTier, Entitlements, FeatureLimits } from '@/providers/EntitlementsProviderV3';
 
 // Subscription event types
@@ -71,6 +72,9 @@ class SubscriptionManager {
         };
 
         console.log(`[SubscriptionManager] ${event}`, eventData);
+
+        // Bridge to paymentEventLogger so events appear in Event Dashboard
+        logRevenueCatEvent(`sm_${event.toLowerCase()}`, { ...data, error });
 
         // Notify listeners
         this.eventListeners.forEach(listener => {

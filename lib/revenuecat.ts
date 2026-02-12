@@ -1,5 +1,6 @@
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
+import { logRevenueCatEvent } from './paymentEventLogger';
 
 let PurchasesRef: any | null = null;
 
@@ -200,6 +201,13 @@ export async function fetchOfferings(): Promise<any | null> {
     const offerings = await Purchases.getOfferings();
     if (!offerings?.current?.availablePackages?.length) {
       console.warn('[RevenueCat] Offerings empty or no current packages');
+      logRevenueCatEvent('revenuecat_offerings_empty', { has_current: !!offerings?.current });
+    } else {
+      logRevenueCatEvent('revenuecat_offerings_fetched', {
+        offering_count: Object.keys(offerings.all || {}).length,
+        current_id: offerings.current?.identifier,
+        package_count: offerings.current?.availablePackages?.length,
+      });
     }
     return offerings;
   } catch (e) {
