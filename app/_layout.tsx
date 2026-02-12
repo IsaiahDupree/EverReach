@@ -64,6 +64,7 @@ import { supabase } from "@/lib/supabase";
 import * as Linking from "expo-linking";
 import { useScreenTracking } from "@/hooks/useScreenTracking";
 import { initializeRevenueCat } from "@/lib/revenuecat";
+import { logRevenueCatEvent } from "@/lib/paymentEventLogger";
 import { useSubscription } from "@/providers/SubscriptionProvider";
 import { apiFetch } from "@/lib/api";
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -242,6 +243,12 @@ function RootLayoutNav() {
         // Initialize RevenueCat with user ID
         const success = await initializeRevenueCat(userId);
         
+        if (success) {
+          logRevenueCatEvent('revenuecat_initialized', { user_id: userId, platform: Platform.OS });
+        } else {
+          logRevenueCatEvent('revenuecat_init_failed', { user_id: userId, platform: Platform.OS });
+        }
+        
         // CRITICAL: After initialization, identify RevenueCat with the user ID
         // This ensures subscriptions are tied to THIS user account, not the device
         if (success && userId) {
@@ -250,9 +257,11 @@ function RootLayoutNav() {
             const result = await logIn(userId);
             if (result) {
               console.log('[App] ✅ RevenueCat identified with user:', userId, 'created:', result.created);
+              logRevenueCatEvent('revenuecat_identified', { user_id: userId, created: result.created });
             }
           } catch (rcError: any) {
             console.error('[App] ❌ Failed to identify RevenueCat:', rcError?.message || rcError);
+            logRevenueCatEvent('revenuecat_identify_failed', { user_id: userId, error: rcError?.message });
           }
         }
 
@@ -262,6 +271,10 @@ function RootLayoutNav() {
           if (Purchases && typeof Purchases.addCustomerInfoUpdateListener === 'function') {
             customerInfoListener = Purchases.addCustomerInfoUpdateListener(async (customerInfo: any) => {
               console.log('[App] RevenueCat customer info updated (active entitlements):', Object.keys(customerInfo?.entitlements?.active || {}));
+              logRevenueCatEvent('revenuecat_customer_info_updated', {
+                active_entitlements: Object.keys(customerInfo?.entitlements?.active || {}),
+                has_active: Object.keys(customerInfo?.entitlements?.active || {}).length > 0,
+              });
 
               // Refresh entitlements from backend when purchase occurs
               try {
