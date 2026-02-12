@@ -60,9 +60,6 @@
             ReferencedContainer = "container:AIEnhancedPersonalCRM.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
-      <StoreKitConfigurationFileReference
-         identifier = "../everreachstorekitconfigfile.storekit">
-      </StoreKitConfigurationFileReference>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"

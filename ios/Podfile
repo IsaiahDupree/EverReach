@@ -21,7 +21,6 @@ platform :ios, podfile_properties['ios.deploymentTarget'] || '15.1'
 prepare_react_native_project!
 
 target 'AIEnhancedPersonalCRM' do
-  inhibit_all_warnings!
   use_expo_modules!
 
   if ENV['EXPO_USE_COMMUNITY_AUTOLINKING'] == '1'
@@ -44,7 +43,7 @@ target 'AIEnhancedPersonalCRM' do
 
   use_react_native!(
     :path => config[:reactNativePath],
-    :hermes_enabled => false,  # Force JSC (configured in app.json)
+    :hermes_enabled => podfile_properties['expo.jsEngine'] == nil || podfile_properties['expo.jsEngine'] == 'hermes',
     # An absolute path to your application root.
     :app_path => "#{Pod::Config.instance.installation_root}/..",
     :privacy_file_aggregation_enabled => podfile_properties['apple.privacyManifestAggregationEnabled'] != 'false',
@@ -57,29 +56,5 @@ target 'AIEnhancedPersonalCRM' do
       :mac_catalyst_enabled => false,
       :ccache_enabled => ccache_enabled?(podfile_properties),
     )
-    
-    # Suppress deprecation and type safety warnings across all pods
-    installer.pods_project.targets.each do |target|
-      target.build_configurations.each do |config|
-        # Suppress all warnings for third-party dependencies
-        config.build_settings['GCC_WARN_INHIBIT_ALL_WARNINGS'] = 'YES'
-        config.build_settings['CLANG_WARN_DOCUMENTATION_COMMENTS'] = 'NO'
-        
-        # Suppress specific warning categories
-        config.build_settings['WARNING_CFLAGS'] ||= []
-        config.build_settings['WARNING_CFLAGS'] << '-Wno-deprecated-declarations'
-        config.build_settings['WARNING_CFLAGS'] << '-Wno-nullability-completeness'
-        config.build_settings['WARNING_CFLAGS'] << '-Wno-implicit-int-conversion'
-        config.build_settings['WARNING_CFLAGS'] << '-Wno-shorten-64-to-32'
-        
-        # Swift warning suppressions
-        config.build_settings['SWIFT_SUPPRESS_WARNINGS'] = 'YES'
-        
-        # Ensure minimum deployment target
-        if config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'].to_f < 12.0
-          config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '12.0'
-        end
-      end
-    end
   end
 end

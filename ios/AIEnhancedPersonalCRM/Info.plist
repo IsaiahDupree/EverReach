@@ -36,6 +36,8 @@
 	</array>
 	<key>CFBundleVersion</key>
 	<string>1</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>mailto</string>
@@ -60,14 +62,22 @@
 	<string>EverReach needs camera access to take photos for contact profiles and capture moments.</string>
 	<key>NSContactsUsageDescription</key>
 	<string>Allow $(PRODUCT_NAME) to access your contacts to import people into your CRM.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Allow $(PRODUCT_NAME) to access your location</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>Allow $(PRODUCT_NAME) to access your location</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Allow $(PRODUCT_NAME) to access your location</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Allow $(PRODUCT_NAME) to access your microphone</string>
+	<string>EverReach uses your microphone to record voice notes about your contacts. For example, you can say 'Remind me to follow up with Sarah' and it will be transcribed and saved.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>The app accesses your photos to let you share them with your friends.</string>
 	<key>NSUserActivityTypes</key>
 	<array>
 		<string>$(PRODUCT_BUNDLE_IDENTIFIER).expo.index_route</string>
 	</array>
+	<key>NSUserTrackingUsageDescription</key>
+	<string>EverReach uses this identifier to measure ad effectiveness and personalize your experience. Your data is hashed for privacy. You can change this anytime in Settings.</string>
 	<key>RCTNewArchEnabled</key>
 	<false/>
 	<key>UILaunchStoryboardName</key>
