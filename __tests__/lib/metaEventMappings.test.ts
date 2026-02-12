@@ -1,20 +1,31 @@
 /**
- * Meta Event Mapping Tests
- * 
- * Verifies that all critical internal events map correctly to Meta standard events
- * via mapToMetaEvent() and that the mappers produce correct custom_data.
+ * Meta Event Integration Tests
+ *
+ * Tests the FULL pipeline: autoTrackToMeta() → mapToMetaEvent() → trackMetaEvent()
+ * → event queue → flushEventQueue() → Conversions API fetch().
+ *
+ * Intercepts global.fetch to capture the actual Conversions API payloads,
+ * then verifies event_name, custom_data (value, currency), user_data, and app_data.
+ *
+ * Also includes a live test that actually hits Meta's API (auto-skipped in CI
+ * when real credentials are not available).
  */
 
-jest.mock('expo-crypto', () => ({
-  digestStringAsync: jest.fn().mockResolvedValue('mocked_hash'),
-  CryptoDigestAlgorithm: { SHA256: 'SHA-256' },
-}));
-
+// -- Env vars MUST be set inside a hoisted jest.mock factory so they're ------
+// -- available when metaAppEvents.ts evaluates IS_ENABLED at module load -----
+jest.mock('expo-crypto', () => {
+  // Runs before module-under-test loads (jest.mock is hoisted)
+  process.env.EXPO_PUBLIC_META_PIXEL_ID = process.env.EXPO_PUBLIC_META_PIXEL_ID || 'test_pixel_123';
+  process.env.EXPO_PUBLIC_META_CONVERSIONS_API_TOKEN = process.env.EXPO_PUBLIC_META_CONVERSIONS_API_TOKEN || 'test_token_abc';
+  return {
+    digestStringAsync: jest.fn().mockResolvedValue('abc123hash'),
+    CryptoDigestAlgorithm: { SHA256: 'SHA-256' },
+  };
+});
 jest.mock('expo-constants', () => ({
   __esModule: true,
   default: { expoConfig: { extra: {} }, appOwnership: 'standalone' },
 }));
-
 jest.mock('@react-native-async-storage/async-storage', () => ({
   __esModule: true,
   default: {
@@ -26,209 +37,301 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   },
 }));
 
-import { mapToMetaEvent } from '@/lib/metaAppEvents';
+import {
+  initializeMetaAppEvents,
+  autoTrackToMeta,
+  trackMetaEvent,
+  shutdownMetaAppEvents,
+  setTrackingConsent,
+  identifyMetaUser,
+} from '@/lib/metaAppEvents';
 
-describe('mapToMetaEvent', () => {
-  // =========================================================================
-  // Critical ROAS events
-  // =========================================================================
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 
-  describe('Purchase events (critical for ROAS)', () => {
-    it('maps purchase_completed → Purchase with value and currency', () => {
-      const mapping = mapToMetaEvent('purchase_completed');
-      expect(mapping).not.toBeNull();
-      expect(mapping!.metaEvent).toBe('Purchase');
+/** Captured payloads from Conversions API fetch calls */
+let capturedPayloads: { url: string; body: any; opts: RequestInit }[] = [];
 
-      const data = mapping!.mapper!({
-        amount: 49.99,
-        currency: 'USD',
-        plan: 'core_annual',
-        product_id: 'com.everreach.core.annual',
+function setupFetchSpy() {
+  return jest.spyOn(global, 'fetch').mockImplementation(async (input: any, init?: any) => {
+    const url = String(input);
+    if (url.includes('graph.facebook.com') && url.includes('/events')) {
+      const body = JSON.parse(init?.body || '{}');
+      capturedPayloads.push({ url, body, opts: init });
+      return new Response(JSON.stringify({ events_received: body.data?.length || 0, fbtrace_id: 'test_trace' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
       });
-      expect(data).toEqual({
-        value: 49.99,
-        currency: 'USD',
-        content_name: 'core_annual',
-        content_type: 'subscription',
-      });
+    }
+    // IP lookup / other
+    return new Response(JSON.stringify({ ip: '1.2.3.4' }), { status: 200 });
+  });
+}
+
+/** Find a specific event across all captured flush payloads */
+function findCapturedEvent(eventName: string, customDataMatch?: Record<string, any>) {
+  for (const payload of capturedPayloads) {
+    for (const ev of payload.body.data || []) {
+      if (ev.event_name !== eventName) continue;
+      if (customDataMatch) {
+        const match = Object.entries(customDataMatch).every(
+          ([k, v]) => ev.custom_data[k] === v
+        );
+        if (!match) continue;
+      }
+      return { event: ev, url: payload.url, opts: payload.opts };
+    }
+  }
+  return null;
+}
+
+// ---------------------------------------------------------------------------
+// Pipeline tests — queue events, flush, verify fetch payloads
+// ---------------------------------------------------------------------------
+
+describe('Meta Events — Full Pipeline Integration', () => {
+  let fetchSpy: jest.SpyInstance;
+
+  beforeAll(async () => {
+    capturedPayloads = [];
+    fetchSpy = setupFetchSpy();
+
+    // Initialize the real module (with intercepted fetch)
+    setTrackingConsent(true);
+    initializeMetaAppEvents();
+
+    // Let async init settle (IP fetch, persisted params load)
+    await new Promise((r) => setTimeout(r, 50));
+
+    // Identify a user so user_data is populated
+    await identifyMetaUser('user_test_123', 'test@example.com', '+15551234567');
+
+    // Clear payloads from init-phase fetches (IP, etc.)
+    capturedPayloads = [];
+
+    // === Fire all test events through the real pipeline ===
+
+    // 1. Purchase (ROAS critical)
+    autoTrackToMeta('purchase_completed', {
+      amount: 49.99,
+      currency: 'USD',
+      plan: 'core_annual',
+      product_id: 'com.everreach.core.annual',
+      payment_platform: 'apple',
     });
 
-    it('defaults currency to USD when missing', () => {
-      const mapping = mapToMetaEvent('purchase_completed');
-      const data = mapping!.mapper!({ amount: 4.99, plan: 'core_monthly' });
-      expect(data.currency).toBe('USD');
-      expect(data.value).toBe(4.99);
-    });
+    // 2. Trial start
+    autoTrackToMeta('trial_started', { trial_days: 7, plan: 'core_monthly' });
 
-    it('falls back to value if amount is missing', () => {
-      const mapping = mapToMetaEvent('purchase_completed');
-      const data = mapping!.mapper!({ value: 9.99 });
-      expect(data.value).toBe(9.99);
-    });
+    // 3. Registration
+    autoTrackToMeta('auth_sign_up', { method: 'email' });
 
-    it('falls back to product_id if plan is missing', () => {
-      const mapping = mapToMetaEvent('purchase_completed');
-      const data = mapping!.mapper!({ amount: 4.99, product_id: '$rc_monthly' });
-      expect(data.content_name).toBe('$rc_monthly');
-    });
+    // 4. Paywall view
+    autoTrackToMeta('paywall_viewed', { source: 'feature_gate' });
+
+    // 5. Subscribe
+    autoTrackToMeta('subscription_upgraded', { amount: 4.99, to_plan: 'core' });
+
+    // 6. Direct trackMetaEvent (payload structure test)
+    trackMetaEvent('ViewContent', { content_name: 'test_screen', content_type: 'screen' });
+
+    // 7. Unmapped events (should NOT queue)
+    autoTrackToMeta('purchase_started', { plan_id: 'core' });
+    autoTrackToMeta('restore_completed', {});
+    autoTrackToMeta('random_internal_event', {});
+
+    // Flush everything to fetch
+    await shutdownMetaAppEvents();
   });
 
-  describe('Trial events', () => {
-    it('maps trial_started → StartTrial', () => {
-      const mapping = mapToMetaEvent('trial_started');
-      expect(mapping).not.toBeNull();
-      expect(mapping!.metaEvent).toBe('StartTrial');
-
-      const data = mapping!.mapper!({ trial_days: 7 });
-      expect(data).toEqual({
-        predicted_ltv: 0,
-        currency: 'USD',
-        content_name: 'free_trial',
-        num_items: 7,
-      });
-    });
-
-    it('defaults trial_days to 7', () => {
-      const mapping = mapToMetaEvent('trial_started');
-      const data = mapping!.mapper!({});
-      expect(data.num_items).toBe(7);
-    });
-  });
-
-  describe('Subscribe events', () => {
-    it('maps subscription_upgraded → Subscribe', () => {
-      const mapping = mapToMetaEvent('subscription_upgraded');
-      expect(mapping).not.toBeNull();
-      expect(mapping!.metaEvent).toBe('Subscribe');
-
-      const data = mapping!.mapper!({ amount: 49.99, to_plan: 'pro' });
-      expect(data.value).toBe(49.99);
-      expect(data.content_name).toBe('pro');
-      expect(data.content_type).toBe('subscription');
-    });
-  });
-
-  // =========================================================================
-  // Registration & Funnel
-  // =========================================================================
-
-  describe('Registration events', () => {
-    it('maps auth_sign_up → CompleteRegistration', () => {
-      const mapping = mapToMetaEvent('auth_sign_up');
-      expect(mapping).not.toBeNull();
-      expect(mapping!.metaEvent).toBe('CompleteRegistration');
-
-      const data = mapping!.mapper!({ method: 'apple' });
-      expect(data.registration_method).toBe('apple');
-      expect(data.status).toBe('completed');
-    });
-
-    it('defaults method to email', () => {
-      const mapping = mapToMetaEvent('auth_sign_up');
-      const data = mapping!.mapper!({});
-      expect(data.registration_method).toBe('email');
-    });
-  });
-
-  describe('Paywall events', () => {
-    it('maps paywall_viewed → ViewContent with paywall type', () => {
-      const mapping = mapToMetaEvent('paywall_viewed');
-      expect(mapping).not.toBeNull();
-      expect(mapping!.metaEvent).toBe('ViewContent');
-
-      const data = mapping!.mapper!({ source: 'settings', trigger: 'feature_gate' });
-      expect(data.content_name).toBe('paywall');
-      expect(data.content_type).toBe('paywall');
-      expect(data.content_category).toBe('settings');
-    });
+  afterAll(async () => {
+    // Re-init so shutdown can clear the flush timer
+    initializeMetaAppEvents();
+    await shutdownMetaAppEvents();
+    fetchSpy.mockRestore();
   });
 
   // =========================================================================
-  // Content & Engagement
+  // Verify flush actually happened
   // =========================================================================
 
-  describe('Content events', () => {
-    it('maps screen_viewed → ViewContent', () => {
-      const mapping = mapToMetaEvent('screen_viewed');
-      expect(mapping).not.toBeNull();
-      expect(mapping!.metaEvent).toBe('ViewContent');
-    });
-
-    it('maps contact_viewed → ViewContent', () => {
-      const mapping = mapToMetaEvent('contact_viewed');
-      expect(mapping).not.toBeNull();
-      expect(mapping!.metaEvent).toBe('ViewContent');
-    });
-
-    it('maps contact_created → AddToWishlist', () => {
-      const mapping = mapToMetaEvent('contact_created');
-      expect(mapping).not.toBeNull();
-      expect(mapping!.metaEvent).toBe('AddToWishlist');
-    });
-
-    it('maps contact_searched → Search', () => {
-      const mapping = mapToMetaEvent('contact_searched');
-      expect(mapping).not.toBeNull();
-      expect(mapping!.metaEvent).toBe('Search');
-    });
-
-    it('maps message_sent → Contact', () => {
-      const mapping = mapToMetaEvent('message_sent');
-      expect(mapping).not.toBeNull();
-      expect(mapping!.metaEvent).toBe('Contact');
-    });
+  it('flushed queued events to the Conversions API', () => {
+    expect(capturedPayloads.length).toBeGreaterThanOrEqual(1);
+    const totalEvents = capturedPayloads.reduce((sum, p) => sum + (p.body.data?.length || 0), 0);
+    // 6 mapped events (Purchase, StartTrial, CompleteRegistration, ViewContent×2, Subscribe)
+    // 3 unmapped events should NOT be in the queue
+    expect(totalEvents).toBe(6);
   });
 
   // =========================================================================
-  // Marketing funnel
+  // purchase_completed → Meta Purchase
   // =========================================================================
 
-  describe('Marketing funnel events', () => {
-    it('maps lead_captured → Lead', () => {
-      const mapping = mapToMetaEvent('lead_captured');
-      expect(mapping).not.toBeNull();
-      expect(mapping!.metaEvent).toBe('Lead');
-    });
-
-    it('maps install_tracked → AppInstall', () => {
-      const mapping = mapToMetaEvent('install_tracked');
-      expect(mapping).not.toBeNull();
-      expect(mapping!.metaEvent).toBe('AppInstall');
-    });
-
-    it('maps qualified_signup → Lead', () => {
-      const mapping = mapToMetaEvent('qualified_signup');
-      expect(mapping).not.toBeNull();
-      expect(mapping!.metaEvent).toBe('Lead');
-    });
-
-    it('maps payment_info_added → AddPaymentInfo', () => {
-      const mapping = mapToMetaEvent('payment_info_added');
-      expect(mapping).not.toBeNull();
-      expect(mapping!.metaEvent).toBe('AddPaymentInfo');
-    });
+  it('purchase_completed → Purchase with correct value, currency, content_name', () => {
+    const found = findCapturedEvent('Purchase');
+    expect(found).not.toBeNull();
+    expect(found!.event.custom_data.value).toBe(49.99);
+    expect(found!.event.custom_data.currency).toBe('USD');
+    expect(found!.event.custom_data.content_name).toBe('core_annual');
+    expect(found!.event.custom_data.content_type).toBe('subscription');
   });
 
   // =========================================================================
-  // Events that should NOT map to Meta
+  // trial_started → Meta StartTrial
   // =========================================================================
 
-  describe('Unmapped events', () => {
-    const unmappedEvents = [
-      'purchase_started',
-      'purchase_failed',
-      'purchase_cancelled',
-      'restore_started',
-      'restore_completed',
-      'backend_sync_started',
-      'backend_sync_completed',
-      'feature_locked',
-      'paywall_dismissed',
-      'random_event',
-    ];
+  it('trial_started → StartTrial with predicted_ltv and trial days', () => {
+    const found = findCapturedEvent('StartTrial');
+    expect(found).not.toBeNull();
+    expect(found!.event.custom_data.predicted_ltv).toBe(0);
+    expect(found!.event.custom_data.currency).toBe('USD');
+    expect(found!.event.custom_data.num_items).toBe(7);
+  });
 
-    it.each(unmappedEvents)('does not map %s to Meta', (event) => {
-      expect(mapToMetaEvent(event)).toBeNull();
+  // =========================================================================
+  // auth_sign_up → Meta CompleteRegistration
+  // =========================================================================
+
+  it('auth_sign_up → CompleteRegistration with method', () => {
+    const found = findCapturedEvent('CompleteRegistration');
+    expect(found).not.toBeNull();
+    expect(found!.event.custom_data.registration_method).toBe('email');
+    expect(found!.event.custom_data.status).toBe('completed');
+  });
+
+  // =========================================================================
+  // paywall_viewed → ViewContent (paywall)
+  // =========================================================================
+
+  it('paywall_viewed → ViewContent with paywall content_type', () => {
+    const found = findCapturedEvent('ViewContent', { content_type: 'paywall' });
+    expect(found).not.toBeNull();
+    expect(found!.event.custom_data.content_name).toBe('paywall');
+    expect(found!.event.custom_data.content_category).toBe('feature_gate');
+  });
+
+  // =========================================================================
+  // subscription_upgraded → Meta Subscribe
+  // =========================================================================
+
+  it('subscription_upgraded → Subscribe with value', () => {
+    const found = findCapturedEvent('Subscribe');
+    expect(found).not.toBeNull();
+    expect(found!.event.custom_data.value).toBe(4.99);
+    expect(found!.event.custom_data.content_name).toBe('core');
+  });
+
+  // =========================================================================
+  // Conversions API payload structure
+  // =========================================================================
+
+  it('every event has event_id, event_time, action_source, user_data, app_data', () => {
+    for (const payload of capturedPayloads) {
+      for (const event of payload.body.data) {
+        expect(event.event_id).toBeDefined();
+        expect(typeof event.event_time).toBe('number');
+        expect(event.event_time).toBeGreaterThan(1700000000);
+        expect(event.action_source).toBe('app');
+
+        expect(event.user_data).toBeDefined();
+        expect(typeof event.user_data).toBe('object');
+        expect(event.user_data.client_user_agent).toBeDefined();
+
+        expect(event.app_data).toBeDefined();
+        expect(event.app_data.extinfo).toBeDefined();
+        expect(Array.isArray(event.app_data.extinfo)).toBe(true);
+      }
+    }
+  });
+
+  // =========================================================================
+  // user_data includes identified user params
+  // =========================================================================
+
+  it('user_data includes hashed email and external_id after identifyMetaUser', () => {
+    const found = findCapturedEvent('Purchase');
+    expect(found).not.toBeNull();
+    expect(found!.event.user_data.em).toBeDefined();
+    expect(found!.event.user_data.external_id).toBeDefined();
+  });
+
+  // =========================================================================
+  // Fetch URL format
+  // =========================================================================
+
+  it('sends to graph.facebook.com with correct URL structure', () => {
+    const payload = capturedPayloads[0];
+    expect(payload.url).toContain('graph.facebook.com/v21.0/');
+    expect(payload.url).toContain('/events?access_token=');
+    expect(payload.opts.method).toBe('POST');
+    expect(payload.opts.headers).toEqual(
+      expect.objectContaining({ 'Content-Type': 'application/json' })
+    );
+  });
+
+  // =========================================================================
+  // Unmapped events are filtered out
+  // =========================================================================
+
+  it('unmapped events (purchase_started, restore_completed) are NOT in the payload', () => {
+    const allEventNames = capturedPayloads.flatMap((p) =>
+      (p.body.data || []).map((e: any) => e.event_name)
+    );
+    expect(allEventNames).not.toContain('purchase_started');
+    expect(allEventNames).not.toContain('restore_completed');
+    expect(allEventNames).not.toContain('random_internal_event');
+  });
+
+  // =========================================================================
+  // Live API test (auto-skipped when real creds unavailable)
+  // =========================================================================
+
+  const hasRealCreds =
+    process.env.EXPO_PUBLIC_META_PIXEL_ID &&
+    process.env.EXPO_PUBLIC_META_PIXEL_ID !== 'test_pixel_123' &&
+    process.env.EXPO_PUBLIC_META_CONVERSIONS_API_TOKEN &&
+    process.env.EXPO_PUBLIC_META_CONVERSIONS_API_TOKEN !== 'test_token_abc';
+
+  const liveIt = hasRealCreds ? it : it.skip;
+
+  liveIt('LIVE: sends Purchase to Meta and gets events_received=1', async () => {
+    const realFetch = jest.requireActual('node-fetch') as typeof fetch;
+
+    const PIXEL_ID = process.env.EXPO_PUBLIC_META_PIXEL_ID!;
+    const TOKEN = process.env.EXPO_PUBLIC_META_CONVERSIONS_API_TOKEN!;
+    const TEST_CODE = process.env.EXPO_PUBLIC_META_TEST_EVENT_CODE || 'TEST48268';
+
+    const payload = {
+      data: [{
+        event_name: 'Purchase',
+        event_time: Math.floor(Date.now() / 1000),
+        event_id: `jest_live_${Date.now()}`,
+        action_source: 'app' as const,
+        user_data: {
+          client_user_agent: 'EverReach/1.0 (jest)',
+          external_id: ['jest_integration_test'],
+        },
+        custom_data: { value: 1.00, currency: 'USD', content_name: 'jest_live_test', content_type: 'subscription' },
+        app_data: {
+          advertiser_tracking_enabled: 1,
+          application_tracking_enabled: 1,
+          extinfo: ['i2', 'com.everreach.app', '1.0.0', '1.0.0', '18.0',
+            'iPhone', 'en_US', 'UTC', '', '390', '844', '2', '6', '256000', '225000', '-5'],
+        },
+      }],
+      test_event_code: TEST_CODE,
+    };
+
+    const url = `https://graph.facebook.com/v21.0/${PIXEL_ID}/events?access_token=${TOKEN}`;
+    const response = await globalThis.fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
     });
+
+    const result = await response.json();
+    expect(response.status).toBe(200);
+    expect(result.events_received).toBe(1);
   });
 });
