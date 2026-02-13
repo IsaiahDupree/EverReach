@@ -7,7 +7,7 @@
  */
 
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getServiceClient } from '@/lib/supabase';
 import { inferUserGoals } from '@/lib/goal-inference';
 
 export const runtime = 'nodejs';
@@ -22,16 +22,7 @@ export async function GET(req: Request) {
   console.log('[Sync AI Context] Starting daily sync...');
   const startTime = Date.now();
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
-    }
-  );
+  const supabase = getServiceClient();
 
   try {
     // Get active users (signed in within last 30 days)
@@ -130,7 +121,7 @@ export async function GET(req: Request) {
     console.error('[Sync AI Context] Fatal error:', error);
     return NextResponse.json({ 
       success: false,
-      error: error.message || 'Internal server error',
+      error: 'Internal server error',
       duration_ms: Date.now() - startTime,
       timestamp: new Date().toISOString()
     }, { status: 500 });

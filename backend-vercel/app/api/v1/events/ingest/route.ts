@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getClientOrThrow } from "@/lib/supabase";
+import { getUser } from "@/lib/auth";
 import { options, ok, unauthorized, badRequest, serverError } from "@/lib/cors";
 import { IngestEvent, IngestRequest, IngestResponse } from "@/lib/events/types";
 import { validateBatch } from "@/lib/events/validator";
@@ -26,13 +27,13 @@ export function OPTIONS(req: Request){ return options(req); }
 export async function POST(req: NextRequest) {
   // Authentication check
   const serverKey = req.headers.get('x-ingest-key');
-  const bearerToken = req.headers.get('authorization');
   
-  const isServerAuthed = serverKey === process.env.INGEST_SERVER_KEY;
-  const isClientAuthed = !!bearerToken; // Could add more validation here
+  const isServerAuthed = Boolean(process.env.INGEST_SERVER_KEY) && serverKey === process.env.INGEST_SERVER_KEY;
+  const user = !isServerAuthed ? await getUser(req) : null;
+  const isClientAuthed = !!user;
 
   if (!isServerAuthed && !isClientAuthed) {
-    return unauthorized('Authentication required. Provide x-ingest-key or Authorization header', req);
+    return unauthorized('Authentication required', req);
   }
 
   // Parse body
@@ -109,7 +110,7 @@ export async function POST(req: NextRequest) {
 
     if (error) {
       console.error('[Events Ingest] Database error:', error);
-      return serverError(`Failed to ingest events: ${error.message}`, req);
+      return serverError('Failed to ingest events', req);
     }
 
     const response: IngestResponse = {
@@ -121,6 +122,6 @@ export async function POST(req: NextRequest) {
 
   } catch (error: any) {
     console.error('[Events Ingest] Unexpected error:', error);
-    return serverError(`Internal error: ${error.message}`, req);
+    return serverError('Internal error', req);
   }
 }

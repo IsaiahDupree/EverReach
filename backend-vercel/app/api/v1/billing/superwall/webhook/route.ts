@@ -8,7 +8,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getServiceClient } from '@/lib/supabase';
 import {
   verifySuperwallSignature,
   processSuperwallEvent,
@@ -18,14 +18,6 @@ import {
 export const runtime = 'nodejs';
 export const maxDuration = 30; // 30 seconds max
 
-function getSupabase() {
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) {
-    throw new Error('Supabase environment variables are missing');
-  }
-  return createClient(url, key);
-}
 
 /**
  * POST /api/v1/billing/superwall/webhook
@@ -79,16 +71,20 @@ export async function POST(req: NextRequest) {
     const allowTestMode = process.env.ALLOW_TEST_MODE !== 'false'; // Default true for testing
     const isTestMode = testModeHeader === 'true' && allowTestMode;
     
-    // TEMPORARY: Allow Superwall webhooks if no secret is configured (log warning)
+    // Fail-closed: reject in production when no secret is configured
     const noSecretConfigured = !webhookSecret && !expectedBearer;
-    if (noSecretConfigured) {
-      console.warn(`[Superwall ${requestId}] ⚠️ No SUPERWALL_WEBHOOK_SECRET or SUPERWALL_WEBHOOK_AUTH_TOKEN configured - accepting webhook without auth. Please configure secrets for production!`);
+    if (noSecretConfigured && !isDev) {
+      console.error(`[Superwall ${requestId}] SUPERWALL_WEBHOOK_SECRET and SUPERWALL_WEBHOOK_AUTH_TOKEN not set — rejecting in production`);
+      return NextResponse.json(
+        { ok: false, error: 'Server misconfigured', request_id: requestId },
+        { status: 500 }
+      );
     }
     
-    console.log(`[Superwall ${requestId}] isDev:`, isDev, 'isTestMode:', isTestMode, 'noSecretConfigured:', noSecretConfigured);
+    console.log(`[Superwall ${requestId}] isDev:`, isDev, 'isTestMode:', isTestMode);
     
-    // Accept any valid auth method
-    const isAuthenticated = isSignatureValid || isAuthHeaderValid || isSecretAsBearerValid || isDev || isTestMode || noSecretConfigured;
+    // Accept any valid auth method (dev/test allowed without signature)
+    const isAuthenticated = isSignatureValid || isAuthHeaderValid || isSecretAsBearerValid || isDev || isTestMode;
     
     if (!isAuthenticated) {
       console.error(`[Superwall ${requestId}] Unauthorized webhook request - all auth methods failed`);
@@ -139,7 +135,7 @@ export async function POST(req: NextRequest) {
 
     console.log(`[Superwall ${requestId}] Processing event: ${webhookData.event_name} for user ${webhookData.user_id}`);
 
-    const supabase = getSupabase();
+    const supabase = getServiceClient();
 
     // Process the event
     let result;
@@ -165,7 +161,6 @@ export async function POST(req: NextRequest) {
         {
           ok: false,
           error: 'Processing failed',
-          message: error.message,
           request_id: requestId,
         },
         { status: 500 }
@@ -199,7 +194,6 @@ export async function POST(req: NextRequest) {
       {
         ok: false,
         error: 'Internal server error',
-        message: error.message,
         request_id: requestId,
       },
       { status: 500 }

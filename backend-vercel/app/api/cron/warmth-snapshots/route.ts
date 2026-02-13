@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getServiceClient } from '@/lib/supabase';
 
 export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
@@ -24,17 +24,7 @@ export async function GET(req: Request) {
     const authError = verifyCron(req);
     if (authError) return authError;
 
-    // Initialize Supabase client (service role for cron jobs)
-    const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    if (!supabaseUrl || !supabaseServiceKey) {
-      throw new Error('Missing Supabase configuration');
-    }
-
-    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: { persistSession: false }
-    });
+    const supabase = getServiceClient();
 
     // Fetch all contacts with warmth scores
     const { data: contacts, error: fetchError } = await supabase
@@ -104,7 +94,7 @@ export async function GET(req: Request) {
     return NextResponse.json(
       {
         success: false,
-        error: error.message || 'Internal server error',
+        error: 'Internal server error',
         timestamp: new Date().toISOString()
       },
       { status: 500 }

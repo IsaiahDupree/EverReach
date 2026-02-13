@@ -10,17 +10,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getServiceClient } from '@/lib/supabase';
 import crypto from 'crypto';
 
 const POSTHOG_WEBHOOK_SECRET = process.env.POSTHOG_WEBHOOK_SECRET!;
-
-function getSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
 
 // Property whitelist (60+ allowed properties, no PII)
 const ALLOWED_PROPERTIES = new Set([
@@ -137,7 +130,7 @@ function extractExperiments(props: Record<string, any>): Record<string, string> 
 
 export async function POST(req: NextRequest) {
   try {
-    const supabase = getSupabase();
+    const supabase = getServiceClient();
     const body = await req.text();
     const signature = req.headers.get('x-posthog-signature') || '';
 
@@ -189,7 +182,7 @@ export async function POST(req: NextRequest) {
     if (insertError) {
       console.error('Failed to insert event:', insertError);
       return NextResponse.json(
-        { error: 'Database insert failed', details: insertError.message },
+        { error: 'Database insert failed' },
         { status: 500 }
       );
     }
@@ -225,7 +218,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('Webhook processing error:', error);
     return NextResponse.json(
-      { error: 'Internal server error', details: String(error) },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }
