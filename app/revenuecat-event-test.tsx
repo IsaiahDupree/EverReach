@@ -65,15 +65,17 @@ export default function RevenueCatEventTestScreen() {
   // Default to Direct Meta CAPI mode (works without backend deploy)
   const [mode, setMode] = useState<'direct' | 'backend'>('direct');
 
-  const MONITOR_URL = 'http://localhost:3457';
+  // Meta monitor (port 3456) for Direct CAPI mode, RC monitor (port 3457) for Backend Webhook mode
+  const META_MONITOR_URL = 'http://localhost:3456';
+  const RC_MONITOR_URL = 'http://localhost:3457';
 
-  // Quick health check — returns true only if the monitor is actually reachable
-  const isMonitorReachable = async (): Promise<boolean> => {
+  // Quick health check — returns true only if the given monitor is actually reachable
+  const isMonitorReachable = async (monitorUrl: string): Promise<boolean> => {
     if (!useMonitor) return false;
     try {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 1500);
-      const res = await fetch(`${MONITOR_URL}/health`, { method: 'GET', signal: controller.signal });
+      const res = await fetch(`${monitorUrl}/health`, { method: 'GET', signal: controller.signal });
       clearTimeout(timeout);
       const data = await res.json();
       return data.status === 'ok';
@@ -117,13 +119,14 @@ export default function RevenueCatEventTestScreen() {
   // Check if monitor proxy is running
   const checkMonitor = useCallback(async () => {
     try {
-      const res = await fetch(`${MONITOR_URL}/health`, { method: 'GET' });
+      const targetUrl = mode === 'direct' ? META_MONITOR_URL : RC_MONITOR_URL;
+      const res = await fetch(`${targetUrl}/health`, { method: 'GET' });
       const data = await res.json();
       setMonitorOnline(data.status === 'ok');
     } catch {
       setMonitorOnline(false);
     }
-  }, []);
+  }, [mode]);
 
   useEffect(() => {
     if (useMonitor) checkMonitor();
@@ -222,10 +225,10 @@ export default function RevenueCatEventTestScreen() {
         test_event_code: TEST_EVENT_CODE,
       };
 
-      // Auto-fallback: if monitor is ON but unreachable, send direct to Meta
-      const monitorUp = await isMonitorReachable();
+      // Direct CAPI mode uses the META monitor (port 3456), not the RC monitor
+      const monitorUp = await isMonitorReachable(META_MONITOR_URL);
       const url = monitorUp
-        ? `${MONITOR_URL}/events`
+        ? `${META_MONITOR_URL}/events`
         : `https://graph.facebook.com/${GRAPH_API_VERSION}/${PIXEL_ID}/events?access_token=${TOKEN}`;
 
       if (useMonitor && !monitorUp) {
@@ -279,10 +282,10 @@ export default function RevenueCatEventTestScreen() {
     });
 
     try {
-      // Auto-fallback: if monitor is ON but unreachable, send direct to backend
-      const monitorUp = await isMonitorReachable();
+      // Backend mode uses the RC monitor (port 3457)
+      const monitorUp = await isMonitorReachable(RC_MONITOR_URL);
       const url = monitorUp
-        ? `${MONITOR_URL}/webhook`
+        ? `${RC_MONITOR_URL}/webhook`
         : `${BACKEND_URL}/api/webhooks/revenuecat`;
 
       const response = await fetch(url, {
@@ -533,8 +536,15 @@ export default function RevenueCatEventTestScreen() {
           <Text style={styles.monitorInfoText}>
             Run in terminal:{' '}
             <Text style={{ color: '#F97316', fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' }}>
-              node scripts/revenuecat-event-monitor.mjs
+              {mode === 'direct'
+                ? 'node scripts/meta-event-monitor.mjs'
+                : 'node scripts/revenuecat-event-monitor.mjs'}
             </Text>
+          </Text>
+          <Text style={[styles.monitorInfoText, { marginTop: 4 }]}>
+            {mode === 'direct'
+              ? 'Direct CAPI mode uses Meta monitor (port 3456)'
+              : 'Backend mode uses RC monitor (port 3457)'}
           </Text>
         </View>
       )}
