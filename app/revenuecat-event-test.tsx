@@ -2,10 +2,10 @@
  * RevenueCat Webhook Event Test Screen
  * 
  * Accessible at /revenuecat-event-test in the app.
- * Two modes:
- * 1. Direct Meta CAPI (default) — sends events directly to Meta's Conversions API
- *    simulating what the server-side emitter would do. Works without backend deploy.
- * 2. Backend Webhook — sends to your deployed backend (requires redeploy).
+ * Three modes:
+ * 1. RC SDK (default) — tests RevenueCat SDK independently (init, offerings, customer info)
+ * 2. Direct Meta CAPI — sends RC events to Meta's Conversions API
+ * 3. Backend Webhook — sends to your deployed backend (requires redeploy)
  */
 
 import React, { useState, useCallback, useEffect } from 'react';
@@ -62,8 +62,8 @@ export default function RevenueCatEventTestScreen() {
   const [monitorOnline, setMonitorOnline] = useState<boolean | null>(null);
   const [liveEvents, setLiveEvents] = useState<PaymentEvent[]>([]);
   const [showLive, setShowLive] = useState(false);
-  // Default to Direct Meta CAPI mode (works without backend deploy)
-  const [mode, setMode] = useState<'direct' | 'backend'>('direct');
+  // Default to RC SDK mode (tests RevenueCat independently)
+  const [mode, setMode] = useState<'sdk' | 'direct' | 'backend'>('sdk');
 
   // Meta monitor (port 3456) for Direct CAPI mode, RC monitor (port 3457) for Backend Webhook mode
   const META_MONITOR_URL = 'http://localhost:3456';
@@ -335,8 +335,89 @@ export default function RevenueCatEventTestScreen() {
     }
   };
 
-  // Run all tests
+  // ── RC SDK Tests (independent RevenueCat events) ──
+  const runSdkTests = async () => {
+    setTesting(true);
+    setResults([]);
+    const ts = () => new Date().toLocaleTimeString();
+
+    // 1. Platform check
+    const isNative = Platform.OS !== 'web';
+    addResult({ id: 'sdk_platform', eventType: 'Platform', metaEvent: '—', status: isNative ? 'success' : 'error', message: isNative ? `✅ ${Platform.OS} (native — SDK available)` : '❌ Web platform — SDK not available', timestamp: ts() });
+    if (!isNative) { setTesting(false); return; }
+
+    // 2. SDK initialization
+    try {
+      const { initializeRevenueCat } = await import('@/lib/revenuecat');
+      const initOk = await initializeRevenueCat();
+      addResult({ id: 'sdk_init', eventType: 'SDK Init', metaEvent: '—', status: initOk ? 'success' : 'error', message: initOk ? '✅ RevenueCat SDK initialized' : '⚠️ SDK init returned false (Expo Go or missing keys)', timestamp: ts() });
+      trackEventCount('SDK_INIT', initOk);
+    } catch (e: any) {
+      addResult({ id: 'sdk_init', eventType: 'SDK Init', metaEvent: '—', status: 'error', message: `❌ ${e.message}`, timestamp: ts() });
+      trackEventCount('SDK_INIT', false);
+    }
+    await delay(300);
+
+    // 3. App User ID
+    try {
+      const { getAppUserId } = await import('@/lib/revenuecat');
+      const userId = await getAppUserId();
+      addResult({ id: 'sdk_userid', eventType: 'App User ID', metaEvent: '—', status: userId ? 'success' : 'error', message: userId ? `✅ ${userId.substring(0, 20)}...` : '⚠️ No user ID (not identified)', timestamp: ts() });
+      trackEventCount('APP_USER_ID', !!userId);
+    } catch (e: any) {
+      addResult({ id: 'sdk_userid', eventType: 'App User ID', metaEvent: '—', status: 'error', message: `❌ ${e.message}`, timestamp: ts() });
+      trackEventCount('APP_USER_ID', false);
+    }
+    await delay(300);
+
+    // 4. Customer Info
+    try {
+      const { getCustomerInfo } = await import('@/lib/revenuecat');
+      const info = await getCustomerInfo();
+      if (info) {
+        const activeEnts = Object.keys(info.entitlements?.active || {});
+        const allEnts = Object.keys(info.entitlements?.all || {});
+        addResult({ id: 'sdk_customer', eventType: 'Customer Info', metaEvent: '—', status: 'success', message: `✅ Active: [${activeEnts.join(', ') || 'none'}] | All: [${allEnts.join(', ') || 'none'}]`, timestamp: ts(), responseData: { active_entitlements: activeEnts, all_entitlements: allEnts, active_subscriptions: info.activeSubscriptions } });
+      } else {
+        addResult({ id: 'sdk_customer', eventType: 'Customer Info', metaEvent: '—', status: 'error', message: '⚠️ No customer info returned', timestamp: ts() });
+      }
+      trackEventCount('CUSTOMER_INFO', !!info);
+    } catch (e: any) {
+      addResult({ id: 'sdk_customer', eventType: 'Customer Info', metaEvent: '—', status: 'error', message: `❌ ${e.message}`, timestamp: ts() });
+      trackEventCount('CUSTOMER_INFO', false);
+    }
+    await delay(300);
+
+    // 5. Offerings
+    try {
+      const { fetchOfferings } = await import('@/lib/revenuecat');
+      const offerings = await fetchOfferings();
+      if (offerings?.current) {
+        const pkgs = offerings.current.availablePackages || [];
+        addResult({ id: 'sdk_offerings', eventType: 'Offerings', metaEvent: '—', status: 'success', message: `✅ Current: "${offerings.current.identifier}" (${pkgs.length} packages)`, timestamp: ts(), responseData: { offering_id: offerings.current.identifier, packages: pkgs.map((p: any) => ({ id: p.identifier, product: p.product?.identifier, price: p.product?.priceString })) } });
+      } else {
+        addResult({ id: 'sdk_offerings', eventType: 'Offerings', metaEvent: '—', status: 'error', message: '⚠️ No current offering (check RC dashboard config)', timestamp: ts() });
+      }
+      trackEventCount('OFFERINGS', !!offerings?.current);
+    } catch (e: any) {
+      addResult({ id: 'sdk_offerings', eventType: 'Offerings', metaEvent: '—', status: 'error', message: `❌ ${e.message}`, timestamp: ts() });
+      trackEventCount('OFFERINGS', false);
+    }
+    await delay(300);
+
+    // 6. Payment event logger status
+    const events = paymentEventLogger.getEvents();
+    const rcEvents = events.filter(e => e.source === 'revenuecat');
+    addResult({ id: 'sdk_logger', eventType: 'Event Logger', metaEvent: '—', status: 'success', message: `✅ ${rcEvents.length} RC events logged this session (${events.length} total)`, timestamp: ts() });
+    trackEventCount('EVENT_LOGGER', true);
+
+    setTesting(false);
+  };
+
+  // Run all tests (mode-aware)
   const runAllTests = async () => {
+    if (mode === 'sdk') { await runSdkTests(); return; }
+
     setTesting(true);
     setResults([]);
 
@@ -381,23 +462,33 @@ export default function RevenueCatEventTestScreen() {
         </TouchableOpacity>
         <Text style={styles.title}>RevenueCat Event Test</Text>
         <Text style={styles.subtitle}>
-          Mode: {mode === 'direct' ? 'Direct Meta CAPI' : `Backend: ${BACKEND_URL}`}
+          Mode: {mode === 'sdk' ? 'RC SDK (Independent)' : mode === 'direct' ? 'Direct Meta CAPI' : `Backend: ${BACKEND_URL}`}
         </Text>
         <Text style={styles.subtitle}>
-          {mode === 'direct'
-            ? `Pixel: ${PIXEL_ID ? PIXEL_ID.substring(0, 8) + '...' : 'NOT SET'} | Test: ${TEST_EVENT_CODE}`
-            : 'Environment: SANDBOX (test mode)'}
+          {mode === 'sdk'
+            ? `Platform: ${Platform.OS} | Tests RevenueCat SDK directly`
+            : mode === 'direct'
+              ? `Pixel: ${PIXEL_ID ? PIXEL_ID.substring(0, 8) + '...' : 'NOT SET'} | Test: ${TEST_EVENT_CODE}`
+              : 'Environment: SANDBOX (test mode)'}
         </Text>
       </View>
 
       {/* Mode Toggle */}
       <View style={styles.modeRow}>
         <TouchableOpacity
+          style={[styles.modeButton, mode === 'sdk' && styles.modeButtonActiveSdk]}
+          onPress={() => setMode('sdk')}
+        >
+          <Text style={[styles.modeButtonText, mode === 'sdk' && styles.modeButtonTextActive]}>
+            RC SDK
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
           style={[styles.modeButton, mode === 'direct' && styles.modeButtonActive]}
           onPress={() => setMode('direct')}
         >
           <Text style={[styles.modeButtonText, mode === 'direct' && styles.modeButtonTextActive]}>
-            🎯 Direct Meta CAPI
+            Meta CAPI
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -405,7 +496,7 @@ export default function RevenueCatEventTestScreen() {
           onPress={() => setMode('backend')}
         >
           <Text style={[styles.modeButtonText, mode === 'backend' && styles.modeButtonTextActive]}>
-            🖥 Backend Webhook
+            Webhook
           </Text>
         </TouchableOpacity>
       </View>
@@ -420,36 +511,40 @@ export default function RevenueCatEventTestScreen() {
           <ActivityIndicator color="#fff" />
         ) : (
           <Text style={styles.primaryButtonText}>
-            {mode === 'direct' ? 'Run All Meta CAPI Tests' : 'Run All Webhook Tests'}
+            {mode === 'sdk' ? 'Run RC SDK Tests' : mode === 'direct' ? 'Run All Meta CAPI Tests' : 'Run All Webhook Tests'}
           </Text>
         )}
       </TouchableOpacity>
 
-      {/* Individual Event Buttons */}
-      <Text style={styles.sectionTitle}>
-        {mode === 'direct' ? 'Send Events to Meta' : 'Send Webhooks to Backend'}
-      </Text>
-      <View style={styles.buttonGrid}>
-        {RC_EVENT_TYPES.map((evt) => (
-          <TouchableOpacity
-            key={evt.type}
-            style={[styles.eventButton, { borderColor: evt.color + '60' }]}
-            onPress={() => sendTestEvent(evt)}
-          >
-            <Text style={styles.eventIcon}>{evt.icon}</Text>
-            <View>
-              <Text style={[styles.eventButtonText, { color: evt.color }]}>{evt.label}</Text>
-              <Text style={styles.metaMapping}>→ Meta: {evt.metaEvent}</Text>
-            </View>
-          </TouchableOpacity>
-        ))}
-      </View>
+      {/* Individual Event Buttons (hidden in SDK mode) */}
+      {mode !== 'sdk' && (
+        <>
+          <Text style={styles.sectionTitle}>
+            {mode === 'direct' ? 'Send Events to Meta' : 'Send Webhooks to Backend'}
+          </Text>
+          <View style={styles.buttonGrid}>
+            {RC_EVENT_TYPES.map((evt) => (
+              <TouchableOpacity
+                key={evt.type}
+                style={[styles.eventButton, { borderColor: evt.color + '60' }]}
+                onPress={() => sendTestEvent(evt)}
+              >
+                <Text style={styles.eventIcon}>{evt.icon}</Text>
+                <View>
+                  <Text style={[styles.eventButtonText, { color: evt.color }]}>{evt.label}</Text>
+                  <Text style={styles.metaMapping}>→ Meta: {evt.metaEvent}</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </>
+      )}
 
       {/* Event Stats Dashboard */}
       {Object.keys(eventCounts).length > 0 && (
         <>
           <View style={styles.statsHeaderRow}>
-            <Text style={styles.sectionTitle}>Webhook Stats (This Session)</Text>
+            <Text style={styles.sectionTitle}>{mode === 'sdk' ? 'SDK Test Stats' : 'Event Stats'} (This Session)</Text>
             <TouchableOpacity onPress={clearStats}>
               <Text style={styles.clearText}>Clear</Text>
             </TouchableOpacity>
@@ -557,12 +652,14 @@ export default function RevenueCatEventTestScreen() {
       {/* Info Box */}
       <View style={styles.infoBox}>
         <Text style={styles.infoTitle}>
-          {mode === 'direct' ? 'How Direct Meta CAPI Works' : 'How Backend Webhook Works'}
+          {mode === 'sdk' ? 'How RC SDK Tests Work' : mode === 'direct' ? 'How Direct Meta CAPI Works' : 'How Backend Webhook Works'}
         </Text>
         <Text style={styles.infoText}>
-          {mode === 'direct'
-            ? `1. Each button sends the Meta event directly to Conversions API\n2. Simulates exactly what the server-side emitter does\n3. Events appear in Meta Events Manager → Test Events\n4. Test code: ${TEST_EVENT_CODE}\n5. No backend deploy needed — tests Meta pipeline directly`
-            : `1. Each button sends a simulated RevenueCat webhook to your backend\n2. Backend processes it → updates Supabase → fires Meta CAPI\n3. Requires backend to be deployed with latest code\n4. If you get HTTP 405, run: vercel --prod in backend-vercel/\n5. Enable Monitor to route through local proxy for full logging`}
+          {mode === 'sdk'
+            ? '1. Tests RevenueCat SDK directly (no Meta, no backend)\n2. Checks: init status, app user ID, customer info, offerings\n3. These are independent RC events logged to paymentEventLogger\n4. Results show real SDK state from your device\n5. Events appear in Live Payment Events + Event Dashboard'
+            : mode === 'direct'
+              ? `1. Each button sends the Meta event directly to Conversions API\n2. Simulates exactly what the server-side emitter does\n3. Events appear in Meta Events Manager → Test Events\n4. Test code: ${TEST_EVENT_CODE}\n5. No backend deploy needed — tests Meta pipeline directly`
+              : `1. Each button sends a simulated RevenueCat webhook to your backend\n2. Backend processes it → updates Supabase → fires Meta CAPI\n3. Requires backend to be deployed with latest code\n4. If you get HTTP 405, run: vercel --prod in backend-vercel/\n5. Enable Monitor to route through local proxy for full logging`}
         </Text>
       </View>
 
@@ -841,6 +938,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#333',
+  },
+  modeButtonActiveSdk: {
+    backgroundColor: '#1B3A1B',
+    borderColor: '#22C55E',
   },
   modeButtonActive: {
     backgroundColor: '#1B2B4E',
