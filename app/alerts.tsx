@@ -37,10 +37,11 @@ export default function AlertsScreen() {
   const loadAlerts = async () => {
     try {
       const response = await apiFetch(
-        `/v1/alerts?dismissed=${showDismissed}`,
+        `/api/v1/alerts?dismissed=${showDismissed}`,
         { requireAuth: true }
       );
-      setAlerts(response.items || []);
+      const data = response.ok ? await response.json() : {};
+      setAlerts(data.items || data.alerts || []);
     } catch (error: any) {
       console.error('Failed to load alerts:', error);
     } finally {
@@ -66,13 +67,14 @@ export default function AlertsScreen() {
     });
     
     router.push({
-      pathname: '/compose/[contactId]',
+      pathname: '/goal-picker',
       params: {
-        contactId: alert.contact.id,
+        personId: alert.contact.id,
+        channel: 'sms',
         goalId: 'check_in',
         source: 'warmth_alert'
       }
-    });
+    } as any);
 
     // Mark as acted on
     handleAction(alert.id, 'reached_out');
@@ -95,7 +97,7 @@ export default function AlertsScreen() {
 
   const handleAction = async (alertId: string, action: 'dismiss' | 'snooze' | 'reached_out') => {
     try {
-      await apiFetch(`/v1/alerts/${alertId}`, {
+      await apiFetch(`/api/v1/alerts/${alertId}`, {
         method: 'PATCH',
         requireAuth: true,
         body: JSON.stringify({

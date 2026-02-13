@@ -48,7 +48,7 @@ export default function WarmthAlertsTestScreen() {
     }
     try {
       setRunning(true);
-      const res = await apiFetch(`/v1/contacts/${contactId}/watch`, { method: 'GET', requireAuth: true });
+      const res = await apiFetch(`/api/v1/contacts/${contactId}/watch`, { method: 'GET', requireAuth: true });
       const text = await res.text();
       const ok = res.ok;
       addResult({ name: 'GET /v1/contacts/:id/watch', ok, detail: text });
@@ -66,7 +66,7 @@ export default function WarmthAlertsTestScreen() {
     }
     try {
       setRunning(true);
-      const res = await apiFetch(`/v1/contacts/${contactId}/watch`, { method: 'PATCH', requireAuth: true, body: JSON.stringify({ watch_status: status }) });
+      const res = await apiFetch(`/api/v1/contacts/${contactId}/watch`, { method: 'PATCH', requireAuth: true, body: JSON.stringify({ watch_status: status }) });
       const text = await res.text();
       addResult({ name: `PATCH /v1/contacts/:id/watch -> ${status}`, ok: res.ok, detail: text });
     } catch (e: any) {
@@ -79,7 +79,7 @@ export default function WarmthAlertsTestScreen() {
   const runListAlerts = useCallback(async () => {
     try {
       setIsLoadingAlerts(true);
-      const res = await apiFetch('/v1/alerts', { method: 'GET', requireAuth: true });
+      const res = await apiFetch('/api/v1/alerts', { method: 'GET', requireAuth: true });
       const text = await res.text();
       let json: any = null;
       try { json = JSON.parse(text); } catch {}
@@ -125,7 +125,7 @@ export default function WarmthAlertsTestScreen() {
       }
 
       const payload = { push_token: token, platform: Platform.OS, device_name: `${Platform.OS} device` };
-      const res = await apiFetch('/v1/push-tokens', { method: 'POST', requireAuth: true, body: JSON.stringify(payload) });
+      const res = await apiFetch('/api/v1/push-tokens', { method: 'POST', requireAuth: true, body: JSON.stringify(payload) });
       const text = await res.text();
       addResult({ name: 'POST /v1/push-tokens', ok: res.ok, detail: text });
       if (!res.ok) Alert.alert('Registration failed', text.slice(0, 300));

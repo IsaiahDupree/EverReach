@@ -102,7 +102,7 @@ const TEST_SECTIONS: { title: string; tests: TestDef[] }[] = [
       { name: 'Contact Goal Suggestions', method: 'GET', path: '/api/v1/contacts/:contactId/goal-suggestions', expect: [200, 404], auth: true, screen: 'Contact Detail' },
       { name: 'Contact Avatar', method: 'GET', path: '/api/v1/contacts/:contactId/avatar', expect: [200, 302, 404, 405], auth: true, screen: 'Contact Detail' },
       { name: 'Contact Interactions', method: 'GET', path: '/api/v1/interactions?contact_id=:contactId&limit=5&sort=created_at:desc', expect: [200], auth: true, screen: 'Contact Detail' },
-      { name: 'Watch Contact', method: 'GET', path: '/v1/contacts/:contactId/watch', expect: [200, 404, 405], auth: true, screen: 'Contact Detail' },
+      { name: 'Watch Contact', method: 'GET', path: '/api/v1/contacts/:contactId/watch', expect: [200, 404, 405], auth: true, screen: 'Contact Detail' },
     ],
   },
   {
@@ -166,8 +166,8 @@ const TEST_SECTIONS: { title: string; tests: TestDef[] }[] = [
   {
     title: '🔔 Alerts & Push',
     tests: [
-      { name: 'List Alerts', method: 'GET', path: '/v1/alerts', expect: [200, 404], auth: true, screen: 'Alerts' },
-      { name: 'Push Tokens', method: 'GET', path: '/v1/push-tokens', expect: [200, 404, 405], auth: true, screen: 'Notifications' },
+      { name: 'List Alerts', method: 'GET', path: '/api/v1/alerts', expect: [200, 404], auth: true, screen: 'Alerts' },
+      { name: 'Push Tokens', method: 'GET', path: '/api/v1/push-tokens', expect: [200, 404, 405], auth: true, screen: 'Notifications' },
     ],
   },
   {
