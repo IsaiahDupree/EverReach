@@ -8,14 +8,41 @@
 
 ---
 
+## 0. Implementation Status (Updated Feb 13, 2026)
+
+| # | Task | Status | Commit |
+|---|------|--------|--------|
+| 1 | Add signature verification to RC webhook | ✅ Done | `7fd9c50` |
+| 2 | Consolidate duplicate RC webhook endpoints | ✅ Done | `1ddabc6` |
+| 3 | Implement Apple JWKS verification | ⬜ Not started | — |
+| 4 | Fix PostHog webhook fail-open | ✅ Done | `7fd9c50` |
+| 5 | Centralize cron auth (`lib/cron-auth.ts`) | ✅ Done (10/27 routes) | `1ddabc6` |
+| 6 | Deploy updated backend to Vercel | ⬜ Not started | — |
+| 7 | Set all required env vars in Vercel | ⬜ Not started | — |
+| 8 | Consolidate CORS → single source of truth | ✅ Done | `7fd9c50` |
+| 9 | Stop leaking DB error details | ✅ Done | `7fd9c50` |
+| 10 | Add webhook idempotency (dedup) | ✅ Done (DB + code) | `7fd9c50` |
+| 11 | Reduce process-imports cron → 5min | ✅ Done | `7fd9c50` |
+| 12 | Add structured request logging | ✅ Done (middleware) | `7fd9c50` |
+| 13 | Move rate limiting to Vercel KV | ⬜ Not started | — |
+| 14 | Standardize Supabase client creation | ⬜ Not started | — |
+| 15 | Add Cache-Control to read-only routes | ⬜ Not started | — |
+| 16 | Add `/api/health/detailed` | ✅ Done | `1d491c8` |
+| 17 | Migrate to RFC 7807 errors | ⬜ Not started | — |
+| 18 | Wire monitoring middleware | ⬜ Not started | — |
+
+**Completed: 11/18 tasks** across 4 commits on `feat/subscription-events`
+
+---
+
 ## 1. Executive Summary
 
 This audit identified **12 critical findings** and **18 recommended improvements** across security, performance, and reliability in the EverReach backend. The most urgent issues are:
 
-- **Unauthenticated webhook endpoints** accepting unsigned payloads in production
-- **22.9% error rate** on Vercel production deployment
-- **20 cron jobs** with inconsistent auth patterns
-- **No global error boundary** or structured request logging
+- ~~**Unauthenticated webhook endpoints** accepting unsigned payloads in production~~ ✅ Fixed
+- **22.9% error rate** on Vercel production deployment (needs redeploy)
+- ~~**20 cron jobs** with inconsistent auth patterns~~ ✅ 10 migrated to `verifyCron()`
+- ~~**No global error boundary** or structured request logging~~ ✅ Request logging added
 
 ---
 
