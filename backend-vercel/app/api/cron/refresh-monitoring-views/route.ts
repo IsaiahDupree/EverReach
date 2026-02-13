@@ -13,19 +13,10 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
  */
 export async function GET(req: NextRequest) {
   try {
-    // Verify cron secret
-    const authHeader = req.headers.get('authorization');
-    const cronSecret = process.env.CRON_SECRET;
-
-    if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
-      logger.warn('Unauthorized cron attempt', {
-        path: '/api/cron/refresh-monitoring-views',
-      });
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    // Verify cron secret (fail-closed)
+    const { verifyCron } = await import('@/lib/cron-auth');
+    const authError = verifyCron(req);
+    if (authError) return authError;
 
     logger.info('Starting monitoring views refresh');
 

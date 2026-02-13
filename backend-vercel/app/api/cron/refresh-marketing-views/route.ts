@@ -22,14 +22,10 @@ function getSupabase() {
 export async function GET(req: NextRequest) {
   try {
     const supabase = getSupabase();
-    // Verify cron secret
-    const authHeader = req.headers.get('authorization');
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    // Verify cron secret (fail-closed)
+    const { verifyCron } = await import('@/lib/cron-auth');
+    const authError = verifyCron(req);
+    if (authError) return authError;
 
     const startTime = Date.now();
     const results: Record<string, any> = {};

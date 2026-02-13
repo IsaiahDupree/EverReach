@@ -19,10 +19,9 @@ type PostHogEvent = {
 export async function GET(req: NextRequest) {
   try {
     const supabase = getSupabaseServiceClient();
-    const authHeader = req.headers.get('authorization');
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const { verifyCron } = await import('@/lib/cron-auth');
+    const authError = verifyCron(req);
+    if (authError) return authError;
 
     const POSTHOG_API_KEY = process.env.POSTHOG_API_KEY;
     const POSTHOG_PROJECT_ID = process.env.POSTHOG_PROJECT_ID;

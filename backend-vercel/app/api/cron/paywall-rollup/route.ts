@@ -8,6 +8,10 @@ export function OPTIONS(req: Request){ return options(req); }
 // GET /api/cron/paywall-rollup
 export async function GET(req: Request){
   try {
+    const { verifyCron } = await import('@/lib/cron-auth');
+    const authError = verifyCron(req);
+    if (authError) return authError;
+
     const supabase = getServiceClient();
     const { data, error } = await supabase.rpc('recompute_paywall_insights');
     if (error) return serverError(error.message, req);

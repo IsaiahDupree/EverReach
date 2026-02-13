@@ -12,19 +12,10 @@ export const runtime = "edge";
  * Auth: Cron secret (CRON_SECRET env var)
  */
 export async function GET(req: Request) {
-  // Verify cron secret for security
-  const authHeader = req.headers.get('authorization');
-  const expectedAuth = `Bearer ${process.env.CRON_SECRET}`;
-  
-  if (!process.env.CRON_SECRET) {
-    console.error('[Warmth Alerts Cron] CRON_SECRET not configured');
-    return serverError('Cron not configured', req);
-  }
-  
-  if (authHeader !== expectedAuth) {
-    console.error('[Warmth Alerts Cron] Unauthorized request');
-    return new Response('Unauthorized', { status: 401 });
-  }
+  // Verify cron secret (fail-closed)
+  const { verifyCron } = await import('@/lib/cron-auth');
+  const cronAuthError = verifyCron(req);
+  if (cronAuthError) return cronAuthError;
   
   const startTime = Date.now();
   console.log('[Warmth Alerts Cron] Starting warmth check...');

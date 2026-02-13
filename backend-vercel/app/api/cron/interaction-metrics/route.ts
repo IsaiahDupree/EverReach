@@ -10,14 +10,9 @@ export function OPTIONS(req: Request){ return options(req); }
 // GET /api/cron/interaction-metrics
 export async function GET(req: Request){
   try {
-    const cronHeader = req.headers.get('x-vercel-cron');
-    if (!cronHeader) {
-      // Allow manual admin trigger without the Vercel header
-      const user = await getUser(req);
-      if (!user || !isAdmin(user.id)) {
-        return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
-      }
-    }
+    const { verifyCron } = await import('@/lib/cron-auth');
+    const authError = verifyCron(req);
+    if (authError) return authError;
 
     const supabase = getServiceClient();
     const { data, error } = await supabase.rpc('recompute_interaction_metrics');

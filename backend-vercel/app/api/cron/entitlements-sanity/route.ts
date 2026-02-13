@@ -8,6 +8,10 @@ export async function OPTIONS(){ return options(); }
 // GET /api/cron/entitlements-sanity?advanceHours=48&limit=50
 export async function GET(req: Request){
   try {
+    const { verifyCron } = await import('@/lib/cron-auth');
+    const authError = verifyCron(req);
+    if (authError) return authError;
+
     const url = new URL(req.url);
     const advanceHours = Math.max(1, Math.min(240, Number(url.searchParams.get('advanceHours') || '48')));
     const limit = Math.max(1, Math.min(500, Number(url.searchParams.get('limit') || '50')));

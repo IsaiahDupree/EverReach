@@ -29,20 +29,10 @@ export async function OPTIONS(req: Request) {
  * - Returns summary of processed/failed jobs
  */
 export async function GET(req: Request) {
-  // Auth check
-  const isVercelCron = req.headers.get('x-vercel-cron') !== null;
-  const url = new URL(req.url);
-  const queryKey = url.searchParams.get('key');
-  const headerSecret = req.headers.get('x-cron-secret');
-  
-  const isAuthorized = isVercelCron || 
-    queryKey === process.env.CRON_SECRET ||
-    headerSecret === process.env.CRON_SECRET;
-  
-  if (!isAuthorized) {
-    console.error('[Import Cron] Unauthorized request');
-    return unauthorized('Unauthorized', req);
-  }
+  // Auth check (fail-closed, Bearer header only)
+  const { verifyCron } = await import('@/lib/cron-auth');
+  const authError = verifyCron(req);
+  if (authError) return authError;
 
   console.log('[Import Cron] Starting job processor...');
   

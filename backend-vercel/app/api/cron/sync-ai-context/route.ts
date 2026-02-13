@@ -14,12 +14,10 @@ export const runtime = 'nodejs';
 export const maxDuration = 300; // 5 minutes max
 
 export async function GET(req: Request) {
-  // Verify cron secret
-  const authHeader = req.headers.get('authorization');
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    console.error('[Sync AI Context] Unauthorized cron attempt');
-    return new NextResponse('Unauthorized', { status: 401 });
-  }
+  // Verify cron secret (fail-closed)
+  const { verifyCron } = await import('@/lib/cron-auth');
+  const authError = verifyCron(req);
+  if (authError) return authError;
 
   console.log('[Sync AI Context] Starting daily sync...');
   const startTime = Date.now();

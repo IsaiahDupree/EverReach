@@ -1,7 +1,10 @@
 import { ok, options } from "@/lib/cors";
+import { verifyCron } from "@/lib/cron-auth";
 
-export const runtime = 'edge';
+export const runtime = 'nodejs';
 export async function OPTIONS(){ return options(); }
-export async function GET(){
+export async function GET(req: Request){
+  const authError = verifyCron(req);
+  if (authError) return authError;
   return ok({ ran: true, task: 'daily-recs', ts: Date.now() });
 }

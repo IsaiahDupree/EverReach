@@ -32,11 +32,10 @@ interface PhotoJob {
 export async function GET(req: NextRequest) {
   const startTime = Date.now();
 
-  // Auth check
-  const cronSecret = req.headers.get('authorization');
-  if (cronSecret !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  // Auth check (fail-closed)
+  const { verifyCron } = await import('@/lib/cron-auth');
+  const authError = verifyCron(req);
+  if (authError) return authError;
 
   // Initialize Supabase with service role
   const supabase = createClient(
