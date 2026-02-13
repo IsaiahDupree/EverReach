@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getServiceClient } from '@/lib/supabase';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 // Helper to get user from auth token
 async function getAuthenticatedUser(req: NextRequest) {
@@ -12,7 +10,7 @@ async function getAuthenticatedUser(req: NextRequest) {
   }
 
   const token = authHeader.replace('Bearer ', '');
-  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  const supabase = getServiceClient();
   
   const { data: { user }, error } = await supabase.auth.getUser(token);
   if (error || !user) {
@@ -36,7 +34,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const metricType = searchParams.get('type'); // webhook | rule | api | rate_limit | alerts
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = getServiceClient();
 
     // Get user's org_id
     const { data: profile } = await supabase

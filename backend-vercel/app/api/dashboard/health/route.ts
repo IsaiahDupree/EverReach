@@ -7,7 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getServiceClient } from '@/lib/supabase';
 
 export const runtime = 'edge';
 
@@ -20,11 +20,7 @@ export async function GET(req: NextRequest) {
     const workspace_id = searchParams.get('workspace_id');
     const service = searchParams.get('service');
 
-    // Create Supabase client
-    const supabase = createClient(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    const supabase = getServiceClient();
 
     // Query latest_service_status view
     let query = supabase

@@ -9,13 +9,11 @@
 
 import { options } from "@/lib/cors";
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getServiceClient } from '@/lib/supabase';
 import { getUser } from '@/lib/auth';
 
 export const runtime = 'nodejs';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 /**
  * GET /api/v1/feature-buckets/:id
@@ -29,7 +27,7 @@ export async function GET(
     const user = await getUser(request);
     const { id } = params;
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = getServiceClient();
 
     // Get bucket details from rollup view
     const { data: bucket, error: bucketError } = await supabase
@@ -149,7 +147,7 @@ export async function PATCH(
       note, // Optional note for status change
     } = body;
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = getServiceClient();
 
     // Get existing bucket
     const { data: existing, error: fetchError } = await supabase
@@ -255,7 +253,7 @@ export async function DELETE(
     // TODO: Check if user is admin
 
     const { id } = params;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = getServiceClient();
 
     // First, unbucket all requests
     await supabase

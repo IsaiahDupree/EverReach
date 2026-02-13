@@ -12,14 +12,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getServiceClient } from '@/lib/supabase';
 
-function getSupabase() {
-  return createClient(
-    process.env.SUPABASE_URL || '',
-    process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-  );
-}
+function getSupabase() { return getServiceClient(); }
 
 interface TrackingEvent {
   event: string;

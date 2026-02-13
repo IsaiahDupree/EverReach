@@ -8,14 +8,12 @@
  */
 
 import { options, ok, serverError } from "@/lib/cors";
-import { createClient } from '@supabase/supabase-js';
+import { getServiceClient } from '@/lib/supabase';
 
 export const runtime = 'nodejs';
 
 export function OPTIONS(req: Request) { return options(req); }
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 /**
  * GET /api/v1/changelog
@@ -33,7 +31,7 @@ export async function GET(request: Request) {
     const category = searchParams.get('category');
     const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100);
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = getServiceClient();
 
     let query = supabase
       .from('feature_changelog')

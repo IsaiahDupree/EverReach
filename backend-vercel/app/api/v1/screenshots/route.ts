@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getServiceClient } from '@/lib/supabase';
 import { screenshot } from '@/lib/analytics';
 import { options, buildCorsHeaders } from '@/lib/cors';
 
@@ -17,12 +17,7 @@ export const runtime = 'nodejs';
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 
-function getSupabase() {
-  return createClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
+function getSupabase() { return getServiceClient(); }
 
 /**
  * POST - Upload screenshot for analysis

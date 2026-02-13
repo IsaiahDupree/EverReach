@@ -6,12 +6,10 @@
  */
 
 import { options, ok, serverError } from '@/lib/cors';
-import { createClient } from '@supabase/supabase-js';
+import { getServiceClient } from '@/lib/supabase';
 
 export const runtime = 'edge';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 interface PaywallConfig {
   hard_paywall_mode: boolean;
@@ -41,7 +39,7 @@ const DEFAULT_CONFIG: PaywallConfig = {
  */
 export async function GET(request: Request) {
   try {
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = getServiceClient();
 
     // Fetch all feature flags
     const { data: flags, error } = await supabase

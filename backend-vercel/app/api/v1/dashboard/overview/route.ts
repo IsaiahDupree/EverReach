@@ -10,13 +10,11 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getServiceClient } from '@/lib/supabase';
 import { getUser } from '@/lib/auth';
 
 export const runtime = 'nodejs';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 /**
  * GET /api/v1/dashboard/overview
@@ -37,7 +35,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = getServiceClient();
     
     // Parallel queries for performance
     const [

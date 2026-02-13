@@ -7,7 +7,7 @@
 
 import { options } from "@/lib/cors";
 import { getSupabaseServiceClient } from '@/lib/supabase';
-import { createClient } from '@supabase/supabase-js';
+import { getServiceClient } from '@/lib/supabase';
 import { NextRequest, NextResponse } from 'next/server';
 import { getUser } from '@/lib/auth';
 import { getCustomFieldDefs, coerceValue, checkUniqueness } from '@/lib/custom-fields/ai-tools';
@@ -33,17 +33,8 @@ export async function GET(
     }
 
     // Get current user
-    const userSupabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        global: {
-          headers: { Authorization: authHeader },
-        },
-      }
-    );
-
-    const { data: { user }, error: userError } = await userSupabase.auth.getUser();
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: userError } = await getServiceClient().auth.getUser(token);
     if (userError || !user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -99,17 +90,8 @@ export async function PATCH(
     }
 
     // Get current user
-    const userSupabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        global: {
-          headers: { Authorization: authHeader },
-        },
-      }
-    );
-
-    const { data: { user }, error: userError } = await userSupabase.auth.getUser();
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: userError } = await getServiceClient().auth.getUser(token);
     if (userError || !user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }

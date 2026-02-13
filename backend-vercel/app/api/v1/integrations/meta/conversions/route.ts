@@ -6,19 +6,14 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getServiceClient } from '@/lib/supabase';
 import { verifyAuth } from '@/lib/auth-utils';
 import { createHash } from 'crypto';
 
 const FB_GRAPH_API = 'https://graph.facebook.com/v24.0';
 const PIXEL_ID = process.env.META_PIXEL_ID;
 
-function getSupabase() {
-  return createClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
+function getSupabase() { return getServiceClient(); }
 
 function getConversionsToken() {
   return process.env.META_CONVERSIONS_API_TOKEN;

@@ -1,21 +1,11 @@
 import { ok, options } from "@/lib/cors";
-import { createClient } from "@supabase/supabase-js";
+import { getServiceClient } from "@/lib/supabase";
 
 export const runtime = 'nodejs';
 
 const startTime = Date.now();
 
-let supabase: ReturnType<typeof createClient> | null = null;
-
-function getSupabase() {
-  if (!supabase) {
-    supabase = createClient(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-  }
-  return supabase;
-}
+function getSupabase() { return getServiceClient(); }
 
 async function checkDatabase(): Promise<{ status: string; latency?: number }> {
   try {

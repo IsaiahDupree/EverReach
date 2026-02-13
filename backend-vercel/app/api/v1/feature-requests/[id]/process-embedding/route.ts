@@ -9,7 +9,7 @@
 
 import { options } from "@/lib/cors";
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getServiceClient } from '@/lib/supabase';
 import { getUser } from '@/lib/auth';
 import { 
   generateEmbedding, 
@@ -22,8 +22,6 @@ import {
 
 export const runtime = 'nodejs';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const SIMILARITY_THRESHOLD = 0.78;
 
 /**
@@ -39,7 +37,7 @@ export async function POST(
     // Allow system calls without auth (for queue processing)
     
     const { id: featureId } = params;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = getServiceClient();
 
     // Get the feature request
     const { data: featureRequest, error: fetchError } = await supabase
@@ -189,7 +187,7 @@ export function OPTIONS(req: Request) {
  * Helper: Update bucket centroid from all request embeddings
  */
 async function updateBucketCentroid(bucketId: string) {
-  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  const supabase = getServiceClient();
 
   // Get all feature request IDs in this bucket
   const { data: requests } = await supabase

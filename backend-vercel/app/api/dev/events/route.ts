@@ -1,14 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getServiceClient } from '@/lib/supabase';
 
 export const runtime = 'edge';
 
 // POST - Track event from frontend/mobile
 export async function POST(req: NextRequest) {
   try {
-    const supabaseUrl = process.env.SUPABASE_URL!;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabase = getServiceClient();
 
     const body = await req.json();
     const {
@@ -43,7 +41,7 @@ export async function POST(req: NextRequest) {
     if (error) {
       console.error('Failed to insert event:', error);
       return NextResponse.json(
-        { error: 'Failed to insert event', details: error.message },
+        { error: 'Failed to insert event' },
         { status: 500 }
       );
     }
@@ -52,7 +50,7 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     console.error('Event tracking error:', error);
     return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }
@@ -61,9 +59,7 @@ export async function POST(req: NextRequest) {
 // GET - Fetch recent events for dashboard
 export async function GET(req: NextRequest) {
   try {
-    const supabaseUrl = process.env.SUPABASE_URL!;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabase = getServiceClient();
 
     const { searchParams } = new URL(req.url);
     const limit = parseInt(searchParams.get('limit') || '100');
@@ -88,7 +84,7 @@ export async function GET(req: NextRequest) {
 
     if (error) {
       return NextResponse.json(
-        { error: 'Failed to fetch events', details: error.message },
+        { error: 'Failed to fetch events' },
         { status: 500 }
       );
     }

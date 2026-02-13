@@ -7,7 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getServiceClient } from '@/lib/supabase';
 
 export const runtime = 'edge';
 
@@ -22,11 +22,7 @@ export async function GET(req: NextRequest) {
     const from = searchParams.get('from');
     const to = searchParams.get('to');
 
-    // Create Supabase client
-    const supabase = createClient(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    const supabase = getServiceClient();
 
     // Build query
     let query = supabase

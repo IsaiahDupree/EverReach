@@ -6,7 +6,7 @@
  */
 
 import { options, ok, created, badRequest, unauthorized, notFound, serverError } from "@/lib/cors";
-import { createClient } from '@supabase/supabase-js';
+import { getServiceClient } from '@/lib/supabase';
 import { getSupabaseServiceClient } from '@/lib/supabase';
 import { NextRequest } from 'next/server';
 
@@ -25,17 +25,8 @@ export async function GET(req: NextRequest) {
     }
 
     // Get current user
-    const userSupabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        global: {
-          headers: { Authorization: authHeader },
-        },
-      }
-    );
-
-    const { data: { user }, error: userError } = await userSupabase.auth.getUser();
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: userError } = await getServiceClient().auth.getUser(token);
     if (userError || !user) {
       return unauthorized('Authorization required', req);
     }
@@ -126,17 +117,8 @@ export async function POST(req: NextRequest) {
     }
 
     // Get current user
-    const userSupabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        global: {
-          headers: { Authorization: authHeader },
-        },
-      }
-    );
-
-    const { data: { user }, error: userError } = await userSupabase.auth.getUser();
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: userError } = await getServiceClient().auth.getUser(token);
     if (userError || !user) {
       return unauthorized('Authorization required', req);
     }

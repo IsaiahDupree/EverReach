@@ -5,18 +5,13 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getServiceClient } from '@/lib/supabase';
 import { OpenAI } from 'openai';
 import { screenshot } from '@/lib/analytics';
 import { options } from '@/lib/cors';
 import { linkScreenshotToContacts } from '@/lib/screenshot-linker';
 
-function getSupabase() {
-  return createClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
+function getSupabase() { return getServiceClient(); }
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,

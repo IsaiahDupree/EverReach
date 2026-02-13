@@ -6,17 +6,12 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getServiceClient } from '@/lib/supabase';
 import { verifyAuth } from '@/lib/auth-utils';
 
 const FB_GRAPH_API = 'https://graph.facebook.com/v24.0';
 
-function getSupabase() {
-  return createClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
+function getSupabase() { return getServiceClient(); }
 
 function getAdsToken() {
   return process.env.FB_ADS_ACCESS_TOKEN;
