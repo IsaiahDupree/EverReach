@@ -1153,6 +1153,12 @@ export default function SettingsScreen() {
           },
           {
             icon: Activity,
+            label: 'API Health Check (All Endpoints)',
+            type: 'link' as const,
+            onPress: () => router.push('/settings/api-health-check' as any),
+          },
+          {
+            icon: Activity,
             label: 'Payment Events Monitor',
             type: 'link' as const,
             onPress: () => router.push('/payment-events-test'),
