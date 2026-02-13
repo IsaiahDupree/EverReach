@@ -11,7 +11,7 @@ export interface Entitlements {
   trial_group?: string;
   trial_gate_strategy?: 'calendar_days' | 'screen_time';
   trial_usage_seconds_limit?: number;
-  subscription_status?: 'active' | 'canceled' | 'past_due' | 'trial';
+  subscription_status?: 'active' | 'trial' | 'grace' | 'paused' | 'past_due' | 'canceled' | 'expired' | 'refunded';
   source?: 'app_store' | 'play' | 'stripe' | 'manual';
   plan?: 'free' | 'pro';
   valid_until?: string | null;

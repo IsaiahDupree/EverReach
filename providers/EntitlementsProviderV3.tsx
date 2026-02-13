@@ -20,7 +20,7 @@ import analytics from '@/lib/analytics';
 
 // Types matching backend API
 export type SubscriptionTier = 'free' | 'core' | 'pro' | 'team';
-export type SubscriptionStatus = 'trial' | 'active' | 'canceled' | 'expired' | 'refunded';
+export type SubscriptionStatus = 'trial' | 'active' | 'grace' | 'paused' | 'past_due' | 'canceled' | 'expired' | 'refunded';
 export type PaymentPlatform = 'apple' | 'google' | 'stripe' | 'revenuecat';
 
 export interface FeatureLimits {
@@ -68,8 +68,11 @@ interface EntitlementsContextValue {
   // Status checks
   isTrial: boolean;
   isActive: boolean;
+  isGrace: boolean;
+  isPaused: boolean;
   isCanceled: boolean;
   isExpired: boolean;
+  hasAccess: boolean; // active, trial, grace, or past_due
 
   // Actions
   refreshEntitlements: () => Promise<void>;
@@ -374,8 +377,11 @@ export function EntitlementsProviderV3({ children }: { children: React.ReactNode
   // Computed status checks
   const isTrial = entitlements?.subscription_status === 'trial';
   const isActive = entitlements?.subscription_status === 'active';
+  const isGrace = entitlements?.subscription_status === 'grace';
+  const isPaused = entitlements?.subscription_status === 'paused';
   const isCanceled = entitlements?.subscription_status === 'canceled';
   const isExpired = entitlements?.subscription_status === 'expired';
+  const hasAccess = isActive || isTrial || isGrace || entitlements?.subscription_status === 'past_due';
 
   const value: EntitlementsContextValue = {
     entitlements: entitlements || null,
@@ -394,8 +400,11 @@ export function EntitlementsProviderV3({ children }: { children: React.ReactNode
 
     isTrial,
     isActive,
+    isGrace,
+    isPaused,
     isCanceled,
     isExpired,
+    hasAccess,
 
     refreshEntitlements,
     restorePurchases,
