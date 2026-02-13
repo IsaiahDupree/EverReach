@@ -140,13 +140,10 @@ async function sendSMS(delivery: any, supabase: ReturnType<typeof getSupabase>):
 export async function GET(req: NextRequest) {
   try {
     const supabase = getSupabase();
-    // Verify cron secret
-    const secret = req.nextUrl.searchParams.get('secret');
-    const cronSecret = process.env.CRON_SECRET;
-    
-    if (cronSecret && secret !== cronSecret) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // Verify cron secret (fail-closed, Bearer header only — no query params)
+    const { verifyCron } = await import('@/lib/cron-auth');
+    const authError = verifyCron(req);
+    if (authError) return authError;
     
     console.log('[send-sms] Starting SMS worker');
     

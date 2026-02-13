@@ -19,13 +19,6 @@ function getSupabase() {
 const POSTHOG_PROJECT_KEY = process.env.POSTHOG_PROJECT_KEY;
 const POSTHOG_HOST = process.env.POSTHOG_HOST || 'https://us.i.posthog.com';
 const POSTHOG_PERSONAL_API_KEY = process.env.POSTHOG_PERSONAL_API_KEY;
-const CRON_SECRET = process.env.CRON_SECRET;
-
-// Verify cron secret
-function verifyCronSecret(req: NextRequest): boolean {
-  const authHeader = req.headers.get('authorization');
-  return authHeader === `Bearer ${CRON_SECRET}`;
-}
 
 export async function GET(req: NextRequest) {
   try {
@@ -50,13 +43,10 @@ export async function POST(req: NextRequest) {
 
 async function handleSync(req: NextRequest, supabase: ReturnType<typeof getSupabase>) {
   try {
-    // Verify cron secret
-    if (!verifyCronSecret(req)) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    // Verify cron secret (fail-closed)
+    const { verifyCron } = await import('@/lib/cron-auth');
+    const authError = verifyCron(req);
+    if (authError) return authError;
 
     if (!POSTHOG_PERSONAL_API_KEY) {
       console.log('[PostHog Sync] Skipping: No API key configured');

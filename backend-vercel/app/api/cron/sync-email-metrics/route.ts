@@ -17,16 +17,9 @@ function getSupabase() {
   );
 }
 
-const CRON_SECRET = process.env.CRON_SECRET;
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 
 const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null;
-
-// Verify cron secret
-function verifyCronSecret(req: NextRequest): boolean {
-  const authHeader = req.headers.get('authorization');
-  return authHeader === `Bearer ${CRON_SECRET}`;
-}
 
 export async function GET(req: NextRequest) {
   try {
@@ -51,13 +44,10 @@ export async function POST(req: NextRequest) {
 
 async function handleSync(req: NextRequest, supabase: ReturnType<typeof getSupabase>) {
   try {
-    // Verify cron secret
-    if (!verifyCronSecret(req)) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    // Verify cron secret (fail-closed)
+    const { verifyCron } = await import('@/lib/cron-auth');
+    const authError = verifyCron(req);
+    if (authError) return authError;
 
     if (!resend) {
       console.log('[Email Sync] Skipping: No Resend API key configured');

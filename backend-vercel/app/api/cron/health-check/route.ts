@@ -21,13 +21,10 @@ export const maxDuration = 60; // Max 60 seconds for cron job
  */
 export async function GET(req: NextRequest) {
   try {
-    // Verify cron authorization
-    const authHeader = req.headers.get('authorization');
-    const cronSecret = process.env.CRON_SECRET;
-    
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // Verify cron authorization (fail-closed)
+    const { verifyCron } = await import('@/lib/cron-auth');
+    const authError = verifyCron(req);
+    if (authError) return authError;
 
     // Create Supabase admin client
     const supabase = createClient(

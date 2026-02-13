@@ -19,18 +19,10 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET(req: Request) {
   try {
-    // Verify cron secret (Vercel sets this automatically)
-    const authHeader = req.headers.get('authorization');
-    const cronSecret = process.env.CRON_SECRET;
-    
-    if (cronSecret) {
-      if (authHeader !== `Bearer ${cronSecret}`) {
-        return NextResponse.json(
-          { error: 'Unauthorized' },
-          { status: 401 }
-        );
-      }
-    }
+    // Verify cron secret (fail-closed)
+    const { verifyCron } = await import('@/lib/cron-auth');
+    const authError = verifyCron(req);
+    if (authError) return authError;
 
     // Initialize Supabase client (service role for cron jobs)
     const supabaseUrl = process.env.SUPABASE_URL;

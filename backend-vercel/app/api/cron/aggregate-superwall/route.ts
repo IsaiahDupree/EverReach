@@ -15,13 +15,10 @@ export const runtime = 'edge';
 
 export async function GET(req: NextRequest) {
   try {
-    // Verify cron authorization
-    const authHeader = req.headers.get('authorization');
-    const cronSecret = process.env.CRON_SECRET;
-    
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // Verify cron authorization (fail-closed)
+    const { verifyCron } = await import('@/lib/cron-auth');
+    const authError = verifyCron(req);
+    if (authError) return authError;
 
     const supabase = createClient(
       process.env.SUPABASE_URL!,

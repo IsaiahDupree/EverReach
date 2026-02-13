@@ -16,13 +16,6 @@ function getSupabase() {
   );
 }
 
-const CRON_SECRET = process.env.CRON_SECRET;
-
-// Verify cron secret
-function verifyCronSecret(req: NextRequest): boolean {
-  const authHeader = req.headers.get('authorization');
-  return authHeader === `Bearer ${CRON_SECRET}`;
-}
 
 export async function GET(req: NextRequest) {
   try {
@@ -47,13 +40,10 @@ export async function POST(req: NextRequest) {
 
 async function handleRefresh(req: NextRequest, supabase: ReturnType<typeof getSupabase>) {
   try {
-    // Verify cron secret
-    if (!verifyCronSecret(req)) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    // Verify cron secret (fail-closed)
+    const { verifyCron } = await import('@/lib/cron-auth');
+    const authError = verifyCron(req);
+    if (authError) return authError;
 
     console.log('[Dashboard Views] Starting refresh...');
 
