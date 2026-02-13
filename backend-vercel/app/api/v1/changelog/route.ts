@@ -76,7 +76,7 @@ export async function GET(request: Request) {
       data,
       grouped: groupedByVersion,
       count: data?.length || 0,
-    }, request);
+    }, request, { 'Cache-Control': 'public, max-age=300, stale-while-revalidate=60' });
   } catch (error: any) {
     console.error('[Changelog] Error:', error);
     return serverError(error?.message || 'Internal server error', request);

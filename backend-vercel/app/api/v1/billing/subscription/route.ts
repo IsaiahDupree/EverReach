@@ -110,6 +110,8 @@ export async function GET(req: NextRequest) {
       next_billing_date: subscription.current_period_end,
       can_upgrade: subscription.plan === 'free',
       can_manage: !!subscription.stripe_customer_id,
+    }, {
+      headers: { 'Cache-Control': 'private, max-age=30, stale-while-revalidate=15' },
     });
   } catch (error) {
     console.error('[Billing Subscription] Error:', error);

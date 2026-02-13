@@ -60,7 +60,7 @@ export async function GET(req: Request) {
       stripe: stripe.status,
       openai: openai.status,
     },
-  }, req);
+  }, req, { 'Cache-Control': 'public, max-age=10, stale-while-revalidate=5' });
 }
 
 export async function OPTIONS(req: Request) {
