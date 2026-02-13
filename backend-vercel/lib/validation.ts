@@ -117,7 +117,7 @@ export const contactsListQuerySchema = z.object({
   warmth_band: z.enum(['hot','warm','neutral','cool','cold']).optional(),
   pipeline: z.enum(['networking','personal','business']).optional(),
   stage: z.string().max(80).optional(),
-  sort: z.enum(['created_at.desc','created_at.asc','warmth.desc','warmth.asc']).default('created_at.desc').optional(),
+  sort: z.enum(['created_at.desc','created_at.asc','updated_at.desc','updated_at.asc','warmth.desc','warmth.asc']).default('created_at.desc').optional(),
   limit: z.coerce.number().int().min(1).max(1000).default(20).optional(),
   cursor: z.string().optional(),
 });

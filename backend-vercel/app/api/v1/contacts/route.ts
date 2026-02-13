@@ -100,7 +100,8 @@ export async function GET(req: Request){
   if (q.has_email !== undefined && q.has_email) sel = sel.not('emails', 'eq', '{}');
 
   const limit = q.limit ?? 20;
-  sel = sel.order(q.sort?.startsWith('warmth') ? 'warmth' : 'created_at', { ascending: q.sort?.endsWith('.asc') ?? false })
+  const sortCol = q.sort?.startsWith('warmth') ? 'warmth' : q.sort?.startsWith('updated_at') ? 'updated_at' : 'created_at';
+  sel = sel.order(sortCol, { ascending: q.sort?.endsWith('.asc') ?? false })
            .order('id', { ascending: false })
            .limit(limit);
   if (q.cursor) sel = sel.lt('created_at', q.cursor);
