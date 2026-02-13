@@ -975,69 +975,80 @@ export default function SettingsScreen() {
         },
       ],
     },
-    // ─── Developer & Testing (single section, visible only when SHOW_DEV_SETTINGS=true) ───
-    ...(SHOW_DEV_SETTINGS ? [{
-      title: 'Developer & Testing',
-      items: [
-        // ── Toggle ──
-        {
-          icon: Wrench,
-          label: 'Enable Dev Features',
-          type: 'toggle' as const,
-          value: devFeaturesEnabled,
-          onToggle: (val: boolean) => {
-            if (val) { enableDevFeatures(); Alert.alert('Dev Features Enabled', 'Test warmth mode (~12 hours) is now available.'); }
-            else { disableDevFeatures(); Alert.alert('Dev Features Disabled', 'Test warmth mode has been hidden.'); }
-            screenAnalytics.track('dev_features_toggled', { enabled: val });
-          },
-        },
-        // ── API & Health ──
-        { icon: Code, label: 'Developer Settings (API Keys)', type: 'link' as const, onPress: () => { screenAnalytics.track('developer_settings_opened', { from: 'settings' }); router.push('/settings/developer' as any); } },
-        { icon: Activity, label: 'API Health Check (All Endpoints)', type: 'link' as const, onPress: () => router.push('/settings/api-health-check' as any) },
-        { icon: Wrench, label: 'API Test Suite', type: 'link' as const, onPress: () => router.push('/api-test-suite') },
-        { icon: Activity, label: 'API Health Dashboard', type: 'link' as const, onPress: () => router.push('/health-status') },
-        { icon: Activity, label: 'Event Dashboard (Live)', type: 'link' as const, onPress: () => router.push('/event-dashboard' as any) },
-        { icon: Activity, label: 'Meta Pixel Test', type: 'link' as const, onPress: () => router.push('/meta-pixel-test' as any) },
-        { icon: Wrench, label: 'OpenAI Generation Test', type: 'link' as const, onPress: () => router.push('/openai-test') },
-        { icon: Wrench, label: FLAGS.LOCAL_ONLY ? 'Open Local Tester' : 'Open Supabase Tester', type: 'link' as const, onPress: () => router.push(FLAGS.LOCAL_ONLY ? '/audio-test' : '/supabase-test') },
-        // ── RevenueCat & Payments ──
-        { icon: Activity, label: 'RC Show App User ID', type: 'link' as const, onPress: handleRCShowUserId },
-        { icon: Activity, label: 'RC Log In as Current User', type: 'link' as const, onPress: handleRCLogInAsCurrent },
-        { icon: Activity, label: 'RC Log In New Test User', type: 'link' as const, onPress: handleRCLogInNewTest },
-        { icon: Activity, label: 'RC Log Out', type: 'link' as const, onPress: handleRCLogOut },
-        { icon: Activity, label: 'RC Fetch Offerings', type: 'link' as const, onPress: handleRCFetchOfferings },
-        { icon: Activity, label: 'RC Purchase Monthly', type: 'link' as const, onPress: handleRCPurchaseMonthly },
-        { icon: Activity, label: 'RC Restore Purchases', type: 'link' as const, onPress: handleRCRestore },
-        { icon: RefreshCcw, label: 'Backend Recompute Entitlements', type: 'link' as const, onPress: handleBackendRecomputeEntitlements },
-        { icon: Play, label: 'Show Subscription Plans (Paywall)', type: 'link' as const, onPress: handleTriggerPaywall },
-        { icon: Play, label: 'Test Custom Paywall', type: 'link' as const, onPress: handleTestCustomPaywall },
-        { icon: Play, label: 'Test RevenueCat Paywall', type: 'link' as const, onPress: handleTestRevenueCatPaywall },
-        { icon: Play, label: 'Test Superwall Paywall', type: 'link' as const, onPress: handleTestSuperwallPaywall },
-        { icon: Play, label: 'Test Superwall Paywall #2', type: 'link' as const, onPress: handleTestSuperwallPaywall2 },
-        { icon: XCircle, label: 'Expire Trial (Test Gate)', type: 'link' as const, onPress: handleExpireTrialForTesting },
-        { icon: RefreshCcw, label: 'Reset Payment Platform', type: 'link' as const, onPress: handleResetPaymentPlatform },
-        { icon: Activity, label: 'Payment Events Monitor', type: 'link' as const, onPress: () => router.push('/payment-events-test') },
-        { icon: Activity, label: 'RevenueCat Event Test', type: 'link' as const, onPress: () => router.push('/revenuecat-event-test' as any) },
-        // ── Warmth & Debug ──
-        { icon: Activity, label: `Test Warmth Decay (+${warmthOffsetDays}d)`, type: 'link' as const, onPress: handleTestWarmthDecay },
-        { icon: Plus, label: 'Increase Offset (+1d)', type: 'link' as const, onPress: incWarmthOffset },
-        { icon: Minus, label: 'Decrease Offset (−1d)', type: 'link' as const, onPress: decWarmthOffset },
-        { icon: RefreshCcw, label: 'Bulk Recompute All Contacts', type: 'link' as const, onPress: handleBulkWarmthRecompute },
-        // ── QA Test Pages (cloud only) ──
-        ...(!FLAGS.LOCAL_ONLY ? [
-          { icon: Wrench, label: 'Warmth Alerts Tests', type: 'link' as const, onPress: () => router.push('/warmth-alerts-test') },
-          { icon: Wrench, label: 'Contact Import Tests', type: 'link' as const, onPress: () => router.push('/contact-import-test') },
+    // ─── Developer Sections (visible only when SHOW_DEV_SETTINGS=true) ───
+    ...(SHOW_DEV_SETTINGS ? [
+      {
+        title: 'Dev: API & Backend',
+        items: [
+          { icon: Code, label: 'Developer Settings (API Keys)', type: 'link' as const, onPress: () => { screenAnalytics.track('developer_settings_opened', { from: 'settings' }); router.push('/settings/developer' as any); } },
+          { icon: Activity, label: '[NEW] API Health Check (All Endpoints)', type: 'link' as const, onPress: () => router.push('/settings/api-health-check' as any) },
+          { icon: Wrench, label: 'API Test Suite', type: 'link' as const, onPress: () => router.push('/api-test-suite') },
+          { icon: Activity, label: 'API Health Dashboard', type: 'link' as const, onPress: () => router.push('/health-status') },
+          { icon: Activity, label: 'Event Dashboard (Live)', type: 'link' as const, onPress: () => router.push('/event-dashboard' as any) },
+          { icon: Wrench, label: 'OpenAI Generation Test', type: 'link' as const, onPress: () => router.push('/openai-test') },
+          { icon: Activity, label: 'Meta Pixel Test', type: 'link' as const, onPress: () => router.push('/meta-pixel-test' as any) },
+          { icon: Wrench, label: FLAGS.LOCAL_ONLY ? 'Open Local Tester' : 'Open Supabase Tester', type: 'link' as const, onPress: () => router.push(FLAGS.LOCAL_ONLY ? '/audio-test' : '/supabase-test') },
+        ],
+      },
+      {
+        title: 'Dev: Payments & Paywalls',
+        items: [
+          { icon: Activity, label: 'RC Show App User ID', type: 'link' as const, onPress: handleRCShowUserId },
+          { icon: Activity, label: 'RC Log In as Current User', type: 'link' as const, onPress: handleRCLogInAsCurrent },
+          { icon: Activity, label: 'RC Log In New Test User', type: 'link' as const, onPress: handleRCLogInNewTest },
+          { icon: Activity, label: 'RC Log Out', type: 'link' as const, onPress: handleRCLogOut },
+          { icon: Activity, label: 'RC Fetch Offerings', type: 'link' as const, onPress: handleRCFetchOfferings },
+          { icon: Activity, label: 'RC Purchase Monthly', type: 'link' as const, onPress: handleRCPurchaseMonthly },
+          { icon: Activity, label: 'RC Restore Purchases', type: 'link' as const, onPress: handleRCRestore },
+          { icon: RefreshCcw, label: 'Backend Recompute Entitlements', type: 'link' as const, onPress: handleBackendRecomputeEntitlements },
+          { icon: Play, label: 'Show Subscription Plans (Paywall)', type: 'link' as const, onPress: handleTriggerPaywall },
+          { icon: Play, label: 'Test Custom Paywall', type: 'link' as const, onPress: handleTestCustomPaywall },
+          { icon: Play, label: 'Test RevenueCat Paywall', type: 'link' as const, onPress: handleTestRevenueCatPaywall },
+          { icon: Play, label: 'Test Superwall Paywall', type: 'link' as const, onPress: handleTestSuperwallPaywall },
+          { icon: Play, label: 'Test Superwall Paywall #2', type: 'link' as const, onPress: handleTestSuperwallPaywall2 },
+          { icon: XCircle, label: 'Expire Trial (Test Gate)', type: 'link' as const, onPress: handleExpireTrialForTesting },
+          { icon: RefreshCcw, label: 'Reset Payment Platform', type: 'link' as const, onPress: handleResetPaymentPlatform },
+          { icon: Activity, label: 'Payment Events Monitor', type: 'link' as const, onPress: () => router.push('/payment-events-test') },
+          { icon: Activity, label: 'RevenueCat Event Test', type: 'link' as const, onPress: () => router.push('/revenuecat-event-test' as any) },
+        ],
+      },
+      {
+        title: 'Dev: Warmth & Contacts',
+        items: [
+          { icon: Activity, label: `Test Warmth Decay (+${warmthOffsetDays}d)`, type: 'link' as const, onPress: handleTestWarmthDecay },
+          { icon: Plus, label: 'Increase Offset (+1d)', type: 'link' as const, onPress: incWarmthOffset },
+          { icon: Minus, label: 'Decrease Offset (−1d)', type: 'link' as const, onPress: decWarmthOffset },
+          { icon: RefreshCcw, label: 'Bulk Recompute All Contacts', type: 'link' as const, onPress: handleBulkWarmthRecompute },
+          ...(!FLAGS.LOCAL_ONLY ? [
+            { icon: Wrench, label: 'Warmth Alerts Tests', type: 'link' as const, onPress: () => router.push('/warmth-alerts-test') },
+            { icon: Wrench, label: 'Contact Import Tests', type: 'link' as const, onPress: () => router.push('/contact-import-test') },
+            { icon: Users, label: 'Contact Save Test', type: 'link' as const, onPress: () => router.push('/contact-save-test') },
+            { icon: Activity, label: 'Contacts Load Test', type: 'link' as const, onPress: () => router.push('/contacts-load-test') },
+            { icon: History, label: 'Contact History', type: 'link' as const, onPress: () => { if (people.length > 0) router.push(`/contact-history/${people[0].id}`); else Alert.alert('No Contacts', 'Add a contact first.'); } },
+          ] : []),
           { icon: FileText, label: 'Notes API Tests', type: 'link' as const, onPress: () => router.push('/notes-test') },
-          { icon: Users, label: 'Contact Save Test', type: 'link' as const, onPress: () => router.push('/contact-save-test') },
-          { icon: Activity, label: 'Contacts Load Test', type: 'link' as const, onPress: () => router.push('/contacts-load-test') },
-          { icon: History, label: 'Contact History', type: 'link' as const, onPress: () => { if (people.length > 0) router.push(`/contact-history/${people[0].id}`); else Alert.alert('No Contacts', 'Add a contact first.'); } },
-        ] : []),
-        // ── Resets & Onboarding ──
-        { icon: RefreshCw, label: 'Reset Welcome Screen', type: 'link' as const, onPress: async () => { await AsyncStorage.removeItem('@has_seen_welcome'); Alert.alert('Success', 'Welcome screen reset. Reload the app.'); } },
-        { icon: Play, label: 'Show Upgrade Onboarding', type: 'link' as const, onPress: handleShowUpgradeOnboarding },
-        { icon: Play, label: 'Show Onboarding V2 (22 Questions)', type: 'link' as const, onPress: handleShowOnboardingV2 },
-      ],
-    }] : []),
+        ],
+      },
+      {
+        title: 'Dev: Resets & Toggles',
+        items: [
+          {
+            icon: Wrench,
+            label: 'Enable Dev Features',
+            type: 'toggle' as const,
+            value: devFeaturesEnabled,
+            onToggle: (val: boolean) => {
+              if (val) { enableDevFeatures(); Alert.alert('Dev Features Enabled', 'Test warmth mode (~12 hours) is now available.'); }
+              else { disableDevFeatures(); Alert.alert('Dev Features Disabled', 'Test warmth mode has been hidden.'); }
+              screenAnalytics.track('dev_features_toggled', { enabled: val });
+            },
+          },
+          { icon: RefreshCw, label: 'Reset Welcome Screen', type: 'link' as const, onPress: async () => { await AsyncStorage.removeItem('@has_seen_welcome'); Alert.alert('Success', 'Welcome screen reset. Reload the app.'); } },
+          { icon: Play, label: 'Show Upgrade Onboarding', type: 'link' as const, onPress: handleShowUpgradeOnboarding },
+          { icon: Play, label: 'Show Onboarding V2 (22 Questions)', type: 'link' as const, onPress: handleShowOnboardingV2 },
+        ],
+      },
+    ] : []),
   ];
 
   const styles = createStyles(theme);
