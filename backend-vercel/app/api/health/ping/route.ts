@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getServiceClient } from '@/lib/supabase';
 
 export const runtime = 'nodejs';
 
@@ -14,22 +14,22 @@ export const runtime = 'nodejs';
  * 
  * Should be called every 5-15 minutes via cron
  */
+export async function GET(req: NextRequest) {
+  return runHealthPing(req);
+}
+
 export async function POST(req: NextRequest) {
+  return runHealthPing(req);
+}
+
+async function runHealthPing(req: NextRequest) {
   try {
-    const authHeader = req.headers.get('authorization');
-    const cronSecret = process.env.CRON_SECRET;
-    
-    // Verify cron/internal auth
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // Verify cron secret (fail-closed)
+    const { verifyCron } = await import('@/lib/cron-auth');
+    const authError = verifyCron(req);
+    if (authError) return authError;
 
-    const SUPABASE_URL = process.env.SUPABASE_URL!;
-    const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, { 
-      auth: { persistSession: false } 
-    });
+    const supabase = getServiceClient();
 
     const now = new Date();
     const results: Record<string, any> = {};
@@ -167,18 +167,6 @@ export async function POST(req: NextRequest) {
     console.error('[health-ping] Error:', error);
     return NextResponse.json({
       error: 'Health check failed',
-      details: error.message
     }, { status: 500 });
   }
-}
-
-// Health check for the health checker itself (meta!)
-export async function GET() {
-  return NextResponse.json({
-    status: 'ok',
-    service: 'health-ping',
-    description: 'Service health monitoring endpoint',
-    schedule: 'Call via cron every 5-15 minutes',
-    timestamp: new Date().toISOString()
-  });
 }

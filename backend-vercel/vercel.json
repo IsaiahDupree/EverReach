@@ -8,55 +8,11 @@
   "framework": "nextjs",
   "crons": [
     {
-      "path": "/api/cron/check-warmth-alerts",
-      "schedule": "0 9 * * *"
-    },
-    {
-      "path": "/api/cron/sync-ai-context",
-      "schedule": "0 2 * * *"
-    },
-    {
-      "path": "/api/cron/refresh-monitoring-views",
+      "path": "/api/cron/monitor",
       "schedule": "*/5 * * * *"
     },
     {
-      "path": "/api/cron/sync-posthog",
-      "schedule": "*/15 * * * *"
-    },
-    {
-      "path": "/api/cron/dev-activity-digest",
-      "schedule": "0 9 * * *"
-    },
-    {
-      "path": "/api/cron/refresh-dashboard-views",
-      "schedule": "0 * * * *"
-    },
-    {
-      "path": "/api/cron/refresh-marketing-views",
-      "schedule": "0 * * * *"
-    },
-    {
-      "path": "/api/cron/process-enrichment-queue",
-      "schedule": "*/5 * * * *"
-    },
-    {
-      "path": "/api/cron/warmth-snapshots",
-      "schedule": "0 0 * * *"
-    },
-    {
-      "path": "/api/cron/recompute-warmth",
-      "schedule": "0 1 * * *"
-    },
-    {
-      "path": "/api/cron/process-imports",
-      "schedule": "*/5 * * * *"
-    },
-    {
-      "path": "/api/cron/process-contact-photos",
-      "schedule": "*/5 * * * *"
-    },
-    {
-      "path": "/api/cron/health-check",
+      "path": "/api/cron/process-queues",
       "schedule": "*/5 * * * *"
     },
     {
@@ -64,28 +20,32 @@
       "schedule": "*/15 * * * *"
     },
     {
-      "path": "/api/etl/posthog",
+      "path": "/api/alerts/check",
+      "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/cron/refresh-views",
+      "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/daily-warmth",
       "schedule": "0 0 * * *"
     },
     {
-      "path": "/api/etl/meta-ads",
+      "path": "/api/cron/daily-etl",
       "schedule": "0 1 * * *"
     },
     {
-      "path": "/api/etl/mobile-acquisition",
+      "path": "/api/cron/sync-ai-context",
       "schedule": "0 2 * * *"
     },
     {
-      "path": "/api/etl/openai-usage",
-      "schedule": "0 3 * * *"
+      "path": "/api/cron/check-warmth-alerts",
+      "schedule": "0 9 * * *"
     },
     {
-      "path": "/api/health/ping",
-      "schedule": "*/15 * * * *"
-    },
-    {
-      "path": "/api/alerts/check",
-      "schedule": "*/15 * * * *"
+      "path": "/api/cron/dev-activity-digest",
+      "schedule": "0 9 * * *"
     }
   ]
 }

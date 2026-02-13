@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getServiceClient } from '@/lib/supabase';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -18,23 +18,25 @@ export const maxDuration = 60;
  * 
  * Should be called every 15 minutes via cron
  */
-export async function POST(req: NextRequest) {
-  try {
-    const authHeader = req.headers.get('authorization');
-    const cronSecret = process.env.CRON_SECRET;
-    
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+export async function GET(req: NextRequest) {
+  return runAlertCheck(req);
+}
 
-    const SUPABASE_URL = process.env.SUPABASE_URL!;
-    const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+export async function POST(req: NextRequest) {
+  return runAlertCheck(req);
+}
+
+async function runAlertCheck(req: NextRequest) {
+  try {
+    // Verify cron secret (fail-closed)
+    const { verifyCron } = await import('@/lib/cron-auth');
+    const authError = verifyCron(req);
+    if (authError) return authError;
+
     const SLACK_WEBHOOK_URL = process.env.SLACK_WEBHOOK_URL;
     const ALERT_EMAIL = process.env.ALERT_EMAIL;
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, { 
-      auth: { persistSession: false } 
-    });
+    const supabase = getServiceClient();
 
     const now = new Date();
     const alertsTriggered: any[] = [];
@@ -311,18 +313,6 @@ export async function POST(req: NextRequest) {
     console.error('[alerts] Error checking alerts:', error);
     return NextResponse.json({
       error: 'Alert check failed',
-      details: error.message
     }, { status: 500 });
   }
-}
-
-// Health check
-export async function GET() {
-  return NextResponse.json({
-    status: 'ok',
-    service: 'alerts-check',
-    description: 'Alert monitoring and notification system',
-    schedule: 'Call via cron every 15 minutes',
-    timestamp: new Date().toISOString()
-  });
 }

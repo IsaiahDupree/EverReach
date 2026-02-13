@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getServiceClient } from '@/lib/supabase';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -17,17 +17,21 @@ export const maxDuration = 60;
  * Can poll OpenAI Usage API or calculate from local logs
  * Should be called daily via cron
  */
-export async function POST(req: NextRequest) {
-  try {
-    const authHeader = req.headers.get('authorization');
-    const cronSecret = process.env.CRON_SECRET;
-    
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+export async function GET(req: NextRequest) {
+  return runOpenAIUsageETL(req);
+}
 
-    const SUPABASE_URL = process.env.SUPABASE_URL!;
-    const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+export async function POST(req: NextRequest) {
+  return runOpenAIUsageETL(req);
+}
+
+async function runOpenAIUsageETL(req: NextRequest) {
+  try {
+    // Verify cron secret (fail-closed)
+    const { verifyCron } = await import('@/lib/cron-auth');
+    const authError = verifyCron(req);
+    if (authError) return authError;
+
     const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
     const OPENAI_ORG_ID = process.env.OPENAI_ORG_ID;
 
@@ -38,9 +42,7 @@ export async function POST(req: NextRequest) {
       }, { status: 500 });
     }
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, { 
-      auth: { persistSession: false } 
-    });
+    const supabase = getServiceClient();
 
     const results: Record<string, any> = {};
     const now = new Date();
@@ -215,20 +217,8 @@ export async function POST(req: NextRequest) {
     console.error('[openai-usage-etl] Error:', error);
     return NextResponse.json({
       error: 'ETL failed',
-      details: error.message
     }, { status: 500 });
   }
-}
-
-// Health check
-export async function GET() {
-  return NextResponse.json({
-    status: 'ok',
-    service: 'openai-usage-etl',
-    description: 'Daily ETL job for OpenAI usage and cost tracking',
-    schedule: 'Call via cron daily at 03:00 UTC',
-    timestamp: new Date().toISOString()
-  });
 }
 
 /**
