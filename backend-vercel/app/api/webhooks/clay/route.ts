@@ -11,15 +11,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getServiceClient } from '@/lib/supabase';
 import crypto from 'crypto';
-
-function getSupabase() {
-  return createClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
 
 interface EnrichmentWebhookPayload {
   request_id: string;
@@ -91,8 +84,8 @@ function verifySignature(body: string, signature: string | null): boolean {
 
   const secret = process.env.CLAY_WEBHOOK_SECRET || process.env.ENRICHMENT_WEBHOOK_SECRET;
   if (!secret) {
-    console.warn('[clay-webhook] No webhook secret configured');
-    return true; // Allow in development
+    console.error('[clay-webhook] No webhook secret configured — rejecting (fail-closed)');
+    return false;
   }
 
   try {
@@ -113,7 +106,7 @@ function verifySignature(body: string, signature: string | null): boolean {
 
 export async function POST(req: NextRequest) {
   try {
-    const supabase = getSupabase();
+    const supabase = getServiceClient();
     const signature = req.headers.get('x-clay-signature') || 
                      req.headers.get('x-enrichment-signature');
     const body = await req.text();
@@ -179,7 +172,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('[clay-webhook] Error processing webhook:', error);
     return NextResponse.json(
-      { error: 'Failed to process webhook', details: (error as Error).message },
+      { error: 'Failed to process webhook' },
       { status: 500 }
     );
   }

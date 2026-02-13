@@ -15,15 +15,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getServiceClient } from '@/lib/supabase';
 import crypto from 'crypto';
-
-function getSupabase() {
-  return createClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
 
 interface ResendWebhookEvent {
   type: 'email.sent' | 'email.delivered' | 'email.delivery_delayed' | 
@@ -57,8 +50,8 @@ function verifySignature(body: string, signature: string | null): boolean {
 
   const secret = process.env.RESEND_WEBHOOK_SECRET;
   if (!secret) {
-    console.warn('[resend-webhook] No RESEND_WEBHOOK_SECRET configured');
-    return true; // Allow in development
+    console.error('[resend-webhook] No RESEND_WEBHOOK_SECRET configured — rejecting (fail-closed)');
+    return false;
   }
 
   try {
@@ -79,7 +72,7 @@ function verifySignature(body: string, signature: string | null): boolean {
 
 export async function POST(req: NextRequest) {
   try {
-    const supabase = getSupabase();
+    const supabase = getServiceClient();
     const signature = req.headers.get('resend-signature');
     const body = await req.text();
     
@@ -230,7 +223,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('[resend-webhook] Error processing webhook:', error);
     return NextResponse.json(
-      { error: 'Failed to process webhook', details: (error as Error).message },
+      { error: 'Failed to process webhook' },
       { status: 500 }
     );
   }

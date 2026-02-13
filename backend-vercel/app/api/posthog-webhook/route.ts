@@ -4,15 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-// Lazy initialization to avoid build-time errors
-function getSupabaseClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
+import { getServiceClient } from '@/lib/supabase';
 
 // Whitelist of properties that are safe to store (no PII)
 const ALLOWED_PROPERTIES = new Set([
@@ -183,7 +175,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Insert into Supabase
-    const supabase = getSupabaseClient();
+    const supabase = getServiceClient();
     const { error, count } = await supabase
       .from('analytics_events')
       .insert(rows);
@@ -191,7 +183,7 @@ export async function POST(req: NextRequest) {
     if (error) {
       console.error('[PostHog] Supabase insert error:', error);
       return NextResponse.json(
-        { error: 'Database insert failed', details: error.message },
+        { error: 'Database insert failed' },
         { status: 500 }
       );
     }
@@ -209,7 +201,7 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     console.error('[PostHog] Webhook processing error:', error);
     return NextResponse.json(
-      { error: 'Processing failed', details: error.message },
+      { error: 'Processing failed' },
       { status: 500 }
     );
   }
@@ -219,7 +211,7 @@ export async function POST(req: NextRequest) {
  * Process specific high-value events into typed tables for easier querying
  */
 async function processDomainEvents(events: any[]) {
-  const supabase = getSupabaseClient();
+  const supabase = getServiceClient();
   for (const event of events) {
     try {
       // Message generation events

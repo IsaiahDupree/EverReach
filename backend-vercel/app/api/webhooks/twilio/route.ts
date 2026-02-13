@@ -10,16 +10,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getServiceClient } from '@/lib/supabase';
 import crypto from 'crypto';
 import { okXml } from '@/lib/cors';
-
-function getSupabase() {
-  return createClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
 
 interface TwilioWebhookParams {
   MessageSid: string;
@@ -48,8 +41,8 @@ function verifySignature(url: string, params: Record<string, string>, signature:
 
   const authToken = process.env.TWILIO_AUTH_TOKEN;
   if (!authToken) {
-    console.warn('[twilio-webhook] No TWILIO_AUTH_TOKEN configured');
-    return true; // Allow in development
+    console.error('[twilio-webhook] No TWILIO_AUTH_TOKEN configured — rejecting (fail-closed)');
+    return false;
   }
 
   try {
@@ -85,7 +78,7 @@ function isStartKeyword(message: string): boolean {
 
 export async function POST(req: NextRequest) {
   try {
-    const supabase = getSupabase();
+    const supabase = getServiceClient();
     const signature = req.headers.get('x-twilio-signature');
     const url = req.url;
     

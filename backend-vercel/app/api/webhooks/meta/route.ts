@@ -9,16 +9,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getServiceClient } from '@/lib/supabase';
 
 const VERIFY_TOKEN = process.env.META_WEBHOOK_VERIFY_TOKEN || 'everreach_meta_verify_2025';
-
-function getSupabase() {
-  return createClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
 
 // Webhook verification (GET)
 export async function GET(req: NextRequest) {
@@ -43,7 +36,7 @@ export async function GET(req: NextRequest) {
 // Webhook events (POST)
 export async function POST(req: NextRequest) {
   try {
-    const supabase = getSupabase();
+    const supabase = getServiceClient();
     const body = await req.json();
 
     console.log('📨 Meta webhook received:', JSON.stringify(body, null, 2));
@@ -79,7 +72,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('Webhook processing error:', error);
     // Return 200 to prevent Meta from retrying
-    return NextResponse.json({ status: 'error', message: (error as Error).message }, { status: 200 });
+    return NextResponse.json({ status: 'error' }, { status: 200 });
   }
 }
 

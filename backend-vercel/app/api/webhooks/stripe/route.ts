@@ -1,30 +1,21 @@
 import { ok, options, badRequest, serverError } from "@/lib/cors";
 import Stripe from "stripe";
-import { createClient } from "@supabase/supabase-js";
+import { getServiceClient } from "@/lib/supabase";
 import { getProductIdForStoreSku, insertSubscriptionSnapshot, recomputeEntitlementsForUser } from "@/lib/entitlements";
 
 export const runtime = 'nodejs';
 
 export async function OPTIONS(){ return options(); }
 
-function requireEnv(name: string): string {
-  const v = process.env[name];
-  if (!v) throw new Error(`Missing env ${name}`);
-  return v;
-}
-
-async function updateProfileByUserId(supabaseUrl: string, serviceKey: string, userId: string, patch: Record<string, any>) {
-  const supabase = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
+async function updateProfileByUserId(supabase: any, userId: string, patch: Record<string, any>) {
   await supabase.from('profiles').upsert({ user_id: userId, ...patch }, { onConflict: 'user_id' });
 }
 
-async function updateProfileByCustomerId(supabaseUrl: string, serviceKey: string, customerId: string, patch: Record<string, any>) {
-  const supabase = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
+async function updateProfileByCustomerId(supabase: any, customerId: string, patch: Record<string, any>) {
   await supabase.from('profiles').update(patch).eq('stripe_customer_id', customerId);
 }
 
-async function getUserIdByCustomerId(supabaseUrl: string, serviceKey: string, customerId: string): Promise<string | null> {
-  const supabase = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
+async function getUserIdByCustomerId(supabase: any, customerId: string): Promise<string | null> {
   const { data } = await supabase
     .from('profiles')
     .select('user_id')
@@ -56,12 +47,6 @@ export async function POST(req: Request){
   const sig = req.headers.get('stripe-signature');
   if (!sig) return badRequest('Missing stripe-signature');
 
-  const SUPABASE_URL = process.env.SUPABASE_URL;
-  const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-    return serverError('Server misconfigured: missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
-  }
-
   const raw = await req.text();
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
   if (!secret) {
@@ -80,8 +65,7 @@ export async function POST(req: Request){
   }
 
   try {
-    // Service client used for entitlement snapshot and recompute
-    const serviceSupabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } });
+    const serviceSupabase = getServiceClient();
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
@@ -115,14 +99,14 @@ export async function POST(req: Request){
         };
 
         if (userId) {
-          await updateProfileByUserId(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, userId, patch);
+          await updateProfileByUserId(serviceSupabase, userId, patch);
         } else if (customerId) {
           // fallback by customer id
-          await updateProfileByCustomerId(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, customerId, patch);
+          await updateProfileByCustomerId(serviceSupabase, customerId, patch);
         }
 
         // Insert snapshot + recompute entitlements when we can resolve user
-        const resolvedUserId = userId || (customerId ? await getUserIdByCustomerId(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, customerId) : null);
+        const resolvedUserId = userId || (customerId ? await getUserIdByCustomerId(serviceSupabase, customerId) : null);
         if (resolvedUserId) {
           const productId = await getProductIdForStoreSku(serviceSupabase as any, 'stripe', priceId);
           const logicalStatus = mapStripeStatusToLogical(status);
@@ -156,9 +140,9 @@ export async function POST(req: Request){
           subscription_status: status || undefined,
           current_period_end: currentPeriodEnd || undefined,
         };
-        await updateProfileByCustomerId(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, customerId, patch);
+        await updateProfileByCustomerId(serviceSupabase, customerId, patch);
 
-        const resolvedUserId = customerId ? await getUserIdByCustomerId(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, customerId) : null;
+        const resolvedUserId = customerId ? await getUserIdByCustomerId(serviceSupabase, customerId) : null;
         if (resolvedUserId) {
           const productId = await getProductIdForStoreSku(serviceSupabase as any, 'stripe', priceId);
           const logicalStatus = mapStripeStatusToLogical(status);
@@ -180,7 +164,8 @@ export async function POST(req: Request){
         break;
     }
   } catch (err: any) {
-    return serverError(`Handler error: ${err.message}`);
+    console.error('[stripe-webhook] Handler error:', err);
+    return serverError('Webhook processing failed');
   }
 
   return ok({ received: true });

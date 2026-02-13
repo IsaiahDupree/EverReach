@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+import { getServiceClient } from '@/lib/supabase';
 
 // Helper to get user from auth token
 async function getAuthenticatedUser(req: NextRequest) {
@@ -12,7 +9,7 @@ async function getAuthenticatedUser(req: NextRequest) {
   }
 
   const token = authHeader.replace('Bearer ', '');
-  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  const supabase = getServiceClient();
   
   const { data: { user }, error } = await supabase.auth.getUser(token);
   if (error || !user) {
@@ -42,7 +39,7 @@ export async function GET(
     const offset = parseInt(searchParams.get('offset') || '0');
     const status = searchParams.get('status'); // filter by status
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = getServiceClient();
 
     // Get user's org_id
     const { data: profile } = await supabase
