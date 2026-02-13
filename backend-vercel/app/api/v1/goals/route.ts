@@ -34,7 +34,7 @@ export async function GET(req: Request){
     } // 'org' reserved for future org-scoped behavior
 
     const { data, error } = await q;
-    if (error) return serverError(error.message, req);
+    if (error) return serverError("Internal server error", req);
     const items = data || [];
     return ok({ goals: items, items }, req);
   } catch (e: any) {
@@ -77,7 +77,7 @@ export async function POST(req: Request){
       .insert([insert])
       .select('id, name, created_at')
       .single();
-    if (error) return serverError(error.message, req);
+    if (error) return serverError("Internal server error", req);
     return created({ goal: data }, req);
   } catch (e: any) {
     return serverError(e?.message || 'Internal error', req);

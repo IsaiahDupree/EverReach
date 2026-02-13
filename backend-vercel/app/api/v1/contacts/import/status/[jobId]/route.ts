@@ -30,7 +30,7 @@ export async function GET(
 
     if (error) {
       console.error('[Import Status] Database error:', error);
-      return serverError(`Failed to get import status: ${error.message}`, req);
+      return serverError("Internal server error", req);
     }
 
     if (!data) {
@@ -41,6 +41,6 @@ export async function GET(
 
   } catch (error: any) {
     console.error('[Import Status] Error:', error);
-    return serverError(`Internal error: ${error.message}`, req);
+    return serverError("Internal server error", req);
   }
 }

@@ -18,7 +18,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }){
       .select('id, channel, name, description, subject_tmpl, body_tmpl, closing_tmpl, variables, visibility, is_default, created_at, updated_at')
       .eq('id', params.id)
       .maybeSingle();
-    if (error) return serverError(error.message, req);
+    if (error) return serverError("Internal server error", req);
     if (!data) return notFound('Template not found', req);
     return ok({ template: data }, req);
   } catch (e: any) {
@@ -42,7 +42,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       .eq('id', params.id)
       .select('id, updated_at')
       .maybeSingle();
-    if (error) return serverError(error.message, req);
+    if (error) return serverError("Internal server error", req);
     if (!data) return notFound('Template not found', req);
     return ok({ template: data }, req);
   } catch (e: any) {
@@ -62,7 +62,7 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
       .eq('id', params.id)
       .select('id')
       .maybeSingle();
-    if (error) return serverError(error.message, req);
+    if (error) return serverError("Internal server error", req);
     if (!data) return notFound('Template not found', req);
     return ok({ deleted: true, id: data.id }, req);
   } catch (e: any) {

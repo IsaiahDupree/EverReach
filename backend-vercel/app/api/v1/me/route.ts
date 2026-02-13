@@ -79,7 +79,7 @@ export async function PATCH(req: Request){
     .single();
 
   if (error) {
-    return badRequest(`Failed to update profile: ${error.message}`, req);
+    return badRequest("Failed to update profile", req);
   }
 
   return ok({

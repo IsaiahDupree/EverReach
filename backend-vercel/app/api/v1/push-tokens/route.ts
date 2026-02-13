@@ -34,13 +34,13 @@ export async function GET(req: Request) {
       .order('created_at', { ascending: false });
     
     if (error) {
-      return serverError(error.message, req);
+      return serverError("Internal server error", req);
     }
     
     return ok({ tokens: tokens || [], items: tokens || [] }, req);
     
   } catch (error: any) {
-    return serverError(error.message, req);
+    return serverError("Internal server error", req);
   }
 }
 
@@ -96,7 +96,7 @@ export async function POST(req: Request) {
         .select()
         .single();
       
-      if (error) return serverError(error.message, req);
+      if (error) return serverError("Internal server error", req);
       
       return ok({ token: updated, updated: true }, req);
     }
@@ -117,12 +117,12 @@ export async function POST(req: Request) {
       .select()
       .single();
     
-    if (error) return serverError(error.message, req);
+    if (error) return serverError("Internal server error", req);
     
     return ok({ token: created, created: true }, req);
     
   } catch (error: any) {
-    return serverError(error.message, req);
+    return serverError("Internal server error", req);
   }
 }
 
@@ -149,11 +149,11 @@ export async function DELETE(req: Request) {
       .update({ is_active: false })
       .eq('push_token', pushToken);
     
-    if (error) return serverError(error.message, req);
+    if (error) return serverError("Internal server error", req);
     
     return ok({ success: true }, req);
     
   } catch (error: any) {
-    return serverError(error.message, req);
+    return serverError("Internal server error", req);
   }
 }

@@ -146,7 +146,7 @@ export async function GET(req: NextRequest) {
     console.error('[Cron] Unexpected error:', error);
     return NextResponse.json({ 
       error: 'Internal server error',
-      details: error.message 
+       
     }, { status: 500 });
   }
 }

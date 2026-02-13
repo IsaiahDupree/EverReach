@@ -35,7 +35,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       .is('deleted_at', null)
       .maybeSingle();
 
-    if (fetchError) return serverError(`Database error: ${fetchError.message}`, req);
+    if (fetchError) return serverError("Internal server error", req);
     if (!contact) return notFound('Contact not found', req);
 
     // Parse multipart form data
@@ -76,7 +76,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
     if (uploadError) {
       console.error('[Avatar Upload] Storage error:', uploadError);
-      return serverError(`Failed to upload avatar: ${uploadError.message}`, req);
+      return serverError("Internal server error", req);
     }
 
     // Get public URL
@@ -99,7 +99,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     if (updateError) {
       // Try to clean up uploaded file
       await storage.storage.from(bucket).remove([storagePath]);
-      return serverError(`Failed to update contact: ${updateError.message}`, req);
+      return serverError("Internal server error", req);
     }
 
     console.log(`[Avatar Upload] Success: contact ${contactId}, URL: ${publicUrl}`);
@@ -113,7 +113,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
   } catch (error: any) {
     console.error('[Avatar Upload] Error:', error);
-    return serverError(`Avatar upload failed: ${error.message}`, req);
+    return serverError("Internal server error", req);
   }
 }
 
@@ -142,7 +142,7 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
       .is('deleted_at', null)
       .maybeSingle();
 
-    if (fetchError) return serverError(`Database error: ${fetchError.message}`, req);
+    if (fetchError) return serverError("Internal server error", req);
     if (!contact) return notFound('Contact not found', req);
 
     // Extract storage path from photo_url if it exists and is from our storage
@@ -183,7 +183,7 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
       .maybeSingle();
 
     if (updateError) {
-      return serverError(`Failed to update contact: ${updateError.message}`, req);
+      return serverError("Internal server error", req);
     }
 
     console.log(`[Avatar Delete] Success: contact ${contactId}`);
@@ -195,6 +195,6 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
 
   } catch (error: any) {
     console.error('[Avatar Delete] Error:', error);
-    return serverError(`Avatar deletion failed: ${error.message}`, req);
+    return serverError("Internal server error", req);
   }
 }

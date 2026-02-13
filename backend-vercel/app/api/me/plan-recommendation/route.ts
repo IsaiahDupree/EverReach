@@ -22,7 +22,7 @@ export async function GET(req: Request){
       .eq('user_id', user.id)
       .eq('window', '30d')
       .maybeSingle();
-    if (error) return serverError(error.message, req);
+    if (error) return serverError("Internal server error", req);
 
     const row = data || {} as any;
     const composeRuns = row.compose_runs_used || 0;

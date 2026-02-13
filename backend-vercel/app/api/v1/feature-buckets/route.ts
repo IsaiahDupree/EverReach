@@ -93,7 +93,7 @@ export async function POST(req: Request) {
       }])
       .select('*')
       .single();
-    if (error) return serverError(error.message, req);
+    if (error) return serverError("Internal server error", req);
     return ok({ bucket: data }, req);
   } catch (e: any) {
     return serverError(e?.message || 'Internal error', req);

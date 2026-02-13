@@ -25,7 +25,7 @@ export async function GET(
     .eq('kind', 'note')
     .maybeSingle();
 
-  if (error) return serverError(`Database error: ${error.message}`, req);
+  if (error) return serverError("Internal server error", req);
   if (!data) return notFound('Note not found', req);
 
   // Return with note_text alias for consistency with POST
@@ -57,7 +57,7 @@ export async function DELETE(
     .eq('kind', 'note')
     .maybeSingle();
 
-  if (fetchError) return serverError(`Database error: ${fetchError.message}`, req);
+  if (fetchError) return serverError("Internal server error", req);
   if (!existing) return notFound('Note not found', req);
 
   // Delete the note
@@ -70,7 +70,7 @@ export async function DELETE(
     .select('id')
     .maybeSingle();
 
-  if (error) return serverError(`Delete failed: ${error.message}`, req);
+  if (error) return serverError("Internal server error", req);
   if (!data) return notFound('Note not found', req);
 
   return ok({ deleted: true, id: data.id }, req);

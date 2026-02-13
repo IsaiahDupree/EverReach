@@ -73,7 +73,7 @@ export async function PATCH(
     
     if (error) {
       if (error.code === 'PGRST116') return notFound('Alert not found', req);
-      return serverError(error.message, req);
+      return serverError("Internal server error", req);
     }
     
     return ok({
@@ -87,7 +87,7 @@ export async function PATCH(
     }, req);
     
   } catch (error: any) {
-    return serverError(error.message, req);
+    return serverError("Internal server error", req);
   }
 }
 
@@ -111,12 +111,12 @@ export async function DELETE(
       .eq('id', params.id);
     
     if (error) {
-      return serverError(error.message, req);
+      return serverError("Internal server error", req);
     }
     
     return ok({ success: true }, req);
     
   } catch (error: any) {
-    return serverError(error.message, req);
+    return serverError("Internal server error", req);
   }
 }

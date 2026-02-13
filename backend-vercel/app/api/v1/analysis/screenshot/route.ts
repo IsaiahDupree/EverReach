@@ -24,7 +24,7 @@ export async function POST(req: Request){
       .insert([{ owner_user_id: user.id, contact_id: parsed.data.contact_id ?? null, file_url: parsed.data.file_url, status: 'pending', ocr_text: null, inferred_goal_id: null, inferred_goal_text: null, variables: {}, confidence: null }])
       .select('id, status')
       .single();
-    if (error) return serverError(error.message, req);
+    if (error) return serverError("Internal server error", req);
     return created({ analysis_id: data.id, status: data.status }, req);
   } catch (e: any) {
     return serverError(e?.message || 'Internal error', req);

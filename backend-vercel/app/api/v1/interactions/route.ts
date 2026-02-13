@@ -69,7 +69,7 @@ export async function GET(req: Request){
   }
 
   const { data, error } = await sel;
-  if (error) return serverError(`Database error: ${error.message}`, req);
+  if (error) return serverError("Internal server error", req);
   
   // Transform response to flatten contact data
   const items = (data ?? []).map((item: any) => {
@@ -134,7 +134,7 @@ export async function POST(req: Request){
     .select('id, contact_id, channel, created_at')
     .single();
 
-  if (error) return serverError(`Database insert failed: ${error.message}`, req);
+  if (error) return serverError("Internal server error", req);
   // EWMA amplitude update (non-blocking failure)
   try {
     await updateAmplitudeForContact(supabase, (parsed.data as any).contact_id, channelVal, (parsed.data as any).occurred_at ?? nowIso);

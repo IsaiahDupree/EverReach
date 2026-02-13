@@ -113,7 +113,7 @@ export async function POST(req: NextRequest) {
         }, req);
       }
       console.error('[Funnel Waitlist] Error inserting signup:', error);
-      return serverError(`Database error: ${error.message}`, req);
+      return serverError("Internal server error", req);
     }
 
     // Update session last_seen_at
@@ -133,7 +133,7 @@ export async function POST(req: NextRequest) {
 
   } catch (error: any) {
     console.error('[Funnel Waitlist] Error:', error);
-    return serverError(`Internal error: ${error.message}`, req);
+    return serverError("Internal server error", req);
   }
 }
 
@@ -160,7 +160,7 @@ export async function GET(req: NextRequest) {
 
     if (error) {
       console.error('[Funnel Waitlist] Error checking email:', error);
-      return serverError(`Database error: ${error.message}`, req);
+      return serverError("Internal server error", req);
     }
 
     return ok({ 
@@ -170,6 +170,6 @@ export async function GET(req: NextRequest) {
 
   } catch (error: any) {
     console.error('[Funnel Waitlist] Error:', error);
-    return serverError(`Internal error: ${error.message}`, req);
+    return serverError("Internal server error", req);
   }
 }

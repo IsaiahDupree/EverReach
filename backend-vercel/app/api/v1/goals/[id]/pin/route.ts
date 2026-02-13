@@ -22,7 +22,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     const { error } = await supabase
       .from('user_goal_prefs')
       .upsert({ user_id: user.id, goal_id: params.id, pinned: parsed.data.pinned, uses: 0 }, { onConflict: 'user_id,goal_id' } as any);
-    if (error) return serverError(error.message, req);
+    if (error) return serverError("Internal server error", req);
     return ok({ goal_id: params.id, pinned: parsed.data.pinned }, req);
   } catch (e: any) {
     return serverError(e?.message || 'Internal error', req);

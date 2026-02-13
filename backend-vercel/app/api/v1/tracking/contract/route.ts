@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
 
     if (error) {
       console.error('[Tracking] Failed to register contract:', error);
-      return serverError(`Failed to register contract: ${error.message}`, req);
+      return serverError("Internal server error", req);
     }
 
     return ok({ 
@@ -76,6 +76,6 @@ export async function POST(req: NextRequest) {
 
   } catch (error: any) {
     console.error('[Tracking] Error registering contract:', error);
-    return serverError(`Internal error: ${error.message}`, req);
+    return serverError("Internal server error", req);
   }
 }

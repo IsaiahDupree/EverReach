@@ -126,7 +126,7 @@ export async function GET(req: Request){
     if (q.cursor) sel2 = sel2.lt('created_at', q.cursor);
 
     const { data: data2, error: error2 } = await sel2;
-    if (error2) return serverError(`db_select_failed: ${error2.message}`, req);
+    if (error2) return serverError("Internal server error", req);
 
     const mapped = (data2 || []).map((row: any) => ({
       id: row.id,
@@ -144,7 +144,7 @@ export async function GET(req: Request){
     return ok({ contacts: mapped, items: mapped, limit, nextCursor: nextCursor2 }, req);
   }
 
-  if (error) return serverError(`db_select_failed: ${error.message}`, req);
+  if (error) return serverError("Internal server error", req);
   const items = data ?? [];
   const nextCursor = items.length === limit ? items[items.length - 1]?.created_at : null;
   // Include both 'contacts' and 'items' keys for compatibility with existing clients/tests
@@ -248,7 +248,7 @@ export async function POST(req: Request){
       .single();
 
     if (pErr) {
-      return serverError(`db_insert_failed: ${pErr.message}`, req);
+      return serverError("Internal server error", req);
     }
 
     // Map to contacts response shape
@@ -256,6 +256,6 @@ export async function POST(req: Request){
     return created({ contact: mapped }, req);
   }
 
-  if (error) return serverError(`db_insert_failed: ${error.message}`, req);
+  if (error) return serverError("Internal server error", req);
   return created({ contact: data }, req);
 }

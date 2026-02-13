@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
 
     if (subError) {
       console.error('[Test Subscription] Subscription upsert error:', subError);
-      return serverError(`Failed to update subscription: ${subError.message}`, req);
+      return serverError("Internal server error", req);
     }
 
     return ok({
@@ -102,6 +102,6 @@ export async function POST(req: NextRequest) {
 
   } catch (error: any) {
     console.error('[Test Subscription] Error:', error);
-    return serverError(`Internal error: ${error.message}`, req);
+    return serverError("Internal server error", req);
   }
 }

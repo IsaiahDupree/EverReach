@@ -28,7 +28,7 @@ export async function POST(req: Request){
       into_id: parsed.data.into_id,
       from_ids: parsed.data.from_ids,
     } as any);
-    if (error) return serverError(error.message, req);
+    if (error) return serverError("Internal server error", req);
     return ok({ merged_into: parsed.data.into_id, merged_from: parsed.data.from_ids }, req);
   } catch (e: any) {
     return serverError(e?.message || 'Internal error', req);

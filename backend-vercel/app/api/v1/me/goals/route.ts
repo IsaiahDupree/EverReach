@@ -74,7 +74,7 @@ export async function GET(req: Request) {
 
     if (error) {
       console.error('[Get Goals Error]', error);
-      return serverError(error.message, req);
+      return serverError("Internal server error", req);
     }
 
     // Get summary stats
@@ -91,7 +91,7 @@ export async function GET(req: Request) {
 
   } catch (error: any) {
     console.error('[Get Goals Error]', error);
-    return serverError(error.message, req);
+    return serverError("Internal server error", req);
   }
 }
 
@@ -124,7 +124,7 @@ export async function POST(req: Request) {
 
     if (error) {
       console.error('[Create Goal Error]', error);
-      return serverError(error.message, req);
+      return serverError("Internal server error", req);
     }
 
     return ok({
@@ -134,6 +134,6 @@ export async function POST(req: Request) {
 
   } catch (error: any) {
     console.error('[Create Goal Error]', error);
-    return serverError(error.message, req);
+    return serverError("Internal server error", req);
   }
 }

@@ -68,7 +68,7 @@ export async function POST(req: Request){
       .insert([insert])
       .select('id, created_at')
       .single();
-    if (error) return serverError(error.message, req);
+    if (error) return serverError("Internal server error", req);
     return created({ id: data.id, created_at: data.created_at }, req);
   } catch (e: any) {
     return serverError(e?.message || 'Internal error', req);

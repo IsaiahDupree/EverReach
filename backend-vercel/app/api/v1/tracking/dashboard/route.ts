@@ -109,6 +109,6 @@ export async function GET(req: NextRequest) {
 
   } catch (error: any) {
     console.error('[Tracking] Error getting dashboard data:', error);
-    return serverError(`Internal error: ${error.message}`, req);
+    return serverError("Internal server error", req);
   }
 }

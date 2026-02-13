@@ -62,7 +62,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 
     if (error) {
       console.error('[Get Goal Contacts Error]', error);
-      return serverError(error.message, req);
+      return serverError("Internal server error", req);
     }
 
     return ok({
@@ -73,7 +73,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 
   } catch (error: any) {
     console.error('[Get Goal Contacts Error]', error);
-    return serverError(error.message, req);
+    return serverError("Internal server error", req);
   }
 }
 
@@ -135,7 +135,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
     if (error) {
       console.error('[Associate Contact Error]', error);
-      return serverError(error.message, req);
+      return serverError("Internal server error", req);
     }
 
     return ok({
@@ -145,7 +145,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
   } catch (error: any) {
     console.error('[Associate Contact Error]', error);
-    return serverError(error.message, req);
+    return serverError("Internal server error", req);
   }
 }
 
@@ -177,7 +177,7 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
 
     if (error) {
       console.error('[Remove Contact Association Error]', error);
-      return serverError(error.message, req);
+      return serverError("Internal server error", req);
     }
 
     return ok({
@@ -186,6 +186,6 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
 
   } catch (error: any) {
     console.error('[Remove Contact Association Error]', error);
-    return serverError(error.message, req);
+    return serverError("Internal server error", req);
   }
 }

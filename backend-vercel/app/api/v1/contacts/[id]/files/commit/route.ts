@@ -40,7 +40,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       .single();
     
     if (error) {
-      return serverError(`Database error: ${error.message}`, req);
+      return serverError("Internal server error", req);
     }
     
     return ok({ attachment: data }, req);

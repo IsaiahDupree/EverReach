@@ -27,7 +27,7 @@ export async function GET(req: Request) {
 
     if (error) {
       console.error('[Trial Eligibility] Error:', error);
-      return serverError(`Failed to check eligibility: ${error.message}`, req);
+      return serverError("Internal server error", req);
     }
 
     const result = data?.[0] || { eligible: false, reason: 'unknown', cooldown_until: null };

@@ -221,6 +221,6 @@ Be comprehensive, data-driven, and highly actionable.`
 
   } catch (error: any) {
     console.error('[Contact Analysis Error]', error);
-    return serverError(error.message, req);
+    return serverError("Internal server error", req);
   }
 }

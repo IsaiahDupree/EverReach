@@ -111,7 +111,7 @@ export async function POST(req: Request) {
           controller.close();
         } catch (error: any) {
           console.error('[Stream Error]', error);
-          const errorData = JSON.stringify({ error: error.message });
+          const errorData = JSON.stringify({ error: 'Stream processing failed' });
           controller.enqueue(encoder.encode(`data: ${errorData}\n\n`));
           controller.close();
         }
@@ -129,6 +129,6 @@ export async function POST(req: Request) {
 
   } catch (error: any) {
     console.error('[Stream Setup Error]', error);
-    return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ error: 'Internal server error' }), { status: 500, headers: { "Content-Type": "application/json" } });
   }
 }

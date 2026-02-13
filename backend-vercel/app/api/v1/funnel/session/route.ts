@@ -75,14 +75,14 @@ export async function POST(req: NextRequest) {
 
     if (error) {
       console.error('[Funnel Session] Error upserting session:', error);
-      return serverError(`Database error: ${error.message}`, req);
+      return serverError("Internal server error", req);
     }
 
     return ok({ success: true, session: data }, req);
 
   } catch (error: any) {
     console.error('[Funnel Session] Error:', error);
-    return serverError(`Internal error: ${error.message}`, req);
+    return serverError("Internal server error", req);
   }
 }
 
@@ -112,13 +112,13 @@ export async function GET(req: NextRequest) {
         return ok({ session: null }, req);
       }
       console.error('[Funnel Session] Error fetching session:', error);
-      return serverError(`Database error: ${error.message}`, req);
+      return serverError("Internal server error", req);
     }
 
     return ok({ session: data }, req);
 
   } catch (error: any) {
     console.error('[Funnel Session] Error:', error);
-    return serverError(`Internal error: ${error.message}`, req);
+    return serverError("Internal server error", req);
   }
 }

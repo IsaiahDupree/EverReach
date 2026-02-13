@@ -20,7 +20,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }){
     .is('deleted_at', null)
     .maybeSingle();
 
-  if (error) return serverError(`Database error: ${error.message}`, req);
+  if (error) return serverError("Internal server error", req);
   if (!data) return notFound('Contact not found', req);
   return ok({ contact: data }, req);
 }
@@ -44,7 +44,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     .select('id, display_name, emails, phones, company, notes, tags, avatar_url, photo_url, metadata, warmth, warmth_band, updated_at')
     .maybeSingle();
 
-  if (error) return serverError(`Database update failed: ${error.message}`, req);
+  if (error) return serverError("Internal server error", req);
   if (!data) return notFound('Contact not found', req);
   return ok({ contact: data }, req);
 }
@@ -67,7 +67,7 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
     .select('id, deleted_at')
     .maybeSingle();
 
-  if (error) return serverError(`Database delete failed: ${error.message}`, req);
+  if (error) return serverError("Internal server error", req);
   if (!data) return notFound('Contact not found', req);
   return ok({ deleted: true, contact: data }, req);
 }

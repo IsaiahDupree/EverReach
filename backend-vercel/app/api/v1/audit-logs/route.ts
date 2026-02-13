@@ -23,7 +23,7 @@ export async function GET(req: Request){
     .limit(limit);
   if (cursor) q = q.lt('created_at', cursor);
   const { data, error } = await q;
-  if (error) return serverError(`Database error: ${error.message}`, req);
+  if (error) return serverError("Internal server error", req);
   const nextCursor = (data && data.length === limit) ? data[data.length - 1].created_at : null;
   return ok({ items: data ?? [], nextCursor, limit }, req);
 }

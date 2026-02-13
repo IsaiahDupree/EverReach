@@ -28,7 +28,7 @@ export async function POST(req: Request) {
       .single();
 
     if (sessionError) {
-      return serverError(`Failed to create session: ${sessionError.message}`, req);
+      return serverError("Internal server error", req);
     }
 
     // Update first_seen_at if this is the first session

@@ -34,7 +34,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }){
       .eq('persona_note_id', params.id)
       .order('created_at', { ascending: false });
       
-    if (error) return serverError(error.message, req);
+    if (error) return serverError("Internal server error", req);
     return ok({ attachments: data || [] }, req);
   } catch (err: any) {
     return serverError(err?.message || 'Internal error', req);
@@ -79,7 +79,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       .select('id, file_path, mime_type, size_bytes, created_at')
       .single();
       
-    if (error) return serverError(error.message, req);
+    if (error) return serverError("Internal server error", req);
     return ok({ attachment: data }, req);
   } catch (err: any) {
     return serverError(err?.message || 'Internal error', req);

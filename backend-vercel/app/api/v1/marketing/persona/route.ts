@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
     if (error) {
       console.error('Failed to assign persona:', error);
       return NextResponse.json(
-        { error: 'Database error', details: error.message },
+        { error: 'Database error' },
         { status: 500 }
       );
     }

@@ -27,7 +27,7 @@ export async function GET(
     .eq('id', params.id)
     .maybeSingle();
 
-  if (fetchError) return serverError(`Database error: ${fetchError.message}`, req);
+  if (fetchError) return serverError("Internal server error", req);
   if (!attachment) return notFound('Attachment not found', req);
 
   // Extract filename from path
@@ -45,7 +45,7 @@ export async function GET(
     .createSignedUrl(attachment.file_path, 3600); // 1 hour = 3600 seconds
 
   if (urlError) {
-    return serverError(`Failed to generate signed URL: ${urlError.message}`, req);
+    return serverError("Internal server error", req);
   }
 
   return ok({

@@ -148,6 +148,6 @@ export async function POST(req: Request) {
 
   } catch (error: any) {
     console.error('[Agent Chat Error]', error);
-    return serverError(error.message, req);
+    return serverError("Internal server error", req);
   }
 }

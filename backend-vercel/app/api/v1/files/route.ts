@@ -44,7 +44,7 @@ export async function GET(req: Request){
     }
 
     const { data, error } = await query;
-    if (error) return serverError(error.message, req);
+    if (error) return serverError("Internal server error", req);
 
     return ok({ files: data || [], count: data?.length || 0 }, req);
   } catch (err: any) {
@@ -63,7 +63,7 @@ export async function POST(req: Request){
     const supa = getServiceStorageClient();
     const bucket = getDefaultBucketName();
     const { data, error } = await supa.storage.from(bucket).createSignedUploadUrl(path, { upsert: true } as any);
-    if (error) return serverError(error.message, req);
+    if (error) return serverError("Internal server error", req);
     return ok({ url: data.signedUrl, path, contentType: contentType || 'application/octet-stream' }, req);
   } catch (e: any) {
     return serverError(e?.message || 'Internal error', req);

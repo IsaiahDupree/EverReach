@@ -55,7 +55,7 @@ export async function POST(req: NextRequest){
 
     if (fetchError) {
       console.error('[ML Export] Fetch error:', fetchError);
-      return serverError(`Failed to fetch ML data: ${fetchError.message}`, req);
+      return serverError("Internal server error", req);
     }
 
     if (!mlData || mlData.length === 0) {
@@ -107,7 +107,7 @@ export async function POST(req: NextRequest){
 
     if (uploadError) {
       console.error('[ML Export] Upload error:', uploadError);
-      return serverError(`Failed to upload export: ${uploadError.message}`, req);
+      return serverError("Internal server error", req);
     }
 
     // 4) Get public URL
@@ -132,6 +132,6 @@ export async function POST(req: NextRequest){
 
   } catch (error: any) {
     console.error('[ML Export] Error:', error);
-    return serverError(`Internal error: ${error.message}`, req);
+    return serverError("Internal server error", req);
   }
 }

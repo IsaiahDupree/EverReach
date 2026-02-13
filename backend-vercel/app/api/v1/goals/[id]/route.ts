@@ -18,7 +18,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }){
       .select('id, org_id, owner_user_id, kind, name, description, channel_suggestions, variables_schema, default_template_id, is_active, popularity_score, created_at, updated_at')
       .eq('id', params.id)
       .maybeSingle();
-    if (error) return serverError(error.message, req);
+    if (error) return serverError("Internal server error", req);
     if (!data) return new Response(JSON.stringify({ error: 'not_found' }), { status: 404 });
     return ok({ goal: data }, req);
   } catch (e: any) {
@@ -43,7 +43,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       .eq('owner_user_id', user.id)
       .select('id, updated_at')
       .maybeSingle();
-    if (error) return serverError(error.message, req);
+    if (error) return serverError("Internal server error", req);
     if (!data) return new Response(JSON.stringify({ error: 'not_found' }), { status: 404 });
     return ok({ goal: data }, req);
   } catch (e: any) {
@@ -64,7 +64,7 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
       .eq('owner_user_id', user.id)
       .select('id')
       .maybeSingle();
-    if (error) return serverError(error.message, req);
+    if (error) return serverError("Internal server error", req);
     if (!data) return new Response(JSON.stringify({ error: 'not_found' }), { status: 404 });
     return ok({ deleted: true, id: data.id }, req);
   } catch (e: any) {

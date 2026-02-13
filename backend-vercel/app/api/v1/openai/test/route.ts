@@ -54,7 +54,7 @@ export async function POST(req: Request) {
     return ok(result, req);
   } catch (error: any) {
     console.error('[OpenAI Test Error]', error);
-    return serverError(error.message || "OpenAI test failed", req);
+    return serverError("OpenAI test failed", req);
   }
 }
 

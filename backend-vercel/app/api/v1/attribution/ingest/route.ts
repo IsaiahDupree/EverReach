@@ -49,7 +49,7 @@ export async function POST(req: Request) {
     });
 
     if (error) {
-      return serverError(`Failed to record attribution: ${error.message}`, req);
+      return serverError("Internal server error", req);
     }
 
     return ok({ ok: true }, req);

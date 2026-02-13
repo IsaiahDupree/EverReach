@@ -19,7 +19,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }){
       .select('id, file_path, mime_type, size_bytes, created_at')
       .eq('contact_id', params.id)
       .order('created_at', { ascending: false });
-    if (error) return serverError(error.message, req);
+    if (error) return serverError("Internal server error", req);
     
     // Generate URLs for each attachment (signed, 1 hour expiry)
     // Use service storage client for privileged operations
@@ -76,7 +76,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       .insert([{ file_path: parsed.data.path, mime_type: parsed.data.mime_type, size_bytes: parsed.data.size_bytes, contact_id: params.id }])
       .select('id, file_path, created_at')
       .single();
-    if (error) return serverError(error.message, req);
+    if (error) return serverError("Internal server error", req);
     return ok({ attachment: data }, req);
   } catch (err: any) {
     return serverError(err?.message || 'Internal error', req);

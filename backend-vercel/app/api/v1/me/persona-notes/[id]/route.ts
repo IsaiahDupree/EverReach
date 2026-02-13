@@ -110,7 +110,7 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
       .eq('user_id', user.id)
       .select('id')
       .maybeSingle();
-    if (error) return serverError(error.message, req);
+    if (error) return serverError("Internal server error", req);
     if (!data) return new Response(JSON.stringify({ error: 'not_found' }), { status: 404 });
     return ok({ deleted: true, id: data.id }, req);
   } catch (e: any) {

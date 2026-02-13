@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
 
     if (profileError) {
       console.error('[Reset Subscription] Profile update error:', profileError);
-      return serverError(`Failed to reset profile: ${profileError.message}`, req);
+      return serverError("Internal server error", req);
     }
 
     // Delete test subscription records
@@ -72,6 +72,6 @@ export async function POST(req: NextRequest) {
 
   } catch (error: any) {
     console.error('[Reset Subscription] Error:', error);
-    return serverError(`Internal error: ${error.message}`, req);
+    return serverError("Internal server error", req);
   }
 }

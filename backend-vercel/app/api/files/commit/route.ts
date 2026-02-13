@@ -39,7 +39,7 @@ export async function POST(req: Request){
       .select('id, file_path, created_at')
       .single();
 
-    if (error) return serverError(error.message, req);
+    if (error) return serverError("Internal server error", req);
     return created({ attachment: data }, req);
   } catch (err: any) {
     return serverError(err?.message || 'Internal error', req);

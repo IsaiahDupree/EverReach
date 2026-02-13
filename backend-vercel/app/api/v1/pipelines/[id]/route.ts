@@ -17,7 +17,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }){
       .select('id, key, name, created_at')
       .eq('id', params.id)
       .maybeSingle();
-    if (error) return serverError(error.message, req);
+    if (error) return serverError("Internal server error", req);
     if (!data) return new Response(JSON.stringify({ error: 'not_found' }), { status: 404 });
     return ok({ pipeline: data }, req);
   } catch (e: any) {
@@ -44,7 +44,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       .eq('id', params.id)
       .select('id, key, name, updated_at')
       .maybeSingle();
-    if (error) return serverError(error.message, req);
+    if (error) return serverError("Internal server error", req);
     if (!data) return new Response(JSON.stringify({ error: 'not_found' }), { status: 404 });
     return ok({ pipeline: data }, req);
   } catch (e: any) {
@@ -64,7 +64,7 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
       .eq('id', params.id)
       .select('id')
       .maybeSingle();
-    if (error) return serverError(error.message, req);
+    if (error) return serverError("Internal server error", req);
     if (!data) return new Response(JSON.stringify({ error: 'not_found' }), { status: 404 });
     return ok({ deleted: true, id: data.id }, req);
   } catch (e: any) {

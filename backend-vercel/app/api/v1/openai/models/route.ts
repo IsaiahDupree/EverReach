@@ -32,6 +32,6 @@ export async function GET(req: Request) {
 
     return ok({ models: chatModels }, req);
   } catch (error: any) {
-    return serverError(error.message, req);
+    return serverError("Internal server error", req);
   }
 }

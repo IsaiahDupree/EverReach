@@ -50,7 +50,7 @@ export async function POST(req: Request) {
       .single();
 
     if (error) {
-      return serverError(`Failed to register device: ${error.message}`, req);
+      return serverError("Internal server error", req);
     }
 
     return ok({

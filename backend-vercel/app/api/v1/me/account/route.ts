@@ -33,7 +33,7 @@ export async function DELETE(req: Request){
       }
       
       console.error('[Account] Failed to delete user:', error);
-      return serverError(error.message, req);
+      return serverError("Internal server error", req);
     }
 
     console.log(`[Account] User ${user.id} deleted successfully.`);

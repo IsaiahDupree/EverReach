@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
     if (error) {
       console.error('Error inserting metrics:', error);
       return NextResponse.json(
-        { error: 'Failed to insert metrics', details: error.message },
+        { error: 'Failed to insert metrics' },
         { status: 500 }
       );
     }
@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     console.error('Error processing metrics:', error);
     return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }

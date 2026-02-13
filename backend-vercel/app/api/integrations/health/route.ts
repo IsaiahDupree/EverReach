@@ -169,6 +169,6 @@ export async function GET(req: NextRequest) {
 
   } catch (error: any) {
     console.error('[HealthCheck] Unexpected error:', error);
-    return serverError(error.message || 'Internal server error', req);
+    return serverError("Internal server error", req);
   }
 }

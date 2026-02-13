@@ -99,7 +99,7 @@ export async function GET(req: NextRequest) {
     console.error('[aggregate-superwall] Unexpected error:', error);
     return NextResponse.json({ 
       error: 'Internal server error',
-      details: error.message 
+       
     }, { status: 500 });
   }
 }

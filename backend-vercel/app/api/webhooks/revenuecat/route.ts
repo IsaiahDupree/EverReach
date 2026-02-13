@@ -243,7 +243,7 @@ export async function POST(req: NextRequest) {
     } catch (error: any) {
         console.error('[RevenueCat Webhook] Error:', error);
         return NextResponse.json(
-            { error: error.message || 'Internal server error' },
+            { error: 'Webhook processing failed' },
             { status: 500 }
         );
     }

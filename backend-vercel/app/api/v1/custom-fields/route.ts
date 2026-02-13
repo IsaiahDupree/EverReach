@@ -87,7 +87,7 @@ export async function GET(req: NextRequest) {
           count: 0,
         }, req);
       }
-      return badRequest(error.message, req);
+      return badRequest("Failed to query custom fields", req);
     }
 
     return ok({
@@ -98,9 +98,7 @@ export async function GET(req: NextRequest) {
 
   } catch (error) {
     console.error('GET /v1/custom-fields error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('Error details:', errorMessage);
-    return serverError(`Internal server error: ${errorMessage}`, req);
+    return serverError("Internal server error", req);
   }
 }
 
@@ -204,7 +202,7 @@ export async function POST(req: NextRequest) {
         // Unique constraint violation
         return badRequest(`Field with slug '${slug}' already exists for this entity`, req);
       }
-      return badRequest(error.message, req);
+      return badRequest("Failed to create custom field", req);
     }
 
     // If is_indexed = true, create the index

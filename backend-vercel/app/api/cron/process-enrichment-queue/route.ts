@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
     if (error) {
       console.error('Failed to fetch pending enrichments:', error);
       return NextResponse.json(
-        { error: 'Database error', details: error.message },
+        { error: 'Database error' },
         { status: 500 }
       );
     }

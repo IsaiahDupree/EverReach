@@ -24,7 +24,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     .eq('id', params.id)
     .is('deleted_at', null)
     .maybeSingle();
-  if (selErr) return serverError(`Database error: ${selErr.message}`, req);
+  if (selErr) return serverError("Internal server error", req);
   if (!row) return notFound('Contact not found', req);
 
   const tagSet = new Set<string>(Array.isArray(row.tags) ? row.tags : []);
@@ -38,7 +38,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     .eq('id', params.id)
     .select('id, tags, updated_at')
     .maybeSingle();
-  if (error) return serverError(`Database update failed: ${error.message}`, req);
+  if (error) return serverError("Internal server error", req);
   if (!data) return notFound('Contact not found', req);
   return ok({ contact: data }, req);
 }

@@ -29,7 +29,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }){
     .limit(limit);
   if (cursor) qInter = qInter.lt('created_at', cursor);
   const { data: interactions, error: interErr } = await qInter;
-  if (interErr) return serverError(`Database error: ${interErr.message}`, req);
+  if (interErr) return serverError("Internal server error", req);
 
   // Messages tagged with this contact via metadata.contact_id
   let qMsg = supabase
@@ -41,7 +41,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }){
     .limit(limit);
   if (cursor) qMsg = qMsg.lt('created_at', cursor);
   const { data: messages, error: msgErr } = await qMsg;
-  if (msgErr) return serverError(`Database error: ${msgErr.message}`, req);
+  if (msgErr) return serverError("Internal server error", req);
 
   const mapped = [
     ...(interactions || []).map(i => ({ type: 'interaction' as const, id: i.id, created_at: i.created_at, payload: i })),

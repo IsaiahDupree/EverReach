@@ -17,7 +17,7 @@ export async function GET(req: Request){
       .select('*')
       .order('created_at', { ascending: false })
       .limit(100);
-    if (error) return serverError(error.message, req);
+    if (error) return serverError("Internal server error", req);
     
     const requests = data || [];
     
@@ -85,7 +85,7 @@ export async function POST(req: Request){
       .insert([insert])
       .select('*')
       .single();
-    if (error) return serverError(error.message, req);
+    if (error) return serverError("Internal server error", req);
     return created({ request: data }, req);
   } catch (e: any) {
     return serverError(e?.message || 'Internal error', req);

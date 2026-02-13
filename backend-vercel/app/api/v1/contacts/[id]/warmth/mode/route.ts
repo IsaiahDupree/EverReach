@@ -119,7 +119,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }){
       .eq('id', params.id)
       .maybeSingle();
 
-    if (error) return serverError(error.message, req);
+    if (error) return serverError("Internal server error", req);
     if (!contact) return badRequest('Contact not found', req);
 
     const mode: WarmthMode = (contact.warmth_mode as WarmthMode) || 'medium';

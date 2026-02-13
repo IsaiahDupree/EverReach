@@ -27,7 +27,7 @@ export async function POST(req: Request){
         .select('variables_schema')
         .eq('id', parsed.data.goal_id)
         .maybeSingle();
-      if (error) return serverError(error.message, req);
+      if (error) return serverError("Internal server error", req);
       variablesSchema = goal?.variables_schema || null;
     }
 

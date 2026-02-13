@@ -47,7 +47,7 @@ export async function POST(req: Request){
       .insert([{ thread_id: threadId, role: 'assistant', content: parsed.data.draft.body, metadata: meta, composer_context: parsed.data.composer_context ?? {} }])
       .select('id, thread_id, created_at')
       .single();
-    if (error) return serverError(error.message, req);
+    if (error) return serverError("Internal server error", req);
 
     // Starter-lite analytics: increment template accepts_count if provided
     const templateId = (parsed.data.composer_context as any)?.template_id;

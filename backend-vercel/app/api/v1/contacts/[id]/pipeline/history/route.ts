@@ -28,7 +28,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }){
     if (cursor) sel = sel.lt('created_at', cursor);
 
     const { data, error } = await sel;
-    if (error) return serverError(error.message, req);
+    if (error) return serverError("Internal server error", req);
 
     const items = data ?? [];
     const nextCursor = items.length === limit ? items[items.length - 1]?.created_at : null;

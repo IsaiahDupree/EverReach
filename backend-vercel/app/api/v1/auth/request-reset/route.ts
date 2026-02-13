@@ -118,6 +118,6 @@ export async function POST(req: NextRequest){
 
   } catch (error: any) {
     console.error('[Reset] Error:', error);
-    return serverError(`Internal error: ${error.message}`, req);
+    return serverError("Internal server error", req);
   }
 }

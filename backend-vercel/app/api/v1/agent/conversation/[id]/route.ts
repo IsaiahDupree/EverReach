@@ -21,7 +21,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
       .eq('user_id', user.id)
       .maybeSingle();
 
-    if (error) return serverError(error.message, req);
+    if (error) return serverError("Internal server error", req);
     if (!data) return new Response(JSON.stringify({ error: "Conversation not found" }), { status: 404, headers: { "Content-Type": "application/json" } });
 
     return ok({
@@ -32,7 +32,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
       updated_at: data.updated_at
     }, req);
   } catch (error: any) {
-    return serverError(error.message, req);
+    return serverError("Internal server error", req);
   }
 }
 
@@ -50,10 +50,10 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
       .eq('id', id)
       .eq('user_id', user.id);
 
-    if (error) return serverError(error.message, req);
+    if (error) return serverError("Internal server error", req);
 
     return ok({ deleted: true }, req);
   } catch (error: any) {
-    return serverError(error.message, req);
+    return serverError("Internal server error", req);
   }
 }

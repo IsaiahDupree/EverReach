@@ -24,7 +24,7 @@ export async function GET(req: Request){
       .eq('user_id', user.id)
       .eq('window', input.window || '90d')
       .maybeSingle();
-    if (error) return serverError(error.message, req);
+    if (error) return serverError("Internal server error", req);
 
     const row = data || {} as any;
     const impact = {

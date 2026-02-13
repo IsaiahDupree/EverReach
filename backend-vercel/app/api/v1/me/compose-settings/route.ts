@@ -18,7 +18,7 @@ export async function GET(req: Request){
       .select('user_id, enabled, default_channel, auto_use_persona_notes, default_template_id, tone, max_length, guardrails, updated_at')
       .eq('user_id', user.id)
       .maybeSingle();
-    if (error) return serverError(error.message, req);
+    if (error) return serverError("Internal server error", req);
     if (!data) {
       // return sensible defaults without creating a row
       return ok({ settings: {
@@ -54,7 +54,7 @@ export async function PATCH(req: Request){
       .upsert({ user_id: user.id, ...parsed.data }, { onConflict: 'user_id' } as any)
       .select('user_id, enabled, default_channel, auto_use_persona_notes, default_template_id, tone, max_length, guardrails, updated_at')
       .maybeSingle();
-    if (error) return serverError(error.message, req);
+    if (error) return serverError("Internal server error", req);
     return ok({ settings: data }, req);
   } catch (e: any) {
     return serverError(e?.message || 'Internal error', req);

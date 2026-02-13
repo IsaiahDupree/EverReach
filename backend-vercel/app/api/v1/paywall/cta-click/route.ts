@@ -48,7 +48,7 @@ export async function POST(req: Request) {
       if (error.message?.includes('duplicate') || error.code === '23505') {
         return ok({ ok: true, idempotent: true }, req);
       }
-      return serverError(`Failed to track CTA click: ${error.message}`, req);
+      return serverError("Internal server error", req);
     }
 
     return ok({

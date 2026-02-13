@@ -60,7 +60,7 @@ export async function GET(req: Request) {
     const { data: alerts, error } = await query;
     
     if (error) {
-      return serverError(error.message, req);
+      return serverError("Internal server error", req);
     }
     
     // Transform data for frontend
@@ -96,6 +96,6 @@ export async function GET(req: Request) {
     }, req);
     
   } catch (error: any) {
-    return serverError(error.message, req);
+    return serverError("Internal server error", req);
   }
 }

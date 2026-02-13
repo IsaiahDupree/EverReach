@@ -16,7 +16,7 @@ export async function GET(req: Request){
 
     const supabase = getServiceClient();
     const { data, error } = await supabase.rpc('recompute_interaction_metrics');
-    if (error) return serverError(error.message, req);
+    if (error) return serverError("Internal server error", req);
 
     return ok({ updated: data ?? 0 }, req);
   } catch (e: any) {

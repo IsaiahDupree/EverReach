@@ -173,7 +173,7 @@ export async function POST(req: NextRequest) {
 
   } catch (error: any) {
     console.error('[Meta Events API] Error:', error);
-    return serverError(error.message || 'Internal server error', req);
+    return serverError("Internal server error", req);
   }
 }
 

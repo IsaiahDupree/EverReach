@@ -83,7 +83,7 @@ export async function GET(req: Request, ctx: { params: { id: string } }) {
       .eq('generation_id', genId)
       .order('created_at', { ascending: false });
 
-    if (error) return serverError(error.message, req);
+    if (error) return serverError("Internal server error", req);
     return ok({ feedback: data || [] }, req);
   } catch (e: any) {
     return serverError(e?.message || 'Failed', req);

@@ -42,7 +42,7 @@ export async function GET(req: Request){
     }
 
     const { data, error } = await query;
-    if (error) return serverError(error.message, req);
+    if (error) return serverError("Internal server error", req);
 
     const nextCursor = (data && data.length === limit) ? data[data.length - 1]?.created_at : null;
 
@@ -90,7 +90,7 @@ export async function POST(req: Request){
       .insert([{ thread_id: threadId, role, content, metadata: meta }])
       .select('id, thread_id, role, content, metadata, created_at')
       .single();
-    if (error) return serverError(error.message, req);
+    if (error) return serverError("Internal server error", req);
 
     return ok({ message: msg }, req);
   } catch (e: any) {

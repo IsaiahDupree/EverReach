@@ -39,7 +39,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       .createSignedUploadUrl(filePath);
     
     if (uploadError) {
-      return serverError(`Failed to create upload URL: ${uploadError.message}`, req);
+      return serverError("Internal server error", req);
     }
     
     return ok({

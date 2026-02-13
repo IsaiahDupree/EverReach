@@ -25,12 +25,12 @@ export async function POST(req: Request){
       // Provide a more actionable error if the bucket is missing
       const msg = error.message?.includes('related resource does not exist')
         ? `Storage bucket '${bucket}' not found. Create it or set SUPABASE_STORAGE_BUCKET.`
-        : error.message;
+        : 'Failed to create upload URL';
       return serverError(msg, req);
     }
 
     return ok({ url: data.signedUrl, path, contentType: contentType || 'application/octet-stream' }, req);
   } catch (err: any) {
-    return serverError(err?.message || 'Internal error', req);
+    return serverError('Internal error', req);
   }
 }

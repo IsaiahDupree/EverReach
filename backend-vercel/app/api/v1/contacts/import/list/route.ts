@@ -50,7 +50,7 @@ export async function GET(req: NextRequest) {
 
     if (error) {
       console.error('[Import List] Database error:', error);
-      return serverError(`Failed to list import jobs: ${error.message}`, req);
+      return serverError("Internal server error", req);
     }
 
     return ok({
@@ -62,6 +62,6 @@ export async function GET(req: NextRequest) {
 
   } catch (error: any) {
     console.error('[Import List] Error:', error);
-    return serverError(`Internal error: ${error.message}`, req);
+    return serverError("Internal server error", req);
   }
 }

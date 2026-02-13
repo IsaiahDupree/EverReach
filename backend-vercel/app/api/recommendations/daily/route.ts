@@ -43,7 +43,7 @@ export async function GET(req: Request){
       .limit(10);
 
     if (error) {
-      return new Response(JSON.stringify({ error: { code: 'db_select_failed', message: 'Failed to load tasks', details: error.message } }), {
+      return new Response(JSON.stringify({ error: { code: 'db_select_failed', message: 'Failed to load tasks' } }), {
         status: 500,
         headers: { "Content-Type": "application/json", ...buildCorsHeaders(origin) },
       });

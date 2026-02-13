@@ -57,7 +57,7 @@ export async function POST(
 
     if (error) {
       console.error('[Import Start] Database error:', error);
-      return serverError(`Failed to create import job: ${error.message}`, req);
+      return serverError("Internal server error", req);
     }
 
     // Store state → job_id mapping in session or database
@@ -80,6 +80,6 @@ export async function POST(
 
   } catch (error: any) {
     console.error('[Import Start] Error:', error);
-    return serverError(`Failed to start import: ${error.message}`, req);
+    return serverError("Internal server error", req);
   }
 }

@@ -225,6 +225,6 @@ Generate the message now:`;
 
   } catch (error: any) {
     console.error('[Smart Compose Error]', error);
-    return serverError(error.message, req);
+    return serverError("Internal server error", req);
   }
 }

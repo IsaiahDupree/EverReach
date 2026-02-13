@@ -42,6 +42,6 @@ export async function GET(req: Request){
 
   } catch (error: any) {
     console.error('[Trial Stats] Error:', error);
-    return serverError(`Internal error: ${error.message}`, req);
+    return serverError("Internal server error", req);
   }
 }

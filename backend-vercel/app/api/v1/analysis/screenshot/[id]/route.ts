@@ -17,7 +17,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }){
       .select('id, owner_user_id, contact_id, file_url, status, ocr_text, inferred_goal_id, inferred_goal_text, variables, confidence, created_at, updated_at')
       .eq('id', params.id)
       .maybeSingle();
-    if (error) return serverError(error.message, req);
+    if (error) return serverError("Internal server error", req);
     if (!data) return new Response(JSON.stringify({ error: 'not_found' }), { status: 404 });
     // Basic ownership check via RLS normally; here we ensure owner matches
     if (data.owner_user_id !== user.id) return new Response(JSON.stringify({ error: 'forbidden' }), { status: 403 });

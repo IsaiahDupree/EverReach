@@ -34,7 +34,7 @@ export async function GET(req: Request){
     if (input.cursor) q = q.lt('created_at', input.cursor);
 
     const { data, error } = await q;
-    if (error) return serverError(error.message, req);
+    if (error) return serverError("Internal server error", req);
 
     const items = data ?? [];
     const nextCursor = items.length === (input.limit ?? 20) ? items[items.length - 1]?.created_at : null;
@@ -80,7 +80,7 @@ export async function POST(req: Request){
       .insert([insert])
       .select('id, channel, name, created_at')
       .single();
-    if (error) return serverError(error.message, req);
+    if (error) return serverError("Internal server error", req);
     return created({ template: data }, req);
   } catch (e: any) {
     return serverError(e?.message || 'Internal error', req);

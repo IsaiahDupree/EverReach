@@ -26,7 +26,7 @@ export async function GET(req: Request){
     // Note: org scoping TBD; current cache does not store org-specific rows (org_id is null)
 
     const { data, error } = await q;
-    if (error) return serverError(error.message, req);
+    if (error) return serverError("Internal server error", req);
 
     const items = (data ?? []).map((row: any, idx: number) => ({
       rank: idx + 1,

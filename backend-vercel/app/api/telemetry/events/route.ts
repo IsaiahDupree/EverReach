@@ -75,7 +75,7 @@ export async function POST(req: Request){
 
     if (error) {
       console.error('[Events API] Supabase insert error:', error);
-      return serverError(`Database error: ${error.message}`, req);
+      return serverError("Internal server error", req);
     }
 
     return ok({ success: true, tracked: true, event_type: eventType }, req);

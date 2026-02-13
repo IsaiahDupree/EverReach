@@ -76,7 +76,7 @@ export async function POST(req: Request){
 
     if (insertError) {
       console.error('[Onboarding] Insert error:', insertError);
-      return serverError(`Failed to save onboarding answers: ${insertError.message}`, req);
+      return serverError("Internal server error", req);
     }
 
     // 2. Apply defaults to user profile based on onboarding answers
@@ -179,6 +179,6 @@ export async function POST(req: Request){
 
   } catch (error: any) {
     console.error('[Onboarding] Error:', error);
-    return serverError(`Internal error: ${error.message}`, req);
+    return serverError("Internal server error", req);
   }
 }

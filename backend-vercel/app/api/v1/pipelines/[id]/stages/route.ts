@@ -30,7 +30,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }){
       .select('id, pipeline_id, key, name, position, terminal')
       .eq('pipeline_id', pipeline.id)
       .order('position', { ascending: true });
-    if (error) return serverError(error.message, req);
+    if (error) return serverError("Internal server error", req);
     return ok({ items: data || [] }, req);
   } catch (e: any) {
     return serverError(e?.message || 'Internal error', req);

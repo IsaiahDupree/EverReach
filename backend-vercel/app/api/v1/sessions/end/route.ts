@@ -36,7 +36,7 @@ export async function POST(req: Request) {
     });
 
     if (endError) {
-      return serverError(`Failed to end session: ${endError.message}`, req);
+      return serverError("Internal server error", req);
     }
 
     // Update last_active_at

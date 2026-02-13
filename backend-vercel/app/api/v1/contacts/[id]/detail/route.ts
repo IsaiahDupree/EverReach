@@ -161,7 +161,7 @@ export async function GET(
   } catch (error: any) {
     console.error('[Contact Detail] Error:', error);
     return new Response(
-      JSON.stringify({ error: 'internal_error', details: error.message }),
+      JSON.stringify({ error: 'internal_error' }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }

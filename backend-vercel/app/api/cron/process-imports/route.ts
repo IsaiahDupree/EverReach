@@ -170,6 +170,6 @@ export async function GET(req: Request) {
 
   } catch (error: any) {
     console.error('[Import Cron] Fatal error:', error);
-    return serverError(error.message || 'Internal server error', req);
+    return serverError("Internal server error", req);
   }
 }

@@ -81,7 +81,7 @@ export async function POST(req: NextRequest){
 
     if (eventError) {
       console.error('[Ingest] Event insert error:', eventError);
-      return serverError(`Failed to store event: ${eventError.message}`, req);
+      return serverError("Internal server error", req);
     }
 
     // 2) Specialized writes for prompts/responses (idempotent upserts)
@@ -131,7 +131,7 @@ export async function POST(req: NextRequest){
 
   } catch (error: any) {
     console.error('[Ingest] Error:', error);
-    return serverError(`Internal error: ${error.message}`, req);
+    return serverError("Internal server error", req);
   }
 }
 

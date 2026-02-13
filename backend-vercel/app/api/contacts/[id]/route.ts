@@ -43,12 +43,12 @@ export async function GET(req: Request, ctx: { params: { id: string } }) {
       .eq("id", id)
       .single();
 
-    if (error) return jsonError(500, "db_select_failed", "Failed to load contact", { hint: error.message }, origin);
+    if (error) return jsonError(500, "db_select_failed", "Failed to load contact", null, origin);
     if (!data) return jsonError(404, "not_found", "Contact not found", null, origin);
 
     return ok({ contact: data }, req);
   } catch (err: any) {
-    return jsonError(500, "unexpected", "Unexpected server error", { message: err?.message }, origin);
+    return jsonError(500, "unexpected", "Unexpected server error", null, origin);
   }
 }
 
@@ -84,12 +84,12 @@ export async function PATCH(req: Request, ctx: { params: { id: string } }) {
       .select("id, display_name, updated_at")
       .single();
 
-    if (error) return jsonError(500, "db_update_failed", "Failed to update contact", { hint: error.message }, origin);
+    if (error) return jsonError(500, "db_update_failed", "Failed to update contact", null, origin);
     if (!data) return jsonError(404, "not_found", "Contact not found", null, origin);
 
     return ok({ contact: data }, req);
   } catch (err: any) {
-    return jsonError(500, "unexpected", "Unexpected server error", { message: err?.message }, origin);
+    return jsonError(500, "unexpected", "Unexpected server error", null, origin);
   }
 }
 
@@ -116,11 +116,11 @@ export async function DELETE(req: Request, ctx: { params: { id: string } }) {
       .select("id")
       .single();
 
-    if (error) return jsonError(500, "db_delete_failed", "Failed to delete contact", { hint: error.message }, origin);
+    if (error) return jsonError(500, "db_delete_failed", "Failed to delete contact", null, origin);
     if (!data) return jsonError(404, "not_found", "Contact not found", null, origin);
 
     return ok({ deleted: true, id: data.id }, req);
   } catch (err: any) {
-    return jsonError(500, "unexpected", "Unexpected server error", { message: err?.message }, origin);
+    return jsonError(500, "unexpected", "Unexpected server error", null, origin);
   }
 }

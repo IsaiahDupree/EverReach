@@ -157,7 +157,7 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     console.error('[App Store Webhook] Error:', error);
     return NextResponse.json(
-      { error: 'Webhook processing failed', details: error.message },
+      { error: 'Webhook processing failed' },
       { status: 500 }
     );
   }

@@ -24,7 +24,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       .insert([{ file_path: parsed.data.path, mime_type: parsed.data.mime_type, size_bytes: parsed.data.size_bytes, message_id: null, contact_id: null, /* keep nullable */ }])
       .select('id, file_path, created_at')
       .single();
-    if (error) return serverError(error.message, req);
+    if (error) return serverError("Internal server error", req);
 
     // Attachments schema doesn't have interaction_id; to keep consistent, we can record interaction linkage in metadata later.
     // For now, we update contact linkage if derived from interaction.

@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
 
     if (error) {
       console.error('[Tracking] Failed to register manifest:', error);
-      return serverError(`Failed to register manifest: ${error.message}`, req);
+      return serverError("Internal server error", req);
     }
 
     return ok({ 
@@ -48,6 +48,6 @@ export async function POST(req: NextRequest) {
 
   } catch (error: any) {
     console.error('[Tracking] Error registering manifest:', error);
-    return serverError(`Internal error: ${error.message}`, req);
+    return serverError("Internal server error", req);
   }
 }

@@ -39,7 +39,7 @@ export async function POST(req: Request){
     if (typeof filters?.warmth_lte === 'number') sel = sel.lte('warmth', filters.warmth_lte);
 
     const { data, error } = await sel;
-    if (error) return serverError(error.message, req);
+    if (error) return serverError("Internal server error", req);
     return ok({ items: data ?? [], limit }, req);
   } catch (e: any) {
     return serverError(e?.message || 'Internal error', req);

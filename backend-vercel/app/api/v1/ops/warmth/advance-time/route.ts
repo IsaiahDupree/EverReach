@@ -43,7 +43,7 @@ export async function POST(req: Request) {
       .is('deleted_at', null);
 
     if (contactsError) {
-      return serverError(`Failed to fetch contacts: ${contactsError.message}`, req);
+      return serverError("Internal server error", req);
     }
 
     if (!contacts || contacts.length === 0) {

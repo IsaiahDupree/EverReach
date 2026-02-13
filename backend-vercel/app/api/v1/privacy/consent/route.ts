@@ -42,7 +42,7 @@ export async function POST(req: Request) {
       .eq('user_id', user.id);
 
     if (error) {
-      return serverError(`Failed to update consent: ${error.message}`, req);
+      return serverError("Internal server error", req);
     }
 
     return ok({

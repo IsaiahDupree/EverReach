@@ -29,7 +29,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }){
   if (cursor) sel = sel.lt('created_at', cursor);
 
   const { data, error } = await sel;
-  if (error) return serverError(`Database error: ${error.message}`, req);
+  if (error) return serverError("Internal server error", req);
   const items = data ?? [];
   const nextCursor = items.length === limit ? items[items.length - 1]?.created_at : null;
   return ok({ items, limit, nextCursor }, req);
@@ -57,7 +57,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     .insert([{ contact_id: parsed.data.contact_id, kind: 'note', content: parsed.data.content ?? null, metadata: parsed.data.metadata ?? {} }])
     .select('id, contact_id, kind, content, created_at')
     .single();
-  if (error) return serverError(`Database insert failed: ${error.message}`, req);
+  if (error) return serverError("Internal server error", req);
   try {
     await updateAmplitudeForContact(supabase, parsed.data.contact_id, 'note', data?.created_at ?? undefined);
   } catch (e) {

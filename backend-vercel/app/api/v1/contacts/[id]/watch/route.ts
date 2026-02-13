@@ -34,7 +34,7 @@ export async function GET(
     
     if (error) {
       if (error.code === 'PGRST116') return notFound('Contact not found', req);
-      return serverError(error.message, req);
+      return serverError("Internal server error", req);
     }
     
     return ok({
@@ -46,7 +46,7 @@ export async function GET(
     }, req);
     
   } catch (error: any) {
-    return serverError(error.message, req);
+    return serverError("Internal server error", req);
   }
 }
 
@@ -109,7 +109,7 @@ export async function PATCH(
     
     if (error) {
       if (error.code === 'PGRST116') return notFound('Contact not found', req);
-      return serverError(error.message, req);
+      return serverError("Internal server error", req);
     }
     
     return ok({
@@ -124,6 +124,6 @@ export async function PATCH(
     }, req);
     
   } catch (error: any) {
-    return serverError(error.message, req);
+    return serverError("Internal server error", req);
   }
 }

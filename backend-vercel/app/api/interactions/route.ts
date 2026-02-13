@@ -43,7 +43,7 @@ export async function GET(req: Request){
     }
 
     const { data, error } = await query;
-    if (error) return serverError(`Database error: ${error.message}`, req);
+    if (error) return serverError("Internal server error", req);
 
     const items = data ?? [];
     const nextCursor = items.length === input.limit ? items[items.length - 1]?.created_at : null;
@@ -77,7 +77,7 @@ export async function POST(req: Request){
       .select('id, contact_id, kind, created_at')
       .single();
 
-    if (error) return serverError(`Database error: ${error.message}`, req);
+    if (error) return serverError("Internal server error", req);
     try {
       await updateAmplitudeForContact(supabase, input.contact_id, input.kind, input.occurred_at ?? nowIso);
     } catch (e) {

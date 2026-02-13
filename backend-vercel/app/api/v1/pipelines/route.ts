@@ -19,7 +19,7 @@ export async function GET(req: Request){
       .from('pipelines')
       .select('id, key, name, created_at')
       .order('key', { ascending: true });
-    if (error) return serverError(error.message, req);
+    if (error) return serverError("Internal server error", req);
     const items = data || [];
     return ok({ pipelines: items, items }, req);
   } catch (e: any) {
@@ -76,7 +76,7 @@ export async function POST(req: Request){
       .insert([pipelineInsert])
       .select('id, key, name, created_at')
       .single();
-    if (error) return serverError(error.message, req);
+    if (error) return serverError("Internal server error", req);
 
     // Optionally insert stages if provided
     if (Array.isArray(stages) && stages.length > 0 && data?.id) {

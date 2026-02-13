@@ -111,7 +111,7 @@ export async function POST(req: NextRequest) {
     console.error('[tracking] Request error:', error);
     return NextResponse.json({
       success: false,
-      error: error.message || 'Internal server error',
+      error: 'Internal server error',
     }, { status: 500 });
   }
 }

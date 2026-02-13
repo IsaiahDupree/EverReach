@@ -76,6 +76,6 @@ export async function DELETE(
 
   } catch (error: any) {
     console.error('[Integrations] DELETE error:', error);
-    return serverError(error.message || 'Internal server error', req);
+    return serverError("Internal server error", req);
   }
 }

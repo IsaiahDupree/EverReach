@@ -62,7 +62,7 @@ export async function GET(req: Request) {
     const { data, error } = await query;
 
     if (error) {
-      return jsonError(500, "db_select_failed", "Failed to load contacts", { hint: error.message }, origin);
+      return jsonError(500, "db_select_failed", "Failed to load contacts", null, origin);
     }
 
     const items = data ?? [];
@@ -70,7 +70,7 @@ export async function GET(req: Request) {
 
     return ok({ items, limit, nextCursor }, req);
   } catch (err: any) {
-    return jsonError(500, "unexpected", "Unexpected server error", { message: err?.message }, origin);
+    return jsonError(500, "unexpected", "Unexpected server error", null, origin);
   }
 }
 
@@ -111,11 +111,11 @@ export async function POST(req: Request) {
       .single();
 
     if (error) {
-      return jsonError(500, "db_insert_failed", "Failed to create contact", { hint: error.message }, origin);
+      return jsonError(500, "db_insert_failed", "Failed to create contact", null, origin);
     }
 
     return created({ contact: data }, req);
   } catch (err: any) {
-    return jsonError(500, "unexpected", "Unexpected server error", { message: err?.message }, origin);
+    return jsonError(500, "unexpected", "Unexpected server error", null, origin);
   }
 }

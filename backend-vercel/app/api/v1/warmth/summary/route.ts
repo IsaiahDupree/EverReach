@@ -42,7 +42,7 @@ export async function GET(req: Request) {
 
     if (error) {
       console.error('Error fetching contacts for warmth summary:', error);
-      return serverError(`db_select_failed: ${error.message}`, req);
+      return serverError("Internal server error", req);
     }
 
     const contactsList = contacts || [];
@@ -92,6 +92,6 @@ export async function GET(req: Request) {
     return ok(summary, req);
   } catch (e: any) {
     console.error('Unexpected error in warmth summary:', e);
-    return serverError(`unexpected_error: ${e?.message || 'Unknown error'}`, req);
+    return serverError("Internal server error", req);
   }
 }

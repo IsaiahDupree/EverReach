@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
     if (error) {
       console.error('Failed to fetch funnel data:', error);
       return NextResponse.json(
-        { error: 'Database query failed', details: error.message },
+        { error: 'Database query failed' },
         { status: 500 }
       );
     }

@@ -128,7 +128,7 @@ export async function GET(req: NextRequest) {
     });
 
     return NextResponse.json(
-      { error: 'PostHog sync failed', details: error.message },
+      { error: 'PostHog sync failed' },
       { status: 500 }
     );
   }

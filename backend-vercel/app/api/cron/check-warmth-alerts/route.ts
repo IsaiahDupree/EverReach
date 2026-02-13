@@ -166,7 +166,7 @@ export async function GET(req: Request) {
     
   } catch (error: any) {
     console.error('[Warmth Alerts Cron] Fatal error:', error);
-    return serverError(error.message, req);
+    return serverError("Internal server error", req);
   }
 }
 

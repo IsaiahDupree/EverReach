@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
       console.error('[API] Error fetching health:', error);
       return NextResponse.json({ 
         error: 'Failed to fetch health status',
-        details: error.message 
+         
       }, { status: 500 });
     }
 
@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
     console.error('[API] Unexpected error:', error);
     return NextResponse.json({ 
       error: 'Internal server error',
-      details: error.message 
+       
     }, { status: 500 });
   }
 }

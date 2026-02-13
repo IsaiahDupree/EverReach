@@ -95,7 +95,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       .select()
       .single();
 
-    if (error) return serverError(error.message, req);
+    if (error) return serverError("Internal server error", req);
 
     return ok({ file: data }, req);
   } catch (err: any) {

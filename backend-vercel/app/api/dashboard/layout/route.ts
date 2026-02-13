@@ -137,6 +137,6 @@ export async function POST(req: NextRequest) {
 
   } catch (error: any) {
     console.error('[Dashboard] POST error:', error);
-    return serverError(error.message || 'Internal server error', req);
+    return serverError("Internal server error", req);
   }
 }

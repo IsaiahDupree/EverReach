@@ -16,7 +16,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }){
     .select('id, thread_id, role, content, metadata, created_at, updated_at')
     .eq('id', params.id)
     .maybeSingle();
-  if (error) return serverError(`Database error: ${error.message}`, req);
+  if (error) return serverError("Internal server error", req);
   if (!data) return notFound('Message not found', req);
   return ok({ message: data }, req);
 }

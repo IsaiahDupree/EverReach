@@ -23,7 +23,7 @@ export async function GET(req: Request) {
       .order('updated_at', { ascending: false })
       .limit(limit);
 
-    if (error) return serverError(error.message, req);
+    if (error) return serverError("Internal server error", req);
 
     const conversations = (data || []).map(c => ({
       id: c.id,
@@ -34,6 +34,6 @@ export async function GET(req: Request) {
 
     return ok({ conversations }, req);
   } catch (error: any) {
-    return serverError(error.message, req);
+    return serverError("Internal server error", req);
   }
 }

@@ -100,7 +100,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
 
     if (error) {
       return NextResponse.json(
-        { error: 'Calculation failed', details: error.message },
+        { error: 'Calculation failed' },
         { status: 500 }
       );
     }

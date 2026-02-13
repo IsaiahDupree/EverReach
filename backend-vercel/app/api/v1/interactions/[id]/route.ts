@@ -19,7 +19,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }){
     .eq('id', params.id)
     .maybeSingle();
 
-  if (error) return serverError(`Database error: ${error.message}`, req);
+  if (error) return serverError("Internal server error", req);
   if (!data) return notFound('Interaction not found', req);
   return ok({ interaction: data }, req);
 }
@@ -42,7 +42,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     .eq('id', params.id)
     .select('id, updated_at')
     .maybeSingle();
-  if (error) return serverError(`Database update failed: ${error.message}`, req);
+  if (error) return serverError("Internal server error", req);
   if (!data) return notFound('Interaction not found', req);
   return ok({ interaction: data }, req);
 }
@@ -62,7 +62,7 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
     .eq('id', params.id)
     .maybeSingle();
 
-  if (fetchError) return serverError(`Database error: ${fetchError.message}`, req);
+  if (fetchError) return serverError("Internal server error", req);
   if (!existing) return notFound('Interaction not found', req);
 
   // Delete the interaction
@@ -73,7 +73,7 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
     .select('id')
     .maybeSingle();
 
-  if (error) return serverError(`Delete failed: ${error.message}`, req);
+  if (error) return serverError("Internal server error", req);
   if (!data) return notFound('Interaction not found', req);
 
   return ok({ deleted: true, id: data.id }, req);
