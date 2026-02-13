@@ -1,55 +1,49 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { buildCorsHeaders } from '@/lib/cors';
 
-// Global CORS middleware - applies to all routes
+/**
+ * Global middleware — applies to all /api/* routes.
+ *
+ * Responsibilities:
+ *  1. CORS (delegates to lib/cors.ts allowlist — single source of truth)
+ *  2. X-Request-ID on every response
+ *  3. Lightweight structured request logging
+ */
 export function middleware(request: NextRequest) {
-  const origin = request.headers.get('origin') || request.headers.get('referer')?.split('/').slice(0, 3).join('/');
-  
-  // Build CORS headers
-  const corsHeaders: Record<string, string> = {
-    'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
-    'Access-Control-Allow-Headers': 'Authorization,Content-Type,X-Requested-With,x-vercel-protection-bypass,Idempotency-Key,idempotency-key,X-Platform,X-App-Version',
-    'Access-Control-Max-Age': '86400',
-    'Vary': 'Origin',
-  };
+  const origin = request.headers.get('origin') ?? undefined;
+  const startMs = Date.now();
 
-  // Allow all origins in development, or if ALLOW_ALL_ORIGINS is set
-  const allowAll = process.env.NODE_ENV !== 'production' || process.env.ALLOW_ALL_ORIGINS === 'true';
-  
-  if (allowAll) {
-    corsHeaders['Access-Control-Allow-Origin'] = origin || '*';
-    corsHeaders['Access-Control-Allow-Credentials'] = 'true';
-  } else {
-    // Production: use allowlist
-    const allowedOrigins = [
-      'https://ai-enhanced-personal-crm.rork.app',
-      'https://rork.com',
-      'https://everreach.app',
-      'https://www.everreach.app',
-      ...(process.env.CORS_ORIGINS?.split(',').map(o => o.trim()) || [])
-    ];
-    
-    if (origin && allowedOrigins.includes(origin)) {
-      corsHeaders['Access-Control-Allow-Origin'] = origin;
-      corsHeaders['Access-Control-Allow-Credentials'] = 'true';
-    } else {
-      corsHeaders['Access-Control-Allow-Origin'] = '*';
-    }
-  }
+  // Generate a request ID for correlation
+  const requestId =
+    (globalThis as any).crypto?.randomUUID?.()?.replace(/-/g, '') ??
+    `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`;
+  const reqIdHeader = `req_${requestId}`;
+
+  // Build CORS headers from the shared allowlist in lib/cors.ts
+  // This respects STATIC_ALLOWED + CORS_ORIGINS env + localhost dev convenience.
+  // No more ALLOW_ALL_ORIGINS bypass.
+  const corsHeaders = buildCorsHeaders(origin) as Record<string, string>;
 
   // Handle OPTIONS preflight requests
   if (request.method === 'OPTIONS') {
     return new NextResponse(null, {
       status: 204,
-      headers: corsHeaders,
+      headers: { ...corsHeaders, 'X-Request-ID': reqIdHeader },
     });
   }
 
-  // For all other requests, add CORS headers to response
+  // For all other requests, add CORS + request ID headers to response
   const response = NextResponse.next();
   Object.entries(corsHeaders).forEach(([key, value]) => {
     response.headers.set(key, value);
   });
+  response.headers.set('X-Request-ID', reqIdHeader);
+
+  // Structured request log (single line, easy to grep in Vercel logs)
+  const path = request.nextUrl.pathname;
+  const method = request.method;
+  console.log(`[API] ${method} ${path} origin=${origin ?? '-'} rid=${reqIdHeader}`);
 
   return response;
 }

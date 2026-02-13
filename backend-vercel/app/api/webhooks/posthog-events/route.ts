@@ -74,8 +74,13 @@ interface PostHogWebhookPayload {
  */
 function verifySignature(body: string, signature: string): boolean {
   if (!POSTHOG_WEBHOOK_SECRET) {
-    console.warn('POSTHOG_WEBHOOK_SECRET not set, skipping verification');
-    return true; // Allow in development
+    const isDev = process.env.NODE_ENV === 'development' || process.env.VERCEL_ENV === 'preview';
+    if (isDev) {
+      console.warn('[PostHog Webhook] Secret not set — allowing in dev/preview mode');
+      return true;
+    }
+    console.error('[PostHog Webhook] POSTHOG_WEBHOOK_SECRET not set — rejecting in production');
+    return false;
   }
 
   const expectedSignature = crypto

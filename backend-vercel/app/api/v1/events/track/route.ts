@@ -94,19 +94,19 @@ export async function POST(req: Request){
         
         if (retryError) {
           console.error('[Events API] Supabase insert error (retry):', retryError);
-          return serverError(`Database error: ${retryError.message}`, req);
+          return serverError('Failed to track event', req);
         }
         // Successfully inserted with null user_id
         return ok({ tracked: true, event_type: eventType, anonymous: true }, req);
       }
       
       console.error('[Events API] Supabase insert error:', error);
-      return serverError(`Database error: ${error.message}`, req);
+      return serverError('Failed to track event', req);
     }
 
     return ok({ tracked: true, event_type: eventType }, req);
   } catch (e: any) {
     console.error('[Events API] Unexpected error:', e);
-    return serverError(e?.message || 'Internal error', req);
+    return serverError('Internal error', req);
   }
 }

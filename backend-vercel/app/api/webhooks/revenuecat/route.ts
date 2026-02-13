@@ -14,8 +14,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServiceClient } from '@/lib/supabase';
 import { options } from '@/lib/cors';
+import { verifyWebhookSignature } from '@/lib/revenuecat-webhook';
 
-export const runtime = 'edge';
+export const runtime = 'nodejs'; // Need Node for crypto.createHmac in signature verification
 
 export function OPTIONS(req: Request) {
   return options(req);
@@ -92,8 +93,38 @@ function deriveStatus(event: RevenueCatWebhookEvent['event']): string {
 
 export async function POST(req: NextRequest) {
     try {
-        const payload: RevenueCatWebhookEvent = await req.json();
+        // ── Auth: verify signature or bearer token ──
+        const rawBody = await req.text();
+        const signature = req.headers.get('x-revenuecat-signature');
+        const authHeader = req.headers.get('authorization') || req.headers.get('Authorization');
+
+        const webhookSecret = process.env.REVENUECAT_WEBHOOK_SECRET;
+        const expectedBearer = process.env.REVENUECAT_WEBHOOK_AUTH_TOKEN;
+
+        const isSignatureValid = verifyWebhookSignature(rawBody, signature, webhookSecret);
+        const isBearerValid = Boolean(expectedBearer) && authHeader === `Bearer ${expectedBearer}`;
+        const isDev = process.env.NODE_ENV === 'development' || process.env.VERCEL_ENV === 'preview';
+
+        if (!isSignatureValid && !isBearerValid && !isDev) {
+            console.error('[RevenueCat Webhook] Unauthorized: signature and bearer both invalid');
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+        if (isDev && !isSignatureValid && !isBearerValid) {
+            console.warn('[RevenueCat Webhook] Processing without auth (dev/preview mode)');
+        }
+
+        // Parse the raw body we already read
+        let payload: RevenueCatWebhookEvent;
+        try {
+            payload = JSON.parse(rawBody);
+        } catch {
+            return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+        }
         const event = payload.event;
+
+        if (!event || !event.type || !event.app_user_id) {
+            return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+        }
 
         console.log('[RevenueCat Webhook] Received:', {
             type: event.type,
@@ -114,6 +145,12 @@ export async function POST(req: NextRequest) {
             await logSubscriptionEvent(supabase, event, payload, plan, status, store);
             console.log('[RevenueCat Webhook] SUBSCRIBER_ALIAS logged, skipping DB update');
             return NextResponse.json({ success: true, skipped: 'subscriber_alias' });
+        }
+
+        // ── 0. Idempotency: log event first, skip if duplicate ──
+        const isDuplicate = await logSubscriptionEvent(supabase, event, payload, plan, status, store);
+        if (isDuplicate) {
+            return NextResponse.json({ success: true, duplicate: true, transaction_id: event.transaction_id });
         }
 
         // ── 1. Update subscriptions table ──
@@ -189,8 +226,7 @@ export async function POST(req: NextRequest) {
             console.error('[RevenueCat Webhook] entitlements upsert error:', entError);
         }
 
-        // ── 3. Log to subscription_events audit table ──
-        await logSubscriptionEvent(supabase, event, payload, plan, status, store);
+        // (Event already logged in step 0 for idempotency)
 
         const hasErrors = subError || entError;
         console.log(`[RevenueCat Webhook] ${hasErrors ? '⚠️ Partial' : '✅'} Processed:`, {
@@ -215,7 +251,7 @@ export async function POST(req: NextRequest) {
 
 /**
  * Log webhook event to subscription_events table for audit trail.
- * Fire-and-forget — errors here don't fail the webhook response.
+ * Returns true if this is a duplicate event (idempotency check via unique index).
  */
 async function logSubscriptionEvent(
     supabase: any,
@@ -224,9 +260,9 @@ async function logSubscriptionEvent(
     plan: string,
     status: string,
     store: string,
-) {
+): Promise<boolean> {
     try {
-        await supabase.from('subscription_events').insert({
+        const { error } = await supabase.from('subscription_events').insert({
             user_id: event.app_user_id,
             event_type: event.type,
             product_id: event.product_id,
@@ -246,8 +282,18 @@ async function logSubscriptionEvent(
                 ? new Date(event.purchased_at_ms).toISOString()
                 : new Date().toISOString(),
         });
+
+        // 23505 = unique_violation → duplicate event
+        if (error?.code === '23505') {
+            console.log('[RevenueCat Webhook] Duplicate event skipped:', event.transaction_id, event.type);
+            return true;
+        }
+        if (error) {
+            console.warn('[RevenueCat Webhook] subscription_events insert failed:', error.message);
+        }
+        return false;
     } catch (err: any) {
-        // Don't fail the webhook if audit logging fails (table may not exist yet)
-        console.warn('[RevenueCat Webhook] subscription_events insert failed:', err?.message);
+        console.warn('[RevenueCat Webhook] subscription_events insert error:', err?.message);
+        return false;
     }
 }

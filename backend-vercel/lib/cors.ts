@@ -68,7 +68,7 @@ export function buildCorsHeaders(origin?: string): HeadersInit {
   const headers: Record<string, string> = {
     'Vary': 'Origin',
     'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
-    'Access-Control-Allow-Headers': 'Authorization,Content-Type,Idempotency-Key,x-vercel-protection-bypass',
+    'Access-Control-Allow-Headers': 'Authorization,Content-Type,Idempotency-Key,idempotency-key,x-vercel-protection-bypass,X-Requested-With,X-Platform,X-App-Version,X-RevenueCat-Signature,X-Test-Mode',
     'Access-Control-Max-Age': '86400',
     'Access-Control-Allow-Credentials': 'true',
   };

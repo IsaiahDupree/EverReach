@@ -49,7 +49,7 @@
     },
     {
       "path": "/api/cron/process-imports",
-      "schedule": "* * * * *"
+      "schedule": "*/5 * * * *"
     },
     {
       "path": "/api/cron/process-contact-photos",
