@@ -26,6 +26,7 @@ import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 import * as Crypto from 'expo-crypto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { supabase } from '@/lib/supabase';
 
 // ============================================================================
 // Configuration
@@ -567,6 +568,11 @@ async function flushEventQueue(): Promise<void> {
           count: events.length,
         });
       }
+
+      // Log events to Supabase for audit trail (fire-and-forget)
+      logEventsToSupabase(events, result).catch((err: any) => {
+        if (__DEV__) console.warn('[MetaAppEvents] DB log failed:', err);
+      });
     } else {
       const errorText = await response.text();
       console.error('[MetaAppEvents] Conversions API error:', {
@@ -585,6 +591,48 @@ async function flushEventQueue(): Promise<void> {
     if (_eventQueue.length + events.length <= MAX_QUEUE_SIZE * 2) {
       _eventQueue.push(...events);
     }
+  }
+}
+
+/**
+ * Log successfully flushed events to Supabase meta_conversion_event table.
+ * Fire-and-forget — failures are logged but don't affect event delivery.
+ */
+async function logEventsToSupabase(
+  events: QueuedEvent[],
+  apiResponse: { events_received?: number },
+): Promise<void> {
+  if (!supabase) return;
+
+  const rows = events.map((evt) => ({
+    event_id: evt.event_id,
+    pixel_id: PIXEL_ID,
+    event_name: evt.event_name,
+    event_time: new Date(evt.event_time * 1000).toISOString(),
+    action_source: evt.action_source,
+    user_id: evt.user_data.external_id?.[0] || null,
+    hashed_email: evt.user_data.em?.[0] || null,
+    hashed_phone: evt.user_data.ph?.[0] || null,
+    client_ip_address: evt.user_data.client_ip_address || null,
+    client_user_agent: evt.user_data.client_user_agent || null,
+    fbp: evt.user_data.fbp || null,
+    fbc: evt.user_data.fbc || null,
+    value: evt.custom_data.value || null,
+    currency: evt.custom_data.currency || null,
+    custom_data: evt.custom_data,
+    test_event_code: __DEV__ ? 'TEST48268' : null,
+    sent_at: new Date().toISOString(),
+    response_data: { events_received: apiResponse.events_received },
+  }));
+
+  const { error } = await supabase
+    .from('meta_conversion_event')
+    .insert(rows);
+
+  if (error) {
+    if (__DEV__) console.warn('[MetaAppEvents] Supabase insert error:', error.message);
+  } else if (__DEV__) {
+    console.log('[MetaAppEvents] Logged', rows.length, 'events to Supabase');
   }
 }
 
