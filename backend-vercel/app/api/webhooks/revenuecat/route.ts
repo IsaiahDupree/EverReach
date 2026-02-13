@@ -3,11 +3,16 @@
  * 
  * Receives subscription events from RevenueCat and updates backend database.
  * Triggered on purchase, renewal, cancellation, etc.
+ * 
+ * DB Tables Updated:
+ *   - subscriptions (id, user_id, product_id, store, store_account_id, status,
+ *                    started_at, current_period_end, cancel_at, canceled_at, updated_at)
+ *   - entitlements  (user_id, plan, valid_until, source, updated_at, subscription_id)
+ *   - subscription_events (audit log of every webhook — see migration)
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getClientOrThrow } from '@/lib/supabase';
-import { createClient } from '@supabase/supabase-js';
+import { getServiceClient } from '@/lib/supabase';
 import { options } from '@/lib/cors';
 
 export const runtime = 'edge';
@@ -46,218 +51,203 @@ interface RevenueCatWebhookEvent {
         is_trial_conversion?: boolean;
         transaction_id: string;
         original_transaction_id: string;
-        store?: 'APP_STORE' | 'PLAY_STORE' | 'STRIPE' | string; // Store/platform identifier
+        store?: 'APP_STORE' | 'PLAY_STORE' | 'STRIPE' | string;
+        price_in_purchased_currency?: number;
+        currency?: string;
+        country_code?: string;
     };
+}
+
+// Map RC product_id to plan tier
+function derivePlan(event: RevenueCatWebhookEvent['event']): 'free' | 'core' | 'pro' | 'team' {
+    const pid = event.product_id?.toLowerCase() || '';
+    const ents = event.entitlement_ids || [];
+    if (ents.includes('pro') || pid.includes('pro')) return 'pro';
+    if (ents.includes('core') || pid.includes('core')) return 'core';
+    if (ents.includes('team') || pid.includes('team')) return 'team';
+    return 'free';
+}
+
+// Map RC store to our DB enum
+function deriveStore(event: RevenueCatWebhookEvent['event']): string {
+    if (!event.store) return 'app_store';
+    switch (event.store) {
+        case 'PLAY_STORE': case 'GOOGLE_PLAY': case 'ANDROID': return 'play';
+        case 'STRIPE': return 'stripe';
+        default: return 'app_store';
+    }
+}
+
+// Map RC event type to subscription status
+function deriveStatus(event: RevenueCatWebhookEvent['event']): string {
+    switch (event.type) {
+        case 'CANCELLATION': return 'canceled';
+        case 'EXPIRATION': case 'REFUND': return 'expired';
+        case 'UNCANCELLATION': case 'INITIAL_PURCHASE': case 'RENEWAL':
+        case 'PRODUCT_CHANGE': case 'BILLING_ISSUE': case 'NON_RENEWING_PURCHASE':
+            return event.period_type === 'TRIAL' ? 'trial' : 'active';
+        default: return 'active';
+    }
 }
 
 export async function POST(req: NextRequest) {
     try {
-        // Get webhook payload
         const payload: RevenueCatWebhookEvent = await req.json();
-
-        console.log('[RevenueCat Webhook] Received event:', {
-            type: payload.event.type,
-            user_id: payload.event.app_user_id,
-            product_id: payload.event.product_id,
-        });
-
-        // Get Supabase client (use service key for webhook)
-        const supabase = createClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.SUPABASE_SERVICE_ROLE_KEY!
-        );
-
-        const userId = payload.event.app_user_id;
         const event = payload.event;
 
-        // Determine subscription tier from product_id or entitlements
-        let tier: 'free' | 'core' | 'pro' | 'team' = 'free';
-        if (event.entitlement_ids.includes('pro') || event.product_id.includes('pro')) {
-            tier = 'pro';
-        } else if (event.entitlement_ids.includes('core') || event.product_id.includes('core')) {
-            tier = 'core';
-        } else if (event.entitlement_ids.includes('team') || event.product_id.includes('team')) {
-            tier = 'team';
-        }
+        console.log('[RevenueCat Webhook] Received:', {
+            type: event.type,
+            user_id: event.app_user_id,
+            product_id: event.product_id,
+            environment: event.environment,
+        });
 
-        // SUBSCRIBER_ALIAS is informational only — no DB update needed
-        if (event.type === 'SUBSCRIBER_ALIAS' as RevenueCatEventType) {
-            console.log('[RevenueCat Webhook] SUBSCRIBER_ALIAS event, skipping DB update');
+        const supabase = getServiceClient();
+        const userId = event.app_user_id;
+        const plan = derivePlan(event);
+        const store = deriveStore(event);
+        const status = deriveStatus(event);
+        const now = new Date().toISOString();
+
+        // SUBSCRIBER_ALIAS is informational only — log but skip DB update
+        if (event.type === 'SUBSCRIBER_ALIAS') {
+            await logSubscriptionEvent(supabase, event, payload, plan, status, store);
+            console.log('[RevenueCat Webhook] SUBSCRIBER_ALIAS logged, skipping DB update');
             return NextResponse.json({ success: true, skipped: 'subscriber_alias' });
         }
 
-        // Determine subscription status
-        let subscriptionStatus: 'active' | 'trial' | 'canceled' | 'expired' = 'active';
+        // ── 1. Update subscriptions table ──
+        // Schema: id, user_id, product_id, store, store_account_id, status,
+        //         started_at, current_period_end, cancel_at, canceled_at, updated_at
+        const subData: Record<string, any> = {
+            user_id: userId,
+            product_id: event.product_id,
+            store,
+            status,
+            current_period_end: event.expiration_at_ms
+                ? new Date(event.expiration_at_ms).toISOString()
+                : null,
+            updated_at: now,
+        };
+
+        // Set started_at only on initial purchase
+        if (event.type === 'INITIAL_PURCHASE' || event.type === 'NON_RENEWING_PURCHASE') {
+            subData.started_at = event.purchased_at_ms
+                ? new Date(event.purchased_at_ms).toISOString()
+                : now;
+        }
+
+        // Set cancel timestamps for cancellation events
         if (event.type === 'CANCELLATION') {
-            subscriptionStatus = 'canceled';
-        } else if (event.type === 'EXPIRATION') {
-            subscriptionStatus = 'expired';
-        } else if (event.type === 'REFUND') {
-            subscriptionStatus = 'expired';
-            tier = 'free'; // Refund revokes access
-        } else if (event.type === 'UNCANCELLATION') {
-            subscriptionStatus = 'active'; // User re-enabled auto-renew
-        } else if (event.type === 'BILLING_ISSUE') {
-            // Keep current tier but flag billing issue via status
-            // Don't downgrade immediately — grace period applies
-            subscriptionStatus = 'active';
-        } else if (event.period_type === 'TRIAL') {
-            subscriptionStatus = 'trial';
+            subData.canceled_at = now;
+            subData.cancel_at = event.expiration_at_ms
+                ? new Date(event.expiration_at_ms).toISOString()
+                : null;
         }
 
-        // CRITICAL: Map RevenueCat product_id to App Store product_id
-        // RevenueCat sends their internal product_id (e.g., "everreach_core_annual")
-        // We need to fetch the product details to get the App Store product_id (e.g., "com.everreach.core.annual")
-        let appStoreProductId = event.product_id; // Default fallback
-        
-        try {
-            const revenueCatApiKey = process.env.REVENUECAT_API_KEY || process.env.REVENUECAT_V2_API_KEY;
-            const revenueCatProjectId = process.env.REVENUECAT_PROJECT_ID || 'projf143188e';
-            
-            if (revenueCatApiKey && event.product_id) {
-                console.log('[RevenueCat Webhook] Fetching product details for:', event.product_id);
-                
-                // Fetch product from RevenueCat API to get store_identifier
-                const productResponse = await fetch(
-                    `https://api.revenuecat.com/v2/projects/${revenueCatProjectId}/products/${event.product_id}`,
-                    {
-                        headers: {
-                            'Authorization': `Bearer ${revenueCatApiKey}`,
-                            'Content-Type': 'application/json',
-                        },
-                    }
-                );
-                
-                if (productResponse.ok) {
-                    const productData = await productResponse.json();
-                    console.log('[RevenueCat Webhook] Product data:', JSON.stringify(productData, null, 2));
-                    
-                    // Get the App Store product identifier (store_identifier for iOS)
-                    // RevenueCat V2 API structure: productData.store_identifier
-                    if (productData.store_identifier) {
-                        appStoreProductId = productData.store_identifier;
-                        console.log('[RevenueCat Webhook] ✅ Mapped to App Store product_id:', appStoreProductId);
-                    } else {
-                        // Try alternative field names
-                        const altId = productData.app_store_product_id || 
-                                     productData.ios_product_id || 
-                                     productData.identifier;
-                        if (altId) {
-                            appStoreProductId = altId;
-                            console.log('[RevenueCat Webhook] ✅ Mapped to App Store product_id (alt):', appStoreProductId);
-                        } else {
-                            console.warn('[RevenueCat Webhook] ⚠️ No store_identifier found, using RevenueCat product_id:', event.product_id);
-                        }
-                    }
-                } else {
-                    console.warn('[RevenueCat Webhook] ⚠️ Could not fetch product details, using RevenueCat product_id:', event.product_id);
-                }
-            }
-        } catch (productError: any) {
-            console.warn('[RevenueCat Webhook] ⚠️ Error fetching product details:', productError.message);
-            console.warn('[RevenueCat Webhook] Using RevenueCat product_id as fallback:', event.product_id);
+        // Clear cancel flags on uncancellation
+        if (event.type === 'UNCANCELLATION') {
+            subData.canceled_at = null;
+            subData.cancel_at = null;
         }
 
-        // Determine store/platform from event data
-        // RevenueCat webhook event.store can be 'APP_STORE', 'PLAY_STORE', etc.
-        // If not provided, infer from product_id or default to app_store
-        let store: 'app_store' | 'play' | 'stripe' = 'app_store'; // Default to app_store
-        
-        if (event.store) {
-            if (event.store === 'PLAY_STORE' || event.store === 'GOOGLE_PLAY' || event.store === 'ANDROID') {
-                store = 'play';
-            } else if (event.store === 'STRIPE') {
-                store = 'stripe';
-            } else {
-                store = 'app_store'; // APP_STORE or default
-            }
-        } else {
-            // Fallback: infer from product_id or environment
-            // iOS products typically have 'com.' prefix, Android might have different patterns
-            if (appStoreProductId.includes('android') || appStoreProductId.includes('play')) {
-                store = 'play';
-            } else {
-                store = 'app_store'; // Default to iOS/App Store
-            }
+        // Refund: also clear cancel fields, status is already 'expired'
+        if (event.type === 'REFUND') {
+            subData.canceled_at = now;
         }
 
-        console.log('[RevenueCat Webhook] Determined store:', store, 'from event.store:', event.store || 'inferred');
+        // Use store_account_id for RC original_transaction_id (closest match)
+        if (event.original_transaction_id) {
+            subData.store_account_id = event.original_transaction_id;
+        }
 
-        // Update or create subscription record
         const { error: subError } = await supabase
             .from('subscriptions')
-            .upsert({
-                user_id: userId,
-                tier,
-                status: subscriptionStatus,
-                product_id: appStoreProductId, // Use mapped App Store product_id
-                store: store, // Use determined store (app_store, play, or stripe)
-                current_period_end: event.expiration_at_ms
-                    ? new Date(event.expiration_at_ms).toISOString()
-                    : null,
-                transaction_id: event.transaction_id,
-                original_transaction_id: event.original_transaction_id,
-                updated_at: new Date().toISOString(),
-            }, {
-                onConflict: 'user_id,store', // Match on both user_id and store
-            });
+            .upsert(subData, { onConflict: 'user_id,store' });
 
         if (subError) {
-            console.error('[RevenueCat Webhook] Error updating subscription:', subError);
-            return NextResponse.json(
-                { error: 'Failed to update subscription' },
-                { status: 500 }
-            );
+            console.error('[RevenueCat Webhook] subscriptions upsert error:', subError);
+            // Continue to entitlements — don't bail completely
         }
 
-        // Update entitlements
-        const features = tier === 'pro'
-            ? { compose_runs: 1000, voice_minutes: 300, messages: 2000, contacts: -1 }
-            : tier === 'core'
-                ? { compose_runs: 200, voice_minutes: 120, messages: 1000, contacts: 500 }
-                : { compose_runs: 50, voice_minutes: 30, messages: 200, contacts: 100 };
-
+        // ── 2. Update entitlements table ──
+        // Schema: user_id, plan, valid_until, source, updated_at, subscription_id
+        const entPlan = (event.type === 'REFUND' || event.type === 'EXPIRATION') ? 'free' : plan;
         const { error: entError } = await supabase
             .from('entitlements')
             .upsert({
                 user_id: userId,
-                tier,
-                subscription_status: subscriptionStatus,
-                payment_platform: 'revenuecat',
-                environment: event.environment,
-                trial_ends_at: event.period_type === 'TRIAL' && event.expiration_at_ms
+                plan: entPlan,
+                valid_until: event.expiration_at_ms
                     ? new Date(event.expiration_at_ms).toISOString()
                     : null,
-                current_period_end: event.expiration_at_ms
-                    ? new Date(event.expiration_at_ms).toISOString()
-                    : null,
-                features,
-                updated_at: new Date().toISOString(),
-            }, {
-                onConflict: 'user_id',
-            });
+                source: 'revenuecat',
+                updated_at: now,
+            }, { onConflict: 'user_id' });
 
         if (entError) {
-            console.error('[RevenueCat Webhook] Error updating entitlements:', entError);
-            return NextResponse.json(
-                { error: 'Failed to update entitlements' },
-                { status: 500 }
-            );
+            console.error('[RevenueCat Webhook] entitlements upsert error:', entError);
         }
 
-        console.log('[RevenueCat Webhook] Successfully processed event:', {
-            type: payload.event.type,
-            user_id: userId,
-            tier,
-            status: subscriptionStatus,
+        // ── 3. Log to subscription_events audit table ──
+        await logSubscriptionEvent(supabase, event, payload, plan, status, store);
+
+        const hasErrors = subError || entError;
+        console.log(`[RevenueCat Webhook] ${hasErrors ? '⚠️ Partial' : '✅'} Processed:`, {
+            type: event.type, user_id: userId, plan: entPlan, status, store,
         });
 
-        return NextResponse.json({ success: true });
+        return NextResponse.json({
+            success: !hasErrors,
+            partial: !!hasErrors,
+            type: event.type,
+            plan: entPlan,
+            status,
+        });
     } catch (error: any) {
         console.error('[RevenueCat Webhook] Error:', error);
         return NextResponse.json(
             { error: error.message || 'Internal server error' },
             { status: 500 }
         );
+    }
+}
+
+/**
+ * Log webhook event to subscription_events table for audit trail.
+ * Fire-and-forget — errors here don't fail the webhook response.
+ */
+async function logSubscriptionEvent(
+    supabase: any,
+    event: RevenueCatWebhookEvent['event'],
+    payload: RevenueCatWebhookEvent,
+    plan: string,
+    status: string,
+    store: string,
+) {
+    try {
+        await supabase.from('subscription_events').insert({
+            user_id: event.app_user_id,
+            event_type: event.type,
+            product_id: event.product_id,
+            store,
+            environment: event.environment,
+            period_type: event.period_type,
+            plan,
+            status,
+            transaction_id: event.transaction_id || null,
+            original_transaction_id: event.original_transaction_id || null,
+            revenue: event.price_in_purchased_currency ?? null,
+            currency: event.currency || 'USD',
+            entitlement_ids: event.entitlement_ids || [],
+            is_trial_conversion: event.is_trial_conversion || false,
+            raw_payload: payload,
+            occurred_at: event.purchased_at_ms
+                ? new Date(event.purchased_at_ms).toISOString()
+                : new Date().toISOString(),
+        });
+    } catch (err: any) {
+        // Don't fail the webhook if audit logging fails (table may not exist yet)
+        console.warn('[RevenueCat Webhook] subscription_events insert failed:', err?.message);
     }
 }
