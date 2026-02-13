@@ -47,6 +47,21 @@ export default function MetaPixelTestScreen() {
 
   const MONITOR_URL = 'http://localhost:3456';
 
+  // Quick health check — returns true only if the monitor is actually reachable
+  const isMonitorReachable = async (): Promise<boolean> => {
+    if (!useMonitor) return false;
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 1500);
+      const res = await fetch(`${MONITOR_URL}/health`, { method: 'GET', signal: controller.signal });
+      clearTimeout(timeout);
+      const data = await res.json();
+      return data.status === 'ok';
+    } catch {
+      return false;
+    }
+  };
+
   // Gate behind dev settings
   useEffect(() => {
     if (!SHOW_DEV_SETTINGS) {
@@ -143,10 +158,15 @@ export default function MetaPixelTestScreen() {
         test_event_code: TEST_EVENT_CODE,
       };
 
-      // Route through monitor proxy or directly to Meta
-      const url = useMonitor
+      // Route through monitor proxy or directly to Meta (auto-fallback if monitor offline)
+      const monitorUp = await isMonitorReachable();
+      const url = monitorUp
         ? `${MONITOR_URL}/events`
         : `https://graph.facebook.com/${GRAPH_API_VERSION}/${PIXEL_ID}/events?access_token=${TOKEN}`;
+
+      if (useMonitor && !monitorUp) {
+        updateResult(id, { message: `Monitor offline — sending direct to Meta CAPI...` });
+      }
 
       const response = await fetch(url, {
         method: 'POST',
@@ -159,7 +179,7 @@ export default function MetaPixelTestScreen() {
       if (response.ok && responseData.events_received > 0) {
         updateResult(id, {
           status: 'success',
-          message: `\u2705 Event received by Meta! (events_received: ${responseData.events_received})`,
+          message: `\u2705 Event received by Meta! (events_received: ${responseData.events_received})${monitorUp ? ' via monitor' : ''}`,
           responseData,
         });
         trackEventCount(eventName, true);
