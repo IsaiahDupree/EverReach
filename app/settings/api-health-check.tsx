@@ -56,6 +56,7 @@ interface SectionResult {
 
 // All endpoints the iOS app actually calls, grouped by feature/screen.
 // Method + path + expected status codes + whether auth is required.
+// Paths with :contactId are resolved dynamically at runtime.
 const TEST_SECTIONS: { title: string; tests: TestDef[] }[] = [
   {
     title: '🏥 Health & Config',
@@ -63,6 +64,7 @@ const TEST_SECTIONS: { title: string; tests: TestDef[] }[] = [
       { name: 'Health Check', method: 'GET', path: '/api/health', expect: [200], auth: false, screen: 'App Launch' },
       { name: 'App Data / Version', method: 'GET', path: '/api/v1/app-data', expect: [200, 404], auth: false, screen: 'App Launch' },
       { name: 'Config Status', method: 'GET', path: '/api/v1/ops/config-status', expect: [200, 404], auth: true, screen: 'Settings' },
+      { name: 'Telemetry (POST)', method: 'POST', path: '/api/telemetry/performance', expect: [200, 201, 400, 404], auth: true, body: { metric: 'health_check', value: 1 }, screen: 'App Launch' },
     ],
   },
   {
@@ -74,15 +76,33 @@ const TEST_SECTIONS: { title: string; tests: TestDef[] }[] = [
       { name: 'Get Usage', method: 'GET', path: '/api/v1/me/usage', expect: [200, 404], auth: true, screen: 'Paywall' },
       { name: 'Usage Summary (30d)', method: 'GET', path: '/api/me/usage-summary?window=30d', expect: [200, 404], auth: true, screen: 'Subscription Plans' },
       { name: 'Compose Settings', method: 'GET', path: '/api/v1/me/compose-settings', expect: [200, 404], auth: true, screen: 'Mode Settings' },
+      { name: 'Link Apple Status', method: 'GET', path: '/api/v1/link/apple', expect: [200, 404, 405], auth: true, screen: 'Personal Profile' },
+      { name: 'Link Google Status', method: 'GET', path: '/api/v1/link/google', expect: [200, 404, 405], auth: true, screen: 'Personal Profile' },
     ],
   },
   {
-    title: '📇 Contacts',
+    title: '📇 Contacts (List)',
     tests: [
       { name: 'List Contacts', method: 'GET', path: '/api/v1/contacts?limit=5', expect: [200], auth: true, screen: 'People Tab' },
       { name: 'Search Contacts', method: 'GET', path: '/api/v1/contacts?q=test&limit=5', expect: [200], auth: true, screen: 'People Tab' },
       { name: 'Contacts (warmth sort)', method: 'GET', path: '/api/v1/contacts?limit=5&sort=warmth.desc', expect: [200], auth: true, screen: 'People Tab' },
+      { name: 'Contacts (updated sort)', method: 'GET', path: '/api/v1/contacts?limit=5&sort=updated_at.desc', expect: [200], auth: true, screen: 'People Tab' },
       { name: 'Batch Avatars', method: 'POST', path: '/api/v1/contacts/avatars/batch', expect: [200, 404], auth: true, body: { contact_ids: [] }, screen: 'People Tab' },
+    ],
+  },
+  {
+    title: '📇 Contact Detail (dynamic)',
+    tests: [
+      { name: 'Get Contact', method: 'GET', path: '/api/v1/contacts/:contactId', expect: [200], auth: true, screen: 'Contact Detail' },
+      { name: 'Contact Context Summary', method: 'GET', path: '/api/v1/contacts/:contactId/context-summary', expect: [200, 404], auth: true, screen: 'Contact Detail' },
+      { name: 'Contact Files', method: 'GET', path: '/api/v1/contacts/:contactId/files', expect: [200, 404], auth: true, screen: 'Contact Detail' },
+      { name: 'Contact Notes', method: 'GET', path: '/api/v1/contacts/:contactId/notes', expect: [200, 404], auth: true, screen: 'Contact Detail' },
+      { name: 'Contact Pipeline', method: 'GET', path: '/api/v1/contacts/:contactId/pipeline', expect: [200, 404], auth: true, screen: 'Contact Detail' },
+      { name: 'Contact Warmth Mode', method: 'GET', path: '/api/v1/contacts/:contactId/warmth/mode', expect: [200, 404], auth: true, screen: 'Contact Detail' },
+      { name: 'Contact Goal Suggestions', method: 'GET', path: '/api/v1/contacts/:contactId/goal-suggestions', expect: [200, 404], auth: true, screen: 'Contact Detail' },
+      { name: 'Contact Avatar', method: 'GET', path: '/api/v1/contacts/:contactId/avatar', expect: [200, 404], auth: true, screen: 'Contact Detail' },
+      { name: 'Contact Interactions', method: 'GET', path: '/api/v1/interactions?contact_id=:contactId&limit=5&sort=created_at:desc', expect: [200], auth: true, screen: 'Contact Detail' },
+      { name: 'Watch Contact', method: 'GET', path: '/v1/contacts/:contactId/watch', expect: [200, 404, 405], auth: true, screen: 'Contact Detail' },
     ],
   },
   {
@@ -91,6 +111,7 @@ const TEST_SECTIONS: { title: string; tests: TestDef[] }[] = [
       { name: 'List Interactions', method: 'GET', path: '/api/v1/interactions?kind=note&limit=5', expect: [200], auth: true, screen: 'Contact Detail' },
       { name: 'Personal Notes (text)', method: 'GET', path: '/api/v1/me/persona-notes?type=text', expect: [200, 404], auth: true, screen: 'Personal Notes' },
       { name: 'Personal Notes (voice)', method: 'GET', path: '/api/v1/me/persona-notes?type=voice&limit=5', expect: [200, 404], auth: true, screen: 'Voice Notes' },
+      { name: 'List All Persona Notes', method: 'GET', path: '/api/v1/me/persona-notes', expect: [200, 404], auth: true, screen: 'Personal Notes' },
     ],
   },
   {
@@ -105,12 +126,17 @@ const TEST_SECTIONS: { title: string; tests: TestDef[] }[] = [
     tests: [
       { name: 'Agent Tools List', method: 'GET', path: '/api/v1/agent/tools', expect: [200, 404], auth: true, screen: 'Chat Tab' },
       { name: 'Trending Prompts', method: 'GET', path: '/api/v1/queries/trending?timeframe=today', expect: [200, 404], auth: false, screen: 'Chat Tab' },
+      { name: 'Queries History', method: 'GET', path: '/api/v1/queries', expect: [200, 404], auth: true, screen: 'Chat Tab' },
+      { name: 'Agent Analyze Contact', method: 'POST', path: '/api/v1/agent/analyze/contact', expect: [200, 400, 404, 422], auth: true, body: { query: 'health check' }, screen: 'Chat Tab' },
+      { name: 'Agent Suggest Actions', method: 'POST', path: '/api/v1/agent/suggest/actions', expect: [200, 400, 404, 422], auth: true, body: { query: 'health check' }, screen: 'Chat Tab' },
+      { name: 'Agent Compose Smart', method: 'POST', path: '/api/v1/agent/compose/smart', expect: [200, 400, 404, 422], auth: true, body: { prompt: 'health check' }, screen: 'Chat Tab' },
     ],
   },
   {
     title: '✉️ Messages & Compose',
     tests: [
       { name: 'List Templates', method: 'GET', path: '/api/v1/templates?limit=5', expect: [200, 404], auth: true, screen: 'Message Compose' },
+      { name: 'Templates by Channel', method: 'GET', path: '/api/v1/templates?channel=email&limit=1', expect: [200, 404], auth: true, screen: 'Message Compose' },
     ],
   },
   {
@@ -126,19 +152,22 @@ const TEST_SECTIONS: { title: string; tests: TestDef[] }[] = [
       { name: 'Get Subscription', method: 'GET', path: '/api/v1/billing/subscription', expect: [200, 404], auth: true, screen: 'Account Billing' },
       { name: 'Paywall Config', method: 'GET', path: '/api/v1/config/paywall-live?platform=ios', expect: [200, 404], auth: false, screen: 'Subscription Plans' },
       { name: 'Changelog', method: 'GET', path: '/api/v1/changelog?limit=3', expect: [200, 404], auth: false, screen: 'Subscription Plans' },
+      { name: 'Restore Purchases', method: 'POST', path: '/api/v1/billing/restore', expect: [200, 400, 404], auth: true, body: {}, screen: 'Subscription' },
+      { name: 'Sync Subscription', method: 'POST', path: '/api/v1/subscriptions/sync', expect: [200, 400, 404], auth: true, body: {}, screen: 'Subscription' },
+      { name: 'Billing Portal', method: 'POST', path: '/api/v1/billing/portal', expect: [200, 400, 404], auth: true, body: { return_url: 'https://app.everreach.com' }, screen: 'Account Billing' },
     ],
   },
   {
     title: '📊 Analytics & Events',
     tests: [
       { name: 'Track Event', method: 'POST', path: '/api/v1/events/track', expect: [200, 201, 400, 404], auth: true, body: { event_name: 'health_check_test', properties: { source: 'api-health-check' } }, screen: 'All Screens' },
-      { name: 'Queries History', method: 'GET', path: '/api/v1/queries', expect: [200, 404], auth: true, screen: 'Chat Tab' },
     ],
   },
   {
-    title: '🔔 Alerts & Notifications',
+    title: '🔔 Alerts & Push',
     tests: [
       { name: 'List Alerts', method: 'GET', path: '/v1/alerts', expect: [200, 404], auth: true, screen: 'Alerts' },
+      { name: 'Push Tokens', method: 'GET', path: '/v1/push-tokens', expect: [200, 404, 405], auth: true, screen: 'Notifications' },
     ],
   },
   {
@@ -169,6 +198,9 @@ const TEST_SECTIONS: { title: string; tests: TestDef[] }[] = [
       { name: 'Files Table (RLS)', method: 'SUPABASE', path: 'files', expect: [200], auth: true, screen: 'Contact Files' },
       { name: 'Insights Table', method: 'SUPABASE', path: 'insights', expect: [200], auth: true, screen: 'Dashboard' },
       { name: 'Onboarding Responses', method: 'SUPABASE', path: 'onboarding_responses_v2', expect: [200], auth: true, screen: 'Onboarding' },
+      { name: 'Message Threads', method: 'SUPABASE', path: 'message_threads', expect: [200], auth: true, screen: 'Chat Tab' },
+      { name: 'Generated Messages', method: 'SUPABASE', path: 'generated_messages', expect: [200], auth: true, screen: 'Messages' },
+      { name: 'People View', method: 'SUPABASE', path: 'people', expect: [200], auth: true, screen: 'People Tab' },
     ],
   },
 ];
@@ -186,6 +218,7 @@ export default function ApiHealthCheckScreen() {
   const [baseOverride, setBaseOverride] = useState('');
   const [progress, setProgress] = useState(0);
   const [authOk, setAuthOk] = useState<boolean | null>(null);
+  const [dynamicContact, setDynamicContact] = useState<string>('');
   const abortRef = useRef(false);
 
   const toggleSection = useCallback((idx: number) => {
@@ -211,6 +244,22 @@ export default function ApiHealthCheckScreen() {
     const token = session?.access_token;
     setAuthOk(!!token);
 
+    // Fetch a real contact ID for dynamic tests
+    let contactId = '';
+    let contactName = '';
+    try {
+      const res = await apiFetch('/api/v1/contacts?limit=1', { requireAuth: true, baseOverride: BASE });
+      if (res.ok) {
+        const json = await res.json();
+        const items = json?.items || json?.contacts || json?.data || [];
+        if (items.length > 0) {
+          contactId = items[0].id;
+          contactName = items[0].first_name || items[0].name || 'Unknown';
+        }
+      }
+    } catch {}
+    setDynamicContact(contactId ? `${contactName} (${contactId.slice(0, 8)}…)` : 'None found');
+
     const allSections: SectionResult[] = [];
 
     for (const section of TEST_SECTIONS) {
@@ -225,6 +274,26 @@ export default function ApiHealthCheckScreen() {
 
       for (const test of section.tests) {
         if (abortRef.current) break;
+
+        // Resolve :contactId in path
+        let resolvedPath = test.path;
+        if (resolvedPath.includes(':contactId')) {
+          if (!contactId) {
+            // Skip dynamic tests if no contact found
+            sectionResult.results.push({
+              def: test,
+              status: 0,
+              passed: false,
+              ms: 0,
+              error: 'No contacts found — skipped',
+            });
+            sectionResult.failed++;
+            completed++;
+            setProgress(completed);
+            continue;
+          }
+          resolvedPath = resolvedPath.replace(/:contactId/g, contactId);
+        }
 
         const start = Date.now();
         let status = 0;
@@ -245,7 +314,7 @@ export default function ApiHealthCheckScreen() {
             }
           } else {
             // Backend API call
-            const response = await apiFetch(test.path, {
+            const response = await apiFetch(resolvedPath, {
               method: test.method,
               requireAuth: test.auth,
               baseOverride: BASE,
@@ -356,6 +425,16 @@ export default function ApiHealthCheckScreen() {
             )}
             <Text style={[styles.authText, { color: authOk ? '#10B981' : '#EF4444' }]}>
               {authOk ? 'Authenticated — all tests can run' : 'Not authenticated — auth-required tests will fail'}
+            </Text>
+          </View>
+        )}
+
+        {/* Dynamic Contact Info */}
+        {dynamicContact !== '' && (
+          <View style={[styles.authBanner, { backgroundColor: theme.colors.surface }]}>
+            <CheckCircle2 size={16} color={theme.colors.textSecondary} />
+            <Text style={[styles.authText, { color: theme.colors.textSecondary }]}>
+              Contact detail tests using: {dynamicContact}
             </Text>
           </View>
         )}
