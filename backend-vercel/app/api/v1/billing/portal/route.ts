@@ -1,6 +1,6 @@
 import { options, ok, unauthorized, serverError, badRequest } from '@/lib/cors';
 import { getUser } from '@/lib/auth';
-import { getClientOrThrow } from '@/lib/supabase';
+import { getServiceClient } from '@/lib/supabase';
 import Stripe from 'stripe';
 
 export const runtime = 'nodejs';
@@ -13,7 +13,7 @@ export async function POST(req: Request) {
   if (!user) return unauthorized('Unauthorized', req);
 
   try {
-    const supabase = getClientOrThrow(req);
+    const supabase = getServiceClient();
 
     // Check subscription source before attempting Stripe portal
     const { data: subscription } = await supabase
@@ -74,7 +74,7 @@ export async function POST(req: Request) {
     return ok({ url: session.url }, req);
   } catch (error: any) {
     console.error('[Billing Portal] Error:', error);
-    return serverError(error?.message || 'Internal server error', req);
+    return serverError('Internal server error', req);
   }
 }
 

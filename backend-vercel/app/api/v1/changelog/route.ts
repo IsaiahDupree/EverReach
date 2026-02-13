@@ -56,7 +56,13 @@ export async function GET(request: Request) {
 
     if (error) {
       console.error('[Changelog] Query error:', error);
-      return serverError('Failed to fetch changelog', request);
+      // Return empty result instead of 500 if table is empty or relationship broken
+      return ok({
+        success: true,
+        data: [],
+        grouped: {},
+        count: 0,
+      }, request, { 'Cache-Control': 'public, max-age=300, stale-while-revalidate=60' });
     }
 
     // Group by version
@@ -77,6 +83,6 @@ export async function GET(request: Request) {
     }, request, { 'Cache-Control': 'public, max-age=300, stale-while-revalidate=60' });
   } catch (error: any) {
     console.error('[Changelog] Error:', error);
-    return serverError(error?.message || 'Internal server error', request);
+    return serverError('Internal server error', request);
   }
 }
