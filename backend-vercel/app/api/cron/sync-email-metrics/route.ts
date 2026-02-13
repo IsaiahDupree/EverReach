@@ -7,15 +7,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getServiceClient } from '@/lib/supabase';
 import { Resend } from 'resend';
-
-function getSupabase() {
-  return createClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 
@@ -23,7 +16,7 @@ const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null;
 
 export async function GET(req: NextRequest) {
   try {
-    const supabase = getSupabase();
+    const supabase = getServiceClient();
     return handleSync(req, supabase);
   } catch (error) {
     console.error('[Email Sync] Error:', error);
@@ -38,11 +31,11 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const supabase = getSupabase();
+  const supabase = getServiceClient();
   return handleSync(req, supabase);
 }
 
-async function handleSync(req: NextRequest, supabase: ReturnType<typeof getSupabase>) {
+async function handleSync(req: NextRequest, supabase: ReturnType<typeof getServiceClient>) {
   try {
     // Verify cron secret (fail-closed)
     const { verifyCron } = await import('@/lib/cron-auth');

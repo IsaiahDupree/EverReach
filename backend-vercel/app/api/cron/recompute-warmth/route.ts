@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getServiceClient } from '@/lib/supabase';
 
 export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
@@ -31,16 +31,7 @@ export async function GET(req: Request) {
     if (authError) return authError;
 
     // Initialize Supabase service client
-    const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    if (!supabaseUrl || !supabaseServiceKey) {
-      throw new Error('Missing Supabase configuration');
-    }
-
-    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: { persistSession: false }
-    });
+    const supabase = getServiceClient();
 
     // Fetch all active contacts (not deleted, with last_interaction_at)
     const { data: contacts, error: fetchError } = await supabase

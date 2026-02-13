@@ -7,14 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-function getSupabase() {
-  return createClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
+import { getServiceClient } from '@/lib/supabase';
 
 const POSTHOG_PROJECT_KEY = process.env.POSTHOG_PROJECT_KEY;
 const POSTHOG_HOST = process.env.POSTHOG_HOST || 'https://us.i.posthog.com';
@@ -22,7 +15,7 @@ const POSTHOG_PERSONAL_API_KEY = process.env.POSTHOG_PERSONAL_API_KEY;
 
 export async function GET(req: NextRequest) {
   try {
-    const supabase = getSupabase();
+    const supabase = getServiceClient();
     return handleSync(req, supabase);
   } catch (error) {
     console.error('[PostHog Sync] Error:', error);
@@ -37,11 +30,11 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const supabase = getSupabase();
+  const supabase = getServiceClient();
   return handleSync(req, supabase);
 }
 
-async function handleSync(req: NextRequest, supabase: ReturnType<typeof getSupabase>) {
+async function handleSync(req: NextRequest, supabase: ReturnType<typeof getServiceClient>) {
   try {
     // Verify cron secret (fail-closed)
     const { verifyCron } = await import('@/lib/cron-auth');

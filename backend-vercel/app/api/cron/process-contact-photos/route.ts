@@ -11,7 +11,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getServiceClient } from '@/lib/supabase';
 import { downloadAndOptimizePhoto, getContactPhotoStoragePath, isValidImageUrl } from '@/lib/photos';
 
 export const runtime = 'nodejs';
@@ -37,17 +37,7 @@ export async function GET(req: NextRequest) {
   const authError = verifyCron(req);
   if (authError) return authError;
 
-  // Initialize Supabase with service role
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    }
-  );
+  const supabase = getServiceClient();
 
   try {
     // Get pending jobs

@@ -7,7 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getServiceClient } from '@/lib/supabase';
 import { getAdapter } from '@/lib/dashboard/adapter-registry';
 import type { IntegrationAccount, MetricPoint } from '@/lib/dashboard/types';
 
@@ -26,11 +26,7 @@ export async function GET(req: NextRequest) {
     const authError = verifyCron(req);
     if (authError) return authError;
 
-    // Create Supabase admin client
-    const supabase = createClient(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    const supabase = getServiceClient();
 
     // Fetch all active integrations
     const { data: integrations, error: integrationsError } = await supabase

@@ -7,19 +7,12 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-function getSupabase() {
-  return createClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
+import { getServiceClient } from '@/lib/supabase';
 
 
 export async function GET(req: NextRequest) {
   try {
-    const supabase = getSupabase();
+    const supabase = getServiceClient();
     return handleRefresh(req, supabase);
   } catch (error) {
     console.error('[Dashboard Views] Error:', error);
@@ -34,11 +27,11 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const supabase = getSupabase();
+  const supabase = getServiceClient();
   return handleRefresh(req, supabase);
 }
 
-async function handleRefresh(req: NextRequest, supabase: ReturnType<typeof getSupabase>) {
+async function handleRefresh(req: NextRequest, supabase: ReturnType<typeof getServiceClient>) {
   try {
     // Verify cron secret (fail-closed)
     const { verifyCron } = await import('@/lib/cron-auth');

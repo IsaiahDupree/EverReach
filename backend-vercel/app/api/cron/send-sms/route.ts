@@ -9,15 +9,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getServiceClient } from '@/lib/supabase';
 import twilio from 'twilio';
-
-function getSupabase() {
-  return createClient(
-    process.env.SUPABASE_URL || '',
-    process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-  );
-}
 
 const twilioClient = twilio(
   process.env.TWILIO_API_KEY_SID,
@@ -38,7 +31,7 @@ function buildDeepLink(path: string, params: Record<string, any>): string {
   return url.toString();
 }
 
-async function sendSMS(delivery: any, supabase: ReturnType<typeof getSupabase>): Promise<void> {
+async function sendSMS(delivery: any, supabase: ReturnType<typeof getServiceClient>): Promise<void> {
   console.log(`[send-sms] Processing delivery ${delivery.id}`);
   
   try {
@@ -139,7 +132,7 @@ async function sendSMS(delivery: any, supabase: ReturnType<typeof getSupabase>):
 
 export async function GET(req: NextRequest) {
   try {
-    const supabase = getSupabase();
+    const supabase = getServiceClient();
     // Verify cron secret (fail-closed, Bearer header only — no query params)
     const { verifyCron } = await import('@/lib/cron-auth');
     const authError = verifyCron(req);

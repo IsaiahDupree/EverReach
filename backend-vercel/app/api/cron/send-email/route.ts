@@ -9,15 +9,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getServiceClient } from '@/lib/supabase';
 import { Resend } from 'resend';
-
-function getSupabase() {
-  return createClient(
-    process.env.SUPABASE_URL || '',
-    process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-  );
-}
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM_EMAIL = process.env.FROM_EMAIL || 'EverReach <hello@everreach.app>';
@@ -33,7 +26,7 @@ function buildDeepLink(path: string, params: Record<string, any>): string {
   return url.toString();
 }
 
-async function sendEmail(delivery: any, supabase: ReturnType<typeof getSupabase>): Promise<void> {
+async function sendEmail(delivery: any, supabase: ReturnType<typeof getServiceClient>): Promise<void> {
   console.log(`[send-email] Processing delivery ${delivery.id}`);
   
   try {
@@ -138,7 +131,7 @@ async function sendEmail(delivery: any, supabase: ReturnType<typeof getSupabase>
 
 export async function GET(req: NextRequest) {
   try {
-    const supabase = getSupabase();
+    const supabase = getServiceClient();
     // Verify cron secret (fail-closed, Bearer header only — no query params)
     const { verifyCron } = await import('@/lib/cron-auth');
     const authError = verifyCron(req);

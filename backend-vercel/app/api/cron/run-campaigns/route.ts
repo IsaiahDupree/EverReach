@@ -9,14 +9,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-function getSupabase() {
-  return createClient(
-    process.env.SUPABASE_URL || '',
-    process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-  );
-}
+import { getServiceClient } from '@/lib/supabase';
 
 interface CampaignRow {
   user_id: string;
@@ -25,7 +18,7 @@ interface CampaignRow {
   context_json?: Record<string, any>;
 }
 
-async function evaluateCampaign(campaign: any, supabase: ReturnType<typeof getSupabase>): Promise<number> {
+async function evaluateCampaign(campaign: any, supabase: ReturnType<typeof getServiceClient>): Promise<number> {
   console.log(`[run-campaigns] Evaluating campaign: ${campaign.name}`);
   
   try {
@@ -103,7 +96,7 @@ async function evaluateCampaign(campaign: any, supabase: ReturnType<typeof getSu
 
 export async function GET(req: NextRequest) {
   try {
-    const supabase = getSupabase();
+    const supabase = getServiceClient();
     // Verify cron secret (fail-closed, Bearer header only)
     const { verifyCron } = await import('@/lib/cron-auth');
     const authError = verifyCron(req);

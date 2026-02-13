@@ -8,22 +8,15 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getServiceClient } from '@/lib/supabase';
 import { UnifiedEnrichmentClient } from '@/lib/enrichment/unified-enrichment-client';
-
-function getSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
 
 const BATCH_SIZE = 10;
 const MAX_RETRIES = 3;
 
 export async function GET(req: NextRequest) {
   try {
-    const supabase = getSupabase();
+    const supabase = getServiceClient();
     // Verify cron secret (fail-closed)
     const { verifyCron } = await import('@/lib/cron-auth');
     const authError = verifyCron(req);
@@ -148,7 +141,7 @@ export async function GET(req: NextRequest) {
 /**
  * Store enrichment results to database
  */
-async function storeEnrichmentResults(userId: string, result: any, supabase: ReturnType<typeof getSupabase>) {
+async function storeEnrichmentResults(userId: string, result: any, supabase: ReturnType<typeof getServiceClient>) {
   // Store social profiles
   if (result.social && result.social.length > 0) {
     const socialProfiles = result.social.reduce((acc: any, platform: any) => {

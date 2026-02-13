@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getServiceClient } from '@/lib/supabase';
 import { logger } from '@/lib/monitoring/logger';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 /**
  * Cron job to refresh monitoring materialized views
@@ -21,7 +18,7 @@ export async function GET(req: NextRequest) {
     logger.info('Starting monitoring views refresh');
 
     const startTime = Date.now();
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = getServiceClient();
 
     // Refresh webhook performance view
     const { error: webhookError } = await supabase.rpc('refresh_monitoring_views');
