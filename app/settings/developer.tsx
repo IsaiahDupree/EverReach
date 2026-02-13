@@ -32,7 +32,7 @@ import {
 import { useTheme } from '@/providers/ThemeProvider';
 import { apiFetch } from '@/lib/api';
 import { go } from '@/lib/navigation';
-import Constants from 'expo-constants';
+import { SHOW_DEV_SETTINGS } from '@/config/dev';
 
 interface ApiKey {
   id: string;
@@ -54,8 +54,7 @@ export default function DeveloperSettingsScreen() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [revealedKeys, setRevealedKeys] = useState<Set<string>>(new Set());
 
-  // Check if developer settings are enabled
-  const SHOW_DEV_SETTINGS = Constants.expoConfig?.extra?.EXPO_PUBLIC_SHOW_DEV_SETTINGS === 'true';
+  // Uses centralized config from config/dev.ts (reads process.env + __DEV__)
 
   useEffect(() => {
     if (SHOW_DEV_SETTINGS) {
