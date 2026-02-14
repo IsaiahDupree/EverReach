@@ -13,15 +13,17 @@ export function calculateWarmth(lastInteraction?: string): number {
 }
 
 export function getWarmthColor(warmth: number): string {
-  if (warmth >= 60) return '#10B981'; // green (hot)
-  if (warmth >= 30) return '#F59E0B'; // yellow (warm)
-  if (warmth >= 10) return '#6B7280'; // gray (cool)
-  return '#EF4444'; // red (cold)
+  if (warmth >= 80) return '#EF4444'; // red (hot)
+  if (warmth >= 60) return '#F59E0B'; // orange (warm)
+  if (warmth >= 40) return '#10B981'; // green (neutral)
+  if (warmth >= 20) return '#3B82F6'; // blue (cool)
+  return '#6B7280'; // gray (cold)
 }
 
 export function getWarmthLabel(warmth: number): string {
-  if (warmth >= 60) return 'Hot';
-  if (warmth >= 30) return 'Warm';
-  if (warmth >= 10) return 'Cool';
+  if (warmth >= 80) return 'Hot';
+  if (warmth >= 60) return 'Warm';
+  if (warmth >= 40) return 'Neutral';
+  if (warmth >= 20) return 'Cool';
   return 'Cold';
 }

@@ -12,10 +12,10 @@ export interface WarmthSettings {
 }
 
 const DEFAULT_WARMTH_SETTINGS: WarmthSettings = {
-  hotThreshold: 60,
-  warmThreshold: 30,
-  coolThreshold: 10,
-  defaultWarmthForNewLeads: 50, // New leads start as "warm"
+  hotThreshold: 80,
+  warmThreshold: 60,
+  coolThreshold: 20,
+  defaultWarmthForNewLeads: 30, // New leads start at EWMA base (cool)
 };
 
 const [WarmthSettingsProviderInternal, useWarmthSettingsInternal] = createContextHook(() => {
@@ -48,9 +48,10 @@ const [WarmthSettingsProviderInternal, useWarmthSettingsInternal] = createContex
     }
   }, [settings]);
 
-  const getWarmthStatus = useCallback((score: number): 'hot' | 'warm' | 'cool' | 'cold' => {
+  const getWarmthStatus = useCallback((score: number): 'hot' | 'warm' | 'neutral' | 'cool' | 'cold' => {
     if (score >= settings.hotThreshold) return 'hot';
     if (score >= settings.warmThreshold) return 'warm';
+    if (score >= 40) return 'neutral';
     if (score >= settings.coolThreshold) return 'cool';
     return 'cold';
   }, [settings]);
