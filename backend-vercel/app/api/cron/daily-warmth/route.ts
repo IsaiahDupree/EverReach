@@ -68,29 +68,31 @@ export async function GET(req: NextRequest) {
     // ──────────────────────────────────────────────
     console.log('[daily-warmth] Step 2: Recomputing warmth...');
     try {
+      // Include ALL non-deleted contacts (not just those with last_interaction_at)
       const { data: contacts, error: fetchError } = await supabase
         .from('contacts')
-        .select('id, display_name, last_interaction_at, warmth')
+        .select('id, display_name, last_interaction_at, created_at, warmth')
         .is('deleted_at', null)
-        .not('last_interaction_at', 'is', null)
-        .order('last_interaction_at', { ascending: true })
+        .order('created_at', { ascending: true })
         .limit(1000);
 
       if (fetchError) throw fetchError;
 
       const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
-      let recomputed = 0, decayed = 0, recomputeErrors = 0;
+      let recomputed = 0, decayed = 0, skipped = 0, recomputeErrors = 0;
       const now = Date.now();
 
       for (const contact of contacts || []) {
         try {
-          const lastAt = contact.last_interaction_at ? new Date(contact.last_interaction_at).getTime() : undefined;
-          const daysSince = lastAt ? (now - lastAt) / (1000 * 60 * 60 * 24) : undefined;
+          // Anchor: prefer last_interaction_at, fall back to created_at
+          const anchorStr = contact.last_interaction_at || contact.created_at;
+          const anchorMs = anchorStr ? new Date(anchorStr).getTime() : undefined;
+          const daysSince = anchorMs ? (now - anchorMs) / (1000 * 60 * 60 * 24) : undefined;
 
-          // Only recompute if > 7 days (when decay starts)
-          if (!daysSince || daysSince <= 7) continue;
+          // Skip contacts less than 1 day old (too fresh to decay)
+          if (!daysSince || daysSince < 1) { skipped++; continue; }
 
-          // Get interaction counts
+          // Get interaction counts (meaningful kinds only)
           const since90 = new Date(now - 90 * 24 * 60 * 60 * 1000).toISOString();
           const { count: interCount } = await supabase
             .from('interactions')
@@ -106,19 +108,19 @@ export async function GET(req: NextRequest) {
             .gte('created_at', since30);
           const distinctKinds = new Set((kindsRows || []).map((r: any) => r.kind)).size;
 
-          // Warmth formula
-          let warmth = 30; // base
-          const recency = clamp(90 - daysSince, 0, 90) / 90;
-          warmth += Math.round(recency * 35);
+          // Warmth formula — aligned with /api/v1/contacts/[id]/warmth/recompute
+          let warmth = 40; // base
+          const recency = clamp(90 - daysSince, 0, 90) / 90; // 1..0
+          warmth += Math.round(recency * 25); // recency boost: 0-25
           const freq = clamp(interCount ?? 0, 0, 6);
-          warmth += Math.round((freq / 6) * 25);
-          warmth += distinctKinds >= 2 ? 10 : 0;
+          warmth += Math.round((freq / 6) * 15); // frequency boost: 0-15
+          warmth += distinctKinds >= 2 ? 5 : 0; // channel bonus: 0 or 5
           if (daysSince > 7) {
-            warmth -= Math.round(Math.min(30, (daysSince - 7) * 0.5));
+            warmth -= Math.round(Math.min(30, (daysSince - 7) * 0.5)); // decay: -0.5/day after 7d, cap -30
           }
           warmth = clamp(warmth, 0, 100);
 
-          // Determine band
+          // Band thresholds — aligned with recompute endpoint
           let band = 'cold';
           if (warmth >= 70) band = 'hot';
           else if (warmth >= 50) band = 'warm';
@@ -127,7 +129,7 @@ export async function GET(req: NextRequest) {
 
           const { error: updateError } = await supabase
             .from('contacts')
-            .update({ warmth, warmth_band: band })
+            .update({ warmth, warmth_band: band, warmth_updated_at: new Date().toISOString() })
             .eq('id', contact.id);
 
           if (updateError) {
