@@ -214,7 +214,6 @@ export function getWarmthColorFromBand(band: string): string {
     case 'warm':
       return '#FFD93D';
     case 'neutral':
-    case 'cooling':
     case 'cool':
       return '#95E1D3';
     case 'cold':

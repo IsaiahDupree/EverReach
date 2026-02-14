@@ -1,16 +1,6 @@
-// Pure warmth calculation functions - no dependencies
-// Extracted for easier testing without React Native/Expo deps
-
-export function calculateWarmth(lastInteraction?: string): number {
-  if (!lastInteraction) return 0;
-  
-  const daysSince = Math.floor(
-    (Date.now() - new Date(lastInteraction).getTime()) / (1000 * 60 * 60 * 24)
-  );
-  
-  const halfLife = 14; // days
-  return Math.round(100 * Math.exp(-daysSince / halfLife));
-}
+// Pure warmth display functions - no dependencies
+// Warmth SCORES are computed server-side via EWMA (backend computeWarmthFromAmplitude)
+// These functions only handle display: colors and labels for a given score.
 
 export function getWarmthColor(warmth: number): string {
   if (warmth >= 80) return '#EF4444'; // red (hot)
