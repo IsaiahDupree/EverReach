@@ -203,4 +203,4 @@ export function subscribeToPeople(callback: (payload: any) => void) {
 }
 
 // Re-export warmth utilities from pure utils file
-export { calculateWarmth, getWarmthColor, getWarmthLabel } from './warmth-utils';
+export { getWarmthColor, getWarmthLabel } from './warmth-utils';

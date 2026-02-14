@@ -133,19 +133,19 @@ export default function WarmthGraph({
       <View style={styles.legend}>
         <View style={styles.legendItem}>
           <View style={[styles.legendDot, { backgroundColor: '#EF4444' }]} />
-          <Text style={styles.legendText}>Cold (0-25)</Text>
+          <Text style={styles.legendText}>Hot (80-100)</Text>
         </View>
         <View style={styles.legendItem}>
           <View style={[styles.legendDot, { backgroundColor: '#F59E0B' }]} />
-          <Text style={styles.legendText}>Cooling (26-50)</Text>
-        </View>
-        <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: '#10B981' }]} />
-          <Text style={styles.legendText}>Warm (51-75)</Text>
+          <Text style={styles.legendText}>Warm (60-79)</Text>
         </View>
         <View style={styles.legendItem}>
           <View style={[styles.legendDot, { backgroundColor: '#3B82F6' }]} />
-          <Text style={styles.legendText}>Hot (76-100)</Text>
+          <Text style={styles.legendText}>Cool (20-39)</Text>
+        </View>
+        <View style={styles.legendItem}>
+          <View style={[styles.legendDot, { backgroundColor: '#6B7280' }]} />
+          <Text style={styles.legendText}>Cold (0-19)</Text>
         </View>
       </View>
     </View>

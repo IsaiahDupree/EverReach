@@ -4,13 +4,14 @@ import { getWarmthManager, type WarmthMode, type WarmthSummary } from '@/lib/war
 
 // Warmth band definitions with colors
 export const WARMTH_BANDS = {
-  hot: { min: 70, max: 100, color: '#EF4444', bgColor: '#FEE2E2', label: 'HOT' },
-  warm: { min: 50, max: 69, color: '#F59E0B', bgColor: '#FEF3C7', label: 'WARM' },
-  cool: { min: 30, max: 49, color: '#3B82F6', bgColor: '#DBEAFE', label: 'COOL' },
-  cold: { min: 0, max: 29, color: '#6B7280', bgColor: '#F3F4F6', label: 'COLD' },
+  hot: { min: 80, max: 100, color: '#EF4444', bgColor: '#FEE2E2', label: 'HOT' },
+  warm: { min: 60, max: 79, color: '#F59E0B', bgColor: '#FEF3C7', label: 'WARM' },
+  neutral: { min: 40, max: 59, color: '#10B981', bgColor: '#D1FAE5', label: 'NEUTRAL' },
+  cool: { min: 20, max: 39, color: '#3B82F6', bgColor: '#DBEAFE', label: 'COOL' },
+  cold: { min: 0, max: 19, color: '#6B7280', bgColor: '#F3F4F6', label: 'COLD' },
 } as const;
 
-export type WarmthBand = 'hot' | 'warm' | 'cool' | 'cold';
+export type WarmthBand = 'hot' | 'warm' | 'neutral' | 'cool' | 'cold';
 
 export interface WarmthData {
   contactId: string;
@@ -67,6 +68,7 @@ const WarmthContext = createContext<WarmthContextValue | undefined>(undefined);
 function calculateBand(score: number): WarmthBand {
   if (score >= WARMTH_BANDS.hot.min) return 'hot';
   if (score >= WARMTH_BANDS.warm.min) return 'warm';
+  if (score >= WARMTH_BANDS.neutral.min) return 'neutral';
   if (score >= WARMTH_BANDS.cool.min) return 'cool';
   return 'cold';
 }
@@ -109,7 +111,7 @@ export function WarmthProvider({ children }: { children: React.ReactNode }) {
     }
 
     // Default fallback for unknown contacts
-    return createWarmthData(contactId, 50); // Default to "warm"
+    return createWarmthData(contactId, 30); // Default to EWMA base (cool)
   }, [warmthMap]);
 
   // Set/update warmth data for a contact
@@ -163,7 +165,7 @@ export function WarmthProvider({ children }: { children: React.ReactNode }) {
       const newMap = new Map<string, WarmthData>();
 
       contacts.forEach(contact => {
-        const score = contact.warmth ?? 50; // Default to 50 if not set
+        const score = contact.warmth ?? 30; // Default to EWMA base (cool)
         newMap.set(contact.id, createWarmthData(contact.id, score, contact.last_touch_at));
       });
 

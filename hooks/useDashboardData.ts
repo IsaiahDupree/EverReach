@@ -14,7 +14,8 @@ export interface WarmthSummary {
   by_band: {
     hot: number;
     warm: number;
-    cooling: number;
+    neutral: number;
+    cool: number;
     cold: number;
   };
   average_score: number;
@@ -27,7 +28,7 @@ export interface Interaction {
   contact_id: string;
   contact_name?: string;
   contact_warmth?: number;
-  contact_warmth_band?: 'hot' | 'warm' | 'neutral' | 'cooling' | 'cold';
+  contact_warmth_band?: 'hot' | 'warm' | 'neutral' | 'cool' | 'cold';
   contact_avatar_url?: string;
   kind: string;
   channel?: string;
@@ -54,18 +55,20 @@ export interface Alert {
   contacts?: any[];
 }
 
-// Warmth band thresholds - MUST match backend
+// Warmth band thresholds - MUST match backend EWMA standard
 const WARMTH_THRESHOLDS = {
-  hot: 70,   // >= 70
-  warm: 50,  // 50-69
-  cool: 30,  // 30-49
-  // cold: < 30
+  hot: 80,     // >= 80
+  warm: 60,    // 60-79
+  neutral: 40, // 40-59
+  cool: 20,    // 20-39
+  // cold: < 20
 };
 
-function calculateWarmthBand(warmth: number): 'hot' | 'warm' | 'cooling' | 'cold' {
+function calculateWarmthBand(warmth: number): 'hot' | 'warm' | 'neutral' | 'cool' | 'cold' {
   if (warmth >= WARMTH_THRESHOLDS.hot) return 'hot';
   if (warmth >= WARMTH_THRESHOLDS.warm) return 'warm';
-  if (warmth >= WARMTH_THRESHOLDS.cool) return 'cooling';
+  if (warmth >= WARMTH_THRESHOLDS.neutral) return 'neutral';
+  if (warmth >= WARMTH_THRESHOLDS.cool) return 'cool';
   return 'cold';
 }
 
@@ -86,7 +89,8 @@ export function useDashboardData() {
       const by_band = {
         hot: 0,
         warm: 0,
-        cooling: 0,
+        neutral: 0,
+        cool: 0,
         cold: 0,
       };
 
@@ -99,7 +103,7 @@ export function useDashboardData() {
         by_band[band]++;
         totalWarmth += warmth;
 
-        if (band === 'cold' || band === 'cooling') {
+        if (band === 'cold' || band === 'cool') {
           contactsNeedingAttention++;
         }
       });
@@ -221,7 +225,7 @@ export function useWarmthSummaryLegacy() {
   const legacyFormat = warmthSummary.data ? {
     hot: warmthSummary.data.by_band.hot,
     warm: warmthSummary.data.by_band.warm,
-    cool: warmthSummary.data.by_band.cooling,
+    cool: (warmthSummary.data.by_band.neutral || 0) + warmthSummary.data.by_band.cool,
     cold: warmthSummary.data.by_band.cold,
     total: warmthSummary.data.total_contacts,
   } : {

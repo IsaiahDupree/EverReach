@@ -140,7 +140,7 @@ export default function DashboardScreen() {
   const summary = warmthSummary.data ? {
     hot: warmthSummary.data.by_band.hot,
     warm: warmthSummary.data.by_band.warm,
-    cool: warmthSummary.data.by_band.cooling,
+    cool: (warmthSummary.data.by_band.neutral || 0) + warmthSummary.data.by_band.cool,
     cold: warmthSummary.data.by_band.cold,
     total: warmthSummary.data.total_contacts,
   } : { hot: 0, warm: 0, cool: 0, cold: 0, total: 0 };
