@@ -18,7 +18,7 @@ export interface Contact {
   title?: string;
   tags?: string[];
   warmth?: number;
-  warmth_band?: 'hot' | 'warm' | 'neutral' | 'cooling' | 'cold';
+  warmth_band?: 'hot' | 'warm' | 'neutral' | 'cool' | 'cold';
   last_interaction_at?: string;
   avatar_url?: string;
   created_at: string;
