@@ -86,7 +86,7 @@ const TEST_SECTIONS: { title: string; tests: TestDef[] }[] = [
       { name: 'List Contacts', method: 'GET', path: '/api/v1/contacts?limit=5', expect: [200], auth: true, screen: 'People Tab' },
       { name: 'Search Contacts', method: 'GET', path: '/api/v1/contacts?q=test&limit=5', expect: [200], auth: true, screen: 'People Tab' },
       { name: 'Contacts (warmth sort)', method: 'GET', path: '/api/v1/contacts?limit=5&sort=warmth.desc', expect: [200], auth: true, screen: 'People Tab' },
-      { name: 'Contacts (updated sort)', method: 'GET', path: '/api/v1/contacts?limit=5&sort=updated_at.desc', expect: [200, 400], auth: true, screen: 'People Tab' }, // 400 until backend redeploy
+      { name: 'Contacts (updated sort)', method: 'GET', path: '/api/v1/contacts?limit=5&sort=updated_at.desc', expect: [200], auth: true, screen: 'People Tab' },
       { name: 'Batch Avatars', method: 'POST', path: '/api/v1/contacts/avatars/batch', expect: [200, 400, 404, 405], auth: true, body: { contact_ids: [] }, screen: 'People Tab' },
     ],
   },
