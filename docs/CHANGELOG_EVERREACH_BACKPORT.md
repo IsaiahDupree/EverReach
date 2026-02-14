@@ -521,6 +521,78 @@ analytics.track('subscription_canceled', { reason });
 
 ---
 
+## 8. Warmth EWMA Unification (v1.1.0 — February 13, 2026)
+
+### Overview
+
+Replaced **3 different warmth formulas** (client-side exponential decay, backend heuristic, dashboard inline thresholds) with a **single EWMA (Exponentially Weighted Moving Average) model**.
+
+### Formula
+
+```
+score = 30 + amplitude × e^(-λ × daysSinceUpdate)
+```
+
+- **BASE** = 30 (neglected contacts settle here)
+- **λ (decay rate)** by `warmth_mode`: fast=0.138629, medium=0.085998, slow=0.046210
+- **Impulse weights**: meeting=9, call=7, email=5, sms=4, note=3
+
+### Band Thresholds (Unified Standard)
+
+| Band | Score | Color |
+|------|-------|-------|
+| Hot | ≥ 80 | #EF4444 (red) |
+| Warm | ≥ 60 | #F59E0B (orange) |
+| Neutral | ≥ 40 | #10B981 (green) |
+| Cool | ≥ 20 | #3B82F6 (blue) |
+| Cold | < 20 | #6B7280 (gray) |
+
+### Backend Changes
+
+- `lib/warmth-ewma.ts` — `computeWarmthFromAmplitude()` + `updateAmplitudeForContact()`
+- `api/cron/daily-warmth/route.ts` — Rewritten to use EWMA instead of per-contact interaction counting
+- `api/v1/contacts/route.ts` — POST initializes `warmth=30, amplitude=0, warmth_band='cool'`
+- All interaction endpoints call `updateAmplitudeForContact()`: interactions, messages/send, notes
+
+### iOS / Web Frontend Changes
+
+| File | Change |
+|------|--------|
+| `lib/warmth-utils.ts` | Removed `calculateWarmth()`, updated thresholds to 80/60/40/20 |
+| `lib/supabase.ts` | Removed `calculateWarmth` re-export |
+| `hooks/useDashboardData.ts` | EWMA thresholds, `cooling` → `cool`, added `neutral` band |
+| `hooks/useContacts.ts` | Fixed `warmth_band` type: `cooling` → `cool` |
+| `providers/WarmthProvider.tsx` | EWMA thresholds, added `neutral` band, default fallback → 30 |
+| `app/(tabs)/home.tsx` | `by_band.cooling` → merged `cool` + `neutral` |
+| `components/WarmthGraph.tsx` | Updated legend to EWMA thresholds |
+| `lib/imageUpload.ts` | Removed stale `cooling` case |
+| `__tests__/warmth-utils.test.ts` | Removed `calculateWarmth` tests, updated expectations |
+
+### Database Columns on `contacts` Table
+
+| Column | Type | Default | Notes |
+|--------|------|---------|-------|
+| `warmth` | integer | 30 | EWMA score |
+| `warmth_band` | text | 'cool' | hot/warm/neutral/cool/cold |
+| `warmth_mode` | text | 'medium' | fast/medium/slow decay rate |
+| `warmth_anchor_score` | numeric | 30 | Score at last interaction |
+| `warmth_anchor_at` | timestamptz | now() | When last interaction occurred |
+| `amplitude` | numeric | 0 | Accumulated interaction impulse |
+| `warmth_last_updated_at` | timestamptz | now() | Last recompute timestamp |
+
+### App Kit Action Items
+
+| # | Change | Priority |
+|---|--------|----------|
+| 25 | Add `warmth-ewma.ts` to backend-kit with `computeWarmthFromAmplitude` + `updateAmplitudeForContact` | 🟡 High |
+| 26 | Update any warmth threshold references to 80/60/40/20 | 🟡 High |
+| 27 | Remove any client-side `calculateWarmth` functions — warmth is backend-computed | 🟡 High |
+| 28 | Add warmth EWMA columns to database schema docs | 🟡 High |
+| 29 | Update `docs/02-ARCHITECTURE.md` with EWMA warmth model description | 🟢 Medium |
+| 30 | Update `docs/04-DATABASE.md` with contacts EWMA columns | 🟢 Medium |
+
+---
+
 ## Appendix: Source Files Reference
 
 | Production File | App Kit Equivalent | Status |
@@ -529,7 +601,10 @@ analytics.track('subscription_canceled', { reason });
 | `backend/app/api/webhooks/stripe/route.ts` | `backend-kit/app/api/webhooks/stripe/route.ts` | Needs update |
 | `backend/lib/cron-auth.ts` | *(does not exist)* | Create new |
 | `backend/lib/supabase.ts` (getServiceClient) | `backend-kit/lib/supabase/admin.ts` | Similar, OK |
+| `backend/lib/warmth-ewma.ts` | *(does not exist)* | Create new |
+| `backend/app/api/cron/daily-warmth/route.ts` | *(does not exist)* | Create new |
 | `ios-app/providers/EntitlementsProviderV3.tsx` | `ios-starter/hooks/useSubscription.ts` | Needs update |
 | `ios-app/repos/SubscriptionRepo.ts` | *(no equivalent)* | Create new |
 | `ios-app/lib/metaAppEvents.ts` | *(does not exist)* | Create new |
+| `ios-app/lib/warmth-utils.ts` | *(review for kit)* | Display-only funcs |
 | `web-frontend/providers/EntitlementsProviderV3.tsx` | `web-kit/hooks/use-subscription.ts` | Needs update |
