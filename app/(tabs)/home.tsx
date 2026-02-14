@@ -140,7 +140,7 @@ export default function DashboardScreen() {
   const summary = warmthSummary.data ? {
     hot: warmthSummary.data.by_band.hot,
     warm: warmthSummary.data.by_band.warm,
-    cool: warmthSummary.data.by_band.cooling,
+    cool: warmthSummary.data.by_band.neutral + warmthSummary.data.by_band.cool,
     cold: warmthSummary.data.by_band.cold,
     total: warmthSummary.data.total_contacts,
   } : { hot: 0, warm: 0, cool: 0, cold: 0, total: 0 };
@@ -297,7 +297,7 @@ export default function DashboardScreen() {
               style={styles.healthCard}
               onPress={() => router.push('/people?filter=hot')}
             >
-              <View style={[styles.healthIndicator, { backgroundColor: '#FF6B6B' }]} />
+              <View style={[styles.healthIndicator, { backgroundColor: '#EF4444' }]} />
               <Text style={styles.healthLabel}>Hot</Text>
               <Text style={styles.healthCount}>{summary.hot}</Text>
             </TouchableOpacity>
@@ -305,7 +305,7 @@ export default function DashboardScreen() {
               style={styles.healthCard}
               onPress={() => router.push('/people?filter=warm')}
             >
-              <View style={[styles.healthIndicator, { backgroundColor: '#FFD93D' }]} />
+              <View style={[styles.healthIndicator, { backgroundColor: '#F59E0B' }]} />
               <Text style={styles.healthLabel}>Warm</Text>
               <Text style={styles.healthCount}>{summary.warm}</Text>
             </TouchableOpacity>
@@ -313,7 +313,7 @@ export default function DashboardScreen() {
               style={styles.healthCard}
               onPress={() => router.push('/people?filter=cool')}
             >
-              <View style={[styles.healthIndicator, { backgroundColor: '#95E1D3' }]} />
+              <View style={[styles.healthIndicator, { backgroundColor: '#3B82F6' }]} />
               <Text style={styles.healthLabel}>Cool</Text>
               <Text style={styles.healthCount}>{summary.cool}</Text>
             </TouchableOpacity>
@@ -321,7 +321,7 @@ export default function DashboardScreen() {
               style={styles.healthCard}
               onPress={() => router.push('/people?filter=cold')}
             >
-              <View style={[styles.healthIndicator, { backgroundColor: '#4ECDC4' }]} />
+              <View style={[styles.healthIndicator, { backgroundColor: '#6B7280' }]} />
               <Text style={styles.healthLabel}>Cold</Text>
               <Text style={styles.healthCount}>{summary.cold}</Text>
             </TouchableOpacity>
