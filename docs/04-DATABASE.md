@@ -93,7 +93,13 @@ CREATE TABLE public.contacts (
   job_title TEXT,
   
   -- Relationship tracking
-  warmth_score INTEGER DEFAULT 50 CHECK (warmth_score >= 0 AND warmth_score <= 100),
+  warmth INTEGER DEFAULT 30 CHECK (warmth >= 0 AND warmth <= 100),
+  warmth_band TEXT DEFAULT 'cool' CHECK (warmth_band IN ('hot', 'warm', 'neutral', 'cool', 'cold')),
+  warmth_mode TEXT DEFAULT 'medium' CHECK (warmth_mode IN ('fast', 'medium', 'slow')),
+  amplitude NUMERIC DEFAULT 0,
+  warmth_anchor_score NUMERIC DEFAULT 30,
+  warmth_anchor_at TIMESTAMPTZ DEFAULT NOW(),
+  warmth_last_updated_at TIMESTAMPTZ DEFAULT NOW(),
   relationship_type TEXT DEFAULT 'contact' CHECK (relationship_type IN ('contact', 'lead', 'customer', 'partner', 'friend', 'family')),
   
   -- Notes and metadata
@@ -113,7 +119,7 @@ CREATE TABLE public.contacts (
 
 -- Indexes for common queries
 CREATE INDEX idx_contacts_user_id ON public.contacts(user_id);
-CREATE INDEX idx_contacts_warmth ON public.contacts(user_id, warmth_score DESC);
+CREATE INDEX idx_contacts_warmth ON public.contacts(user_id, warmth DESC);
 CREATE INDEX idx_contacts_name ON public.contacts(user_id, name);
 CREATE INDEX idx_contacts_tags ON public.contacts USING GIN(tags);
 
@@ -261,14 +267,18 @@ const { data: contacts } = await supabase
   .contains('tags', ['vip', 'customer']);
 ```
 
-### Update Warmth Score
+### Update Warmth Score (via EWMA)
 
 ```typescript
+// Warmth is computed server-side via EWMA. To update, call the recompute endpoint:
+// POST /api/v1/contacts/:id/warmth/recompute
+// Or update amplitude directly after an interaction:
 const { data } = await supabase
   .from('contacts')
   .update({ 
-    warmth_score: newScore,
-    last_contacted_at: new Date().toISOString()
+    warmth: newScore,
+    warmth_band: newBand,
+    warmth_last_updated_at: new Date().toISOString()
   })
   .eq('id', contactId)
   .eq('user_id', userId) // Security check
@@ -350,22 +360,30 @@ CREATE TRIGGER on_auth_user_created
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 ```
 
-### Calculate Warmth Decay
+### Warmth EWMA Decay (Recommended)
+
+Warmth scores use an **EWMA (Exponentially Weighted Moving Average)** model:
+
+```
+score = BASE + amplitude × e^(-λ × daysSinceUpdate)
+```
+
+- **BASE** = 30 (neglected contacts settle here)
+- **λ** depends on `warmth_mode`: fast=0.138629, medium=0.085998, slow=0.046210
+- **Impulse weights** (added to amplitude on interaction): meeting=9, call=7, email=5, sms=4, note=3
+- **Bands**: hot≥80, warm≥60, neutral≥40, cool≥20, cold<20
+
+The daily cron job recomputes warmth for all contacts using this formula.
+See `backend/lib/warmth-ewma.ts` for the `computeWarmthFromAmplitude()` implementation.
 
 ```sql
--- Function to decay warmth scores over time
-CREATE OR REPLACE FUNCTION decay_warmth_scores()
-RETURNS void AS $$
-BEGIN
-  UPDATE public.contacts
-  SET warmth_score = GREATEST(0, warmth_score - 5)
-  WHERE last_contacted_at < NOW() - INTERVAL '30 days'
-    AND warmth_score > 0;
-END;
-$$ LANGUAGE plpgsql;
-
--- Schedule with pg_cron (if enabled)
-SELECT cron.schedule('decay-warmth', '0 0 * * *', 'SELECT decay_warmth_scores()');
+-- Legacy pg_cron approach (simple linear decay — NOT recommended, use EWMA cron instead)
+-- The EWMA approach is handled by a Vercel cron route: /api/cron/daily-warmth
+-- It reads amplitude + warmth_last_updated_at and applies exponential decay.
+SELECT cron.schedule('daily-warmth', '0 3 * * *', $$
+  -- Trigger the Vercel cron endpoint instead of inline SQL
+  -- See backend/app/api/cron/daily-warmth/route.ts
+$$);
 ```
 
 ---

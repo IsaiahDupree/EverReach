@@ -397,6 +397,72 @@ Include in your privacy policy:
 
 ---
 
+## Meta Conversions API (Server-Side Events)
+
+For paid acquisition campaigns, Meta's **Conversions API (CAPI)** sends events server-side for better attribution than client-side pixels alone.
+
+### Setup
+
+1. Create a Meta Pixel in [Events Manager](https://business.facebook.com/events_manager)
+2. Generate a Conversions API access token (Events Manager → Pixel Settings → Set up manually)
+3. Add env vars:
+   ```
+   EXPO_PUBLIC_META_PIXEL_ID=your_pixel_id
+   EXPO_PUBLIC_META_CONVERSIONS_API_TOKEN=your_token
+   ```
+
+### Standard Events to Send
+
+| Meta Event | App Trigger | When |
+|-----------|------------|------|
+| CompleteRegistration | User signs up | After auth |
+| StartTrial | Trial begins | After RC purchase |
+| Subscribe | Subscription starts | After RC purchase |
+| Purchase | Any purchase | After RC purchase |
+| ViewContent | Screen viewed | On navigation |
+| Lead | Lead captured | Contact created |
+| Contact | Message sent | After send |
+| Search | Search performed | On search |
+
+### Implementation Pattern
+
+```typescript
+// lib/metaAppEvents.ts — key structure
+const PIXEL_ID = process.env.EXPO_PUBLIC_META_PIXEL_ID;
+const TOKEN = process.env.EXPO_PUBLIC_META_CONVERSIONS_API_TOKEN;
+
+// Queue events in batches, flush every 10 seconds
+// Send to: https://graph.facebook.com/v21.0/{PIXEL_ID}/events
+// Include user_data: hashed email, phone, name, fbp, fbc, client_ip
+// Respect iOS ATT: only include user_data when tracking consent granted
+// Log all events to Supabase `meta_conversion_event` table for auditing
+```
+
+### Event Match Quality
+
+For high EMQ scores, persist and send these user parameters (all SHA-256 hashed):
+- **em** (email), **ph** (phone), **fn** (first name), **ln** (last name)
+- **ct** (city), **st** (state), **zp** (zip), **country**
+- **fbp** (browser ID — generate and persist in AsyncStorage)
+- **fbc** (click ID — from Facebook ad deep links, 7-day TTL)
+- **client_ip_address** (fetch from external service, cache)
+
+### iOS App Tracking Transparency
+
+```typescript
+// Request ATT before sending user_data
+import { requestTrackingPermissionsAsync } from 'expo-tracking-transparency';
+const { granted } = await requestTrackingPermissionsAsync();
+setTrackingConsent(granted);
+// Events still queue without consent, but user_data fields are omitted
+```
+
+> **Note:** Add `NSUserTrackingUsageDescription` to Info.plist and declare tracking data types in App Store Connect App Privacy.
+
+See `ios-app/lib/metaAppEvents.ts` for the full production implementation.
+
+---
+
 ## Checklist
 
 - [ ] Set up PostHog (or alternative)
@@ -406,8 +472,10 @@ Include in your privacy policy:
 - [ ] Configure user properties
 - [ ] Set up feature flags (optional)
 - [ ] Create admin dashboard (optional)
+- [ ] Set up Meta Conversions API (for paid acquisition)
 - [ ] Update privacy policy
 - [ ] Add opt-out option
+- [ ] Declare tracking data types in App Store Connect
 
 ---
 
