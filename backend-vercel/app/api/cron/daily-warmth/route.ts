@@ -13,6 +13,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getServiceClient } from '@/lib/supabase';
+import { computeWarmthFromAmplitude, type WarmthMode } from '@/lib/warmth-ewma';
 
 export const runtime = 'nodejs';
 export const maxDuration = 300; // 5 minutes for large contact sets
@@ -64,68 +65,32 @@ export async function GET(req: NextRequest) {
     }
 
     // ──────────────────────────────────────────────
-    // Step 2: Recompute warmth with decay (was recompute-warmth)
+    // Step 2: Recompute warmth via EWMA (same formula as recompute endpoint)
     // ──────────────────────────────────────────────
-    console.log('[daily-warmth] Step 2: Recomputing warmth...');
+    console.log('[daily-warmth] Step 2: Recomputing warmth via EWMA...');
     try {
-      // Include ALL non-deleted contacts (not just those with last_interaction_at)
       const { data: contacts, error: fetchError } = await supabase
         .from('contacts')
-        .select('id, display_name, last_interaction_at, created_at, warmth')
+        .select('id, warmth, amplitude, warmth_last_updated_at, warmth_mode')
         .is('deleted_at', null)
-        .order('created_at', { ascending: true })
         .limit(1000);
 
       if (fetchError) throw fetchError;
 
-      const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
-      let recomputed = 0, decayed = 0, skipped = 0, recomputeErrors = 0;
-      const now = Date.now();
+      let recomputed = 0, decayed = 0, unchanged = 0, recomputeErrors = 0;
 
       for (const contact of contacts || []) {
         try {
-          // Anchor: prefer last_interaction_at, fall back to created_at
-          const anchorStr = contact.last_interaction_at || contact.created_at;
-          const anchorMs = anchorStr ? new Date(anchorStr).getTime() : undefined;
-          const daysSince = anchorMs ? (now - anchorMs) / (1000 * 60 * 60 * 24) : undefined;
+          const mode: WarmthMode = (contact.warmth_mode as WarmthMode) || 'medium';
+          const { score: warmth, band } = computeWarmthFromAmplitude(
+            contact.amplitude ?? 0,
+            contact.warmth_last_updated_at ?? null,
+            undefined, // use current time
+            mode
+          );
 
-          // Skip contacts less than 1 day old (too fresh to decay)
-          if (!daysSince || daysSince < 1) { skipped++; continue; }
-
-          // Get interaction counts (meaningful kinds only)
-          const since90 = new Date(now - 90 * 24 * 60 * 60 * 1000).toISOString();
-          const { count: interCount } = await supabase
-            .from('interactions')
-            .select('id', { count: 'exact', head: true })
-            .eq('contact_id', contact.id)
-            .gte('created_at', since90);
-
-          const since30 = new Date(now - 30 * 24 * 60 * 60 * 1000).toISOString();
-          const { data: kindsRows } = await supabase
-            .from('interactions')
-            .select('kind')
-            .eq('contact_id', contact.id)
-            .gte('created_at', since30);
-          const distinctKinds = new Set((kindsRows || []).map((r: any) => r.kind)).size;
-
-          // Warmth formula — aligned with /api/v1/contacts/[id]/warmth/recompute
-          let warmth = 40; // base
-          const recency = clamp(90 - daysSince, 0, 90) / 90; // 1..0
-          warmth += Math.round(recency * 25); // recency boost: 0-25
-          const freq = clamp(interCount ?? 0, 0, 6);
-          warmth += Math.round((freq / 6) * 15); // frequency boost: 0-15
-          warmth += distinctKinds >= 2 ? 5 : 0; // channel bonus: 0 or 5
-          if (daysSince > 7) {
-            warmth -= Math.round(Math.min(30, (daysSince - 7) * 0.5)); // decay: -0.5/day after 7d, cap -30
-          }
-          warmth = clamp(warmth, 0, 100);
-
-          // Band thresholds — aligned with recompute endpoint
-          let band = 'cold';
-          if (warmth >= 70) band = 'hot';
-          else if (warmth >= 50) band = 'warm';
-          else if (warmth >= 30) band = 'neutral';
-          else if (warmth >= 15) band = 'cool';
+          // Skip update if score hasn't changed
+          if (warmth === (contact.warmth || 0)) { unchanged++; continue; }
 
           const { error: updateError } = await supabase
             .from('contacts')
@@ -147,9 +112,10 @@ export async function GET(req: NextRequest) {
         checked: contacts?.length || 0,
         recomputed,
         decayed,
+        unchanged,
         errors: recomputeErrors,
       };
-      console.log(`[daily-warmth] Recomputed: ${recomputed}, decayed: ${decayed}`);
+      console.log(`[daily-warmth] Recomputed: ${recomputed}, decayed: ${decayed}, unchanged: ${unchanged}`);
     } catch (e: any) {
       console.error('[daily-warmth] Recompute failed:', e);
       results.recompute = { error: e.message };
