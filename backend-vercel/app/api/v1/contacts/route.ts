@@ -202,6 +202,13 @@ export async function POST(req: Request){
   if (idempotency) insert.metadata = { ...(insert.metadata ?? {}), idempotency_key: idempotency };
   if (orgId) (insert as any).org_id = orgId;
 
+  // Initialize EWMA warmth fields for new contacts
+  const now = new Date().toISOString();
+  if (insert.warmth == null) insert.warmth = 30;
+  if (!insert.warmth_band) insert.warmth_band = 'cool';
+  if (!insert.warmth_last_updated_at) insert.warmth_last_updated_at = now;
+  if (insert.amplitude == null) insert.amplitude = 0;
+
   const { data, error } = await supabase
     .from('contacts')
     .insert([insert])
