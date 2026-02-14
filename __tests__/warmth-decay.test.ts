@@ -1,272 +1,210 @@
 /**
- * Warmth Decay Formula Tests
- * 
- * Tests the backend warmth formula used by both:
+ * Warmth EWMA Decay Formula Tests
+ *
+ * Tests the unified EWMA warmth formula used by:
  * - POST /api/v1/contacts/:id/warmth/recompute
  * - GET /api/cron/daily-warmth
- * 
+ * - POST /api/v1/interactions (via updateAmplitudeForContact)
+ *
  * Formula:
- *   warmth = 40 (base)
- *     + round((clamp(90 - daysSince, 0, 90) / 90) * 25)  // recency boost: 0-25
- *     + round((clamp(interactions90d, 0, 6) / 6) * 15)    // frequency boost: 0-15
- *     + (distinctKinds30d >= 2 ? 5 : 0)                   // channel bonus: 0 or 5
- *     - round(min(30, max(0, daysSince - 7) * 0.5))       // decay after 7d: -0.5/day, cap -30
- *   clamped to [0, 100]
- * 
- * Bands:
- *   >= 70 → hot
- *   >= 50 → warm
- *   >= 30 → neutral
- *   >= 15 → cool
- *   < 15  → cold
+ *   score = BASE + amplitude × e^(-λ × daysSinceUpdate)
+ *   BASE = 30
+ *   λ depends on warmth_mode:
+ *     fast    = 0.138629  (half-life ≈ 5 days)
+ *     medium  = 0.085998  (half-life ≈ 8 days)
+ *     slow    = 0.046210  (half-life ≈ 15 days)
+ *
+ * Bands (EWMA standard):
+ *   >= 80 → hot
+ *   >= 60 → warm
+ *   >= 40 → neutral
+ *   >= 20 → cool
+ *   < 20  → cold
+ *
+ * Impulse weights (added to amplitude on interaction):
+ *   meeting = 9, call = 7, email = 5, sms = 4, note = 3
  */
 
-// Pure reimplementation of the backend formula for testing
-function clamp(n: number, min: number, max: number) {
-  return Math.max(min, Math.min(max, n));
+const BASE = 30;
+const LAMBDA = {
+  fast: 0.138629,
+  medium: 0.085998,
+  slow: 0.046210,
+};
+
+function computeEWMA(amplitude: number, daysSince: number, mode: 'fast' | 'medium' | 'slow' = 'medium'): number {
+  const lambda = LAMBDA[mode];
+  const decayed = amplitude * Math.exp(-lambda * daysSince);
+  return Math.round(Math.min(100, Math.max(0, BASE + decayed)));
 }
 
-function computeWarmth(opts: {
-  daysSince: number;
-  interactions90d?: number;
-  distinctKinds30d?: number;
-}): { warmth: number; band: string } {
-  const { daysSince, interactions90d = 0, distinctKinds30d = 0 } = opts;
-
-  let warmth = 40; // base
-
-  // recency boost: 0-25
-  const recency = clamp(90 - daysSince, 0, 90) / 90;
-  warmth += Math.round(recency * 25);
-
-  // frequency boost: 0-15
-  const freq = clamp(interactions90d, 0, 6);
-  warmth += Math.round((freq / 6) * 15);
-
-  // channel bonus
-  warmth += distinctKinds30d >= 2 ? 5 : 0;
-
-  // decay after 7 days: -0.5/day, cap -30
-  if (daysSince > 7) {
-    warmth -= Math.round(Math.min(30, (daysSince - 7) * 0.5));
-  }
-
-  warmth = clamp(warmth, 0, 100);
-
-  let band = 'cold';
-  if (warmth >= 70) band = 'hot';
-  else if (warmth >= 50) band = 'warm';
-  else if (warmth >= 30) band = 'neutral';
-  else if (warmth >= 15) band = 'cool';
-
-  return { warmth, band };
+function getBand(score: number): string {
+  if (score >= 80) return 'hot';
+  if (score >= 60) return 'warm';
+  if (score >= 40) return 'neutral';
+  if (score >= 20) return 'cool';
+  return 'cold';
 }
 
-describe('Warmth Decay Formula', () => {
-  describe('brand new contacts (0 interactions)', () => {
-    test('day 0: fresh contact starts at 65 (base + full recency)', () => {
-      const { warmth, band } = computeWarmth({ daysSince: 0 });
-      expect(warmth).toBe(65); // 40 + 25 + 0 + 0 - 0
-      expect(band).toBe('warm');
+describe('EWMA Warmth Decay', () => {
+  describe('base score (no interactions)', () => {
+    test('amplitude 0 always gives base score 30', () => {
+      expect(computeEWMA(0, 0)).toBe(BASE);
+      expect(computeEWMA(0, 30)).toBe(BASE);
+      expect(computeEWMA(0, 365)).toBe(BASE);
     });
 
-    test('day 7: still 65 (no decay yet)', () => {
-      const { warmth } = computeWarmth({ daysSince: 7 });
-      // recency: (90-7)/90 * 25 = 23
-      expect(warmth).toBe(63); // 40 + 23 + 0 + 0 - 0
-    });
-
-    test('day 14: decay kicks in', () => {
-      const { warmth } = computeWarmth({ daysSince: 14 });
-      // recency: (90-14)/90 * 25 = round(21.1) = 21
-      // decay: round((14-7)*0.5) = round(3.5) = 4
-      expect(warmth).toBe(57); // 40 + 21 + 0 + 0 - 4
-    });
-
-    test('day 30: significantly decayed', () => {
-      const { warmth, band } = computeWarmth({ daysSince: 30 });
-      // recency: round((60/90)*25) = round(16.67) = 17
-      // decay: round((30-7)*0.5) = round(11.5) = 12
-      expect(warmth).toBe(45); // 40 + 17 + 0 + 0 - 12
-      expect(band).toBe('neutral');
-    });
-
-    test('day 60: low warmth', () => {
-      const { warmth, band } = computeWarmth({ daysSince: 60 });
-      // recency: round((30/90)*25) = round(8.33) = 8
-      // decay: round((60-7)*0.5) = round(26.5) = 27
-      expect(warmth).toBe(21); // 40 + 8 + 0 + 0 - 27
-      expect(band).toBe('cool');
-    });
-
-    test('day 90: very low, recency gone', () => {
-      const { warmth, band } = computeWarmth({ daysSince: 90 });
-      // recency: 0
-      // decay: min(30, (90-7)*0.5) = min(30, 41.5) = 30
-      expect(warmth).toBe(10); // 40 + 0 + 0 + 0 - 30
-      expect(band).toBe('cold');
-    });
-
-    test('day 120: still 10 (decay capped at -30)', () => {
-      const { warmth } = computeWarmth({ daysSince: 120 });
-      // recency: clamp(90-120, 0, 90) = 0
-      // decay: min(30, (120-7)*0.5) = min(30, 56.5) = 30
-      expect(warmth).toBe(10); // 40 + 0 + 0 + 0 - 30
+    test('base score is in cool band', () => {
+      expect(getBand(BASE)).toBe('cool');
     });
   });
 
-  describe('warmth decreases monotonically over time (0 interactions)', () => {
-    test('warmth strictly decreases from day 0 to day 90', () => {
+  describe('decay over time', () => {
+    const amplitude = 50; // high amplitude (several interactions)
+
+    test('day 0: full amplitude added to base', () => {
+      expect(computeEWMA(amplitude, 0)).toBe(80); // 30 + 50
+    });
+
+    test('day 8: approximately half amplitude (medium mode half-life)', () => {
+      const score = computeEWMA(amplitude, 8);
+      // 50 * e^(-0.086 * 8) ≈ 25.2 → 30 + 25 = 55
+      expect(score).toBeGreaterThan(50);
+      expect(score).toBeLessThan(70);
+    });
+
+    test('day 30: mostly decayed', () => {
+      const score = computeEWMA(amplitude, 30);
+      // 50 * e^(-0.086 * 30) ≈ 3.8 → 30 + 4 = 34
+      expect(score).toBeGreaterThanOrEqual(BASE);
+      expect(score).toBeLessThan(40);
+    });
+
+    test('day 60: negligible amplitude, near base', () => {
+      const score = computeEWMA(amplitude, 60);
+      expect(score).toBeLessThanOrEqual(BASE + 1);
+    });
+  });
+
+  describe('monotonic decrease', () => {
+    test('score never increases without new interaction', () => {
+      const amplitude = 40;
       let prev = 100;
-      for (let day = 0; day <= 90; day += 5) {
-        const { warmth } = computeWarmth({ daysSince: day });
-        expect(warmth).toBeLessThanOrEqual(prev);
-        prev = warmth;
+      for (let day = 0; day <= 120; day++) {
+        const score = computeEWMA(amplitude, day);
+        expect(score).toBeLessThanOrEqual(prev);
+        prev = score;
       }
     });
 
-    test('warmth never goes negative', () => {
-      for (let day = 0; day <= 365; day += 10) {
-        const { warmth } = computeWarmth({ daysSince: day });
-        expect(warmth).toBeGreaterThanOrEqual(0);
-        expect(warmth).toBeLessThanOrEqual(100);
+    test('score is always within [0, 100]', () => {
+      for (const amp of [0, 10, 50, 100, 200]) {
+        for (let day = 0; day <= 365; day += 10) {
+          const score = computeEWMA(amp, day);
+          expect(score).toBeGreaterThanOrEqual(0);
+          expect(score).toBeLessThanOrEqual(100);
+        }
+      }
+    });
+
+    test('score never drops below base (30)', () => {
+      for (let day = 0; day <= 365; day++) {
+        const score = computeEWMA(20, day);
+        expect(score).toBeGreaterThanOrEqual(BASE);
       }
     });
   });
 
-  describe('interactions boost warmth', () => {
-    test('6 interactions in 90d adds +15', () => {
-      const without = computeWarmth({ daysSince: 30 });
-      const withInteractions = computeWarmth({ daysSince: 30, interactions90d: 6 });
-      expect(withInteractions.warmth - without.warmth).toBe(15);
+  describe('mode comparison (decay rates)', () => {
+    const amplitude = 40;
+    const day = 10;
+
+    test('fast mode decays faster than medium', () => {
+      expect(computeEWMA(amplitude, day, 'fast')).toBeLessThan(computeEWMA(amplitude, day, 'medium'));
     });
 
-    test('3 interactions adds +8 (half of 15, rounded)', () => {
-      const without = computeWarmth({ daysSince: 30 });
-      const with3 = computeWarmth({ daysSince: 30, interactions90d: 3 });
-      expect(with3.warmth - without.warmth).toBe(8); // round((3/6)*15) = round(7.5) = 8
+    test('medium mode decays faster than slow', () => {
+      expect(computeEWMA(amplitude, day, 'medium')).toBeLessThan(computeEWMA(amplitude, day, 'slow'));
     });
 
-    test('more than 6 interactions caps at +15', () => {
-      const with6 = computeWarmth({ daysSince: 30, interactions90d: 6 });
-      const with20 = computeWarmth({ daysSince: 30, interactions90d: 20 });
-      expect(with6.warmth).toBe(with20.warmth);
-    });
-  });
-
-  describe('channel diversity bonus', () => {
-    test('1 channel kind: no bonus', () => {
-      const { warmth } = computeWarmth({ daysSince: 30, distinctKinds30d: 1 });
-      const base = computeWarmth({ daysSince: 30, distinctKinds30d: 0 });
-      expect(warmth).toBe(base.warmth);
-    });
-
-    test('2+ channel kinds: +5 bonus', () => {
-      const with2 = computeWarmth({ daysSince: 30, distinctKinds30d: 2 });
-      const without = computeWarmth({ daysSince: 30, distinctKinds30d: 0 });
-      expect(with2.warmth - without.warmth).toBe(5);
+    test('all modes converge to base over long time', () => {
+      for (const mode of ['fast', 'medium', 'slow'] as const) {
+        expect(computeEWMA(amplitude, 180, mode)).toBe(BASE);
+      }
     });
   });
 
-  describe('band thresholds', () => {
-    test('hot >= 70', () => {
-      expect(computeWarmth({ daysSince: 0, interactions90d: 6, distinctKinds30d: 2 }).band).toBe('hot');
+  describe('interaction impulses', () => {
+    const IMPULSE = { meeting: 9, call: 7, email: 5, sms: 4, note: 3 };
+
+    test('meeting gives biggest boost', () => {
+      expect(computeEWMA(IMPULSE.meeting, 0)).toBeGreaterThan(computeEWMA(IMPULSE.call, 0));
     });
 
-    test('warm >= 50', () => {
-      const { band } = computeWarmth({ daysSince: 14 });
-      expect(band).toBe('warm');
+    test('note gives smallest boost', () => {
+      expect(computeEWMA(IMPULSE.note, 0)).toBeLessThan(computeEWMA(IMPULSE.sms, 0));
     });
 
-    test('neutral >= 30', () => {
-      const { band } = computeWarmth({ daysSince: 30 });
-      expect(band).toBe('neutral');
+    test('single meeting: score = 39', () => {
+      expect(computeEWMA(IMPULSE.meeting, 0)).toBe(39); // 30 + 9
     });
 
-    test('cool >= 15', () => {
-      const { band } = computeWarmth({ daysSince: 60 });
-      expect(band).toBe('cool');
+    test('single sms: score = 34', () => {
+      expect(computeEWMA(IMPULSE.sms, 0)).toBe(34); // 30 + 4
     });
 
-    test('cold < 15', () => {
-      const { band } = computeWarmth({ daysSince: 90 });
-      expect(band).toBe('cold');
+    test('meeting + call + email: score = 51', () => {
+      const combined = IMPULSE.meeting + IMPULSE.call + IMPULSE.email; // 21
+      expect(computeEWMA(combined, 0)).toBe(51); // 30 + 21
+    });
+  });
+
+  describe('band thresholds (EWMA standard: 80/60/40/20)', () => {
+    test('hot >= 80', () => {
+      expect(getBand(80)).toBe('hot');
+      expect(getBand(100)).toBe('hot');
+    });
+
+    test('warm 60-79', () => {
+      expect(getBand(60)).toBe('warm');
+      expect(getBand(79)).toBe('warm');
+    });
+
+    test('neutral 40-59', () => {
+      expect(getBand(40)).toBe('neutral');
+      expect(getBand(59)).toBe('neutral');
+    });
+
+    test('cool 20-39', () => {
+      expect(getBand(20)).toBe('cool');
+      expect(getBand(39)).toBe('cool');
+    });
+
+    test('cold < 20', () => {
+      expect(getBand(19)).toBe('cold');
+      expect(getBand(0)).toBe('cold');
     });
   });
 
   describe('real-world scenarios', () => {
-    test('active contact: recent interaction + high frequency stays hot', () => {
-      const { warmth, band } = computeWarmth({ daysSince: 2, interactions90d: 6, distinctKinds30d: 3 });
-      // 40 + 24 + 15 + 5 - 0 = 84
-      expect(warmth).toBe(84);
-      expect(band).toBe('hot');
+    test('new contact: starts at base 30 (cool)', () => {
+      expect(computeEWMA(0, 0)).toBe(30);
+      expect(getBand(30)).toBe('cool');
     });
 
-    test('new contact added today with no interactions', () => {
-      const { warmth, band } = computeWarmth({ daysSince: 0 });
-      expect(warmth).toBe(65);
-      expect(band).toBe('warm');
+    test('5 rapid interactions (meeting+call+email+sms+note = 28): warm', () => {
+      expect(computeEWMA(28, 0)).toBe(58);
+      expect(getBand(58)).toBe('neutral');
     });
 
-    test('contact neglected for 2 weeks, had 2 interactions', () => {
-      const { warmth, band } = computeWarmth({ daysSince: 14, interactions90d: 2 });
-      // 40 + 21 + 5 + 0 - 4 = 62
-      expect(warmth).toBe(62);
-      expect(band).toBe('warm');
+    test('heavy engagement (amp=50): hits hot, decays to cool in ~30d', () => {
+      expect(getBand(computeEWMA(50, 0))).toBe('hot');    // 80
+      expect(getBand(computeEWMA(50, 8))).toBe('neutral');  // 55
+      expect(getBand(computeEWMA(50, 30))).toBe('cool');   // ~34
     });
 
-    test('contact from 3 months ago, 1 old interaction', () => {
-      const { warmth, band } = computeWarmth({ daysSince: 90, interactions90d: 1 });
-      // 40 + 0 + 3 + 0 - 30 = 13
-      expect(warmth).toBe(13);
-      expect(band).toBe('cold');
-    });
-
-    test('max warmth: fresh + 6 interactions + multi-channel', () => {
-      const { warmth } = computeWarmth({ daysSince: 0, interactions90d: 6, distinctKinds30d: 2 });
-      // 40 + 25 + 15 + 5 - 0 = 85
-      expect(warmth).toBe(85);
-    });
-
-    test('min warmth: 90+ days, 0 interactions', () => {
-      const { warmth } = computeWarmth({ daysSince: 90 });
-      // 40 + 0 + 0 + 0 - 30 = 10
-      expect(warmth).toBe(10);
-    });
-  });
-
-  describe('client-side calculateWarmth consistency', () => {
-    // The client-side warmth-utils.ts uses a simpler exponential decay:
-    // score = 100 * e^(-daysSince / 14)
-    // This is a DIFFERENT formula than the backend — client is for display only,
-    // backend is the source of truth. Verify both decay monotonically.
-
-    function clientCalculateWarmth(daysSince: number): number {
-      return Math.round(100 * Math.exp(-daysSince / 14));
-    }
-
-    test('client-side decay is monotonically decreasing', () => {
-      let prev = 100;
-      for (let day = 0; day <= 90; day++) {
-        const w = clientCalculateWarmth(day);
-        expect(w).toBeLessThanOrEqual(prev);
-        prev = w;
-      }
-    });
-
-    test('both formulas agree that warmth decreases over time', () => {
-      const backendDay0 = computeWarmth({ daysSince: 0 }).warmth;
-      const backendDay30 = computeWarmth({ daysSince: 30 }).warmth;
-      const backendDay90 = computeWarmth({ daysSince: 90 }).warmth;
-
-      const clientDay0 = clientCalculateWarmth(0);
-      const clientDay30 = clientCalculateWarmth(30);
-      const clientDay90 = clientCalculateWarmth(90);
-
-      expect(backendDay0).toBeGreaterThan(backendDay30);
-      expect(backendDay30).toBeGreaterThan(backendDay90);
-      expect(clientDay0).toBeGreaterThan(clientDay30);
-      expect(clientDay30).toBeGreaterThan(clientDay90);
+    test('neglected contact (amp=5, 90d ago): at base', () => {
+      expect(computeEWMA(5, 90)).toBe(BASE);
     });
   });
 });
