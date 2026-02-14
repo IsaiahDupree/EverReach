@@ -532,21 +532,11 @@ export default function MessageResultsScreen() {
           console.error('[MessageResults] Error creating interaction (background):', interactionError);
         }
 
+        // Refresh warmth display — amplitude was already updated by the interaction POST
         try {
-          const warmthResponse = await apiFetch(
-            `/api/v1/contacts/${person.id}/warmth/recompute`,
-            {
-              method: 'POST',
-              requireAuth: true,
-            }
-          );
-          if (warmthResponse.ok) {
-            await refreshWarmth(person.id);
-          } else {
-            console.warn('[MessageResults] Warmth recalculation failed:', warmthResponse.status);
-          }
+          await refreshWarmth(person.id);
         } catch (warmthError) {
-          console.error('[MessageResults] Error recalculating warmth (background):', warmthError);
+          console.error('[MessageResults] Error refreshing warmth (background):', warmthError);
         }
       })();
     } catch (error) {
