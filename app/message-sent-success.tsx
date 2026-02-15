@@ -23,7 +23,6 @@ export default function MessageSentSuccessScreen() {
   useAnalytics('MessageSentSuccess', {
     screenProperties: {
       person_id: params.personId,
-      warmth_increase: 5,
     },
   });
   
@@ -36,26 +35,33 @@ export default function MessageSentSuccessScreen() {
   
   const person = people.find(p => p.id === params.personId);
   const personName = params.personName || person?.fullName || 'Contact';
-  const oldWarmth = person?.warmth ?? 30;
-  const warmthIncrease = 5;
-  const newWarmth = Math.min(100, oldWarmth + warmthIncrease);
+  const oldWarmthRef = useRef<number>(person?.warmth ?? 30);
   
-  const [displayScore, setDisplayScore] = useState<number>(oldWarmth);
+  const [newWarmth, setNewWarmth] = useState<number>(oldWarmthRef.current);
+  const [warmthIncrease, setWarmthIncrease] = useState<number>(0);
+  const [displayScore, setDisplayScore] = useState<number>(oldWarmthRef.current);
 
-  // ✅ NEW: Force refresh warmth score immediately after message sent
+  // Fetch real warmth from backend and compute actual delta
   useEffect(() => {
-    if (params.personId) {
-      console.log('[MessageSentSuccess] Force refreshing warmth for contact:', params.personId);
-      refreshSingle(params.personId, { force: true, source: 'message-sent' }).catch(err => {
+    if (!params.personId) return;
+    console.log('[MessageSentSuccess] Fetching real warmth for contact:', params.personId);
+    refreshSingle(params.personId, { force: true, source: 'message-sent' })
+      .then((data) => {
+        const realScore = data?.score ?? oldWarmthRef.current;
+        const delta = Math.max(0, realScore - oldWarmthRef.current);
+        console.log('[MessageSentSuccess] Real warmth:', realScore, 'old:', oldWarmthRef.current, 'delta:', delta);
+        setNewWarmth(realScore);
+        setWarmthIncrease(delta);
+      })
+      .catch(err => {
         console.error('[MessageSentSuccess] Failed to refresh warmth:', err);
       });
-    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.personId]);
 
   useEffect(() => {
     console.log('[MessageSentSuccess] Screen mounted, starting animations');
-    console.log('[MessageSentSuccess] Old warmth:', oldWarmth, 'New warmth:', newWarmth);
+    console.log('[MessageSentSuccess] Old warmth:', oldWarmthRef.current, 'New warmth:', newWarmth);
     
     Animated.sequence([
       Animated.parallel([
@@ -95,7 +101,7 @@ export default function MessageSentSuccessScreen() {
     ]).start();
 
     const scoreListener = scoreCountAnim.addListener(({ value }) => {
-      const currentScore = Math.round(oldWarmth + (newWarmth - oldWarmth) * value);
+      const currentScore = Math.round(oldWarmthRef.current + (newWarmth - oldWarmthRef.current) * value);
       setDisplayScore(currentScore);
     });
 
@@ -116,7 +122,7 @@ export default function MessageSentSuccessScreen() {
       clearTimeout(timer);
       scoreCountAnim.removeListener(scoreListener);
     };
-  }, [fadeAnim, scaleAnim, warmthScaleAnim, warmthSlideAnim, scoreCountAnim, oldWarmth, newWarmth, refreshPeople, router]);
+  }, [fadeAnim, scaleAnim, warmthScaleAnim, warmthSlideAnim, scoreCountAnim, newWarmth, refreshPeople, router]);
 
   const styles = createStyles(theme);
 
@@ -164,11 +170,17 @@ export default function MessageSentSuccessScreen() {
             <Text style={styles.warmthLabel}>Warmth Score</Text>
             <View style={styles.scoreRow}>
               <Text style={styles.scoreText}>{displayScore}</Text>
-              <TrendingUp size={20} color="#10B981" strokeWidth={2.5} />
-              <Text style={styles.increaseText}>+{warmthIncrease}</Text>
+              {warmthIncrease > 0 && (
+                <>
+                  <TrendingUp size={20} color="#10B981" strokeWidth={2.5} />
+                  <Text style={styles.increaseText}>+{warmthIncrease}</Text>
+                </>
+              )}
             </View>
             <Text style={styles.warmthSubtext}>
-              {personName} is getting warmer!
+              {warmthIncrease > 0
+                ? `${personName} is getting warmer!`
+                : `Keep reaching out to ${personName}!`}
             </Text>
           </View>
         </Animated.View>
