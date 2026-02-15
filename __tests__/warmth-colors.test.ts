@@ -8,32 +8,32 @@ import {
 
 describe('warmth color utilities', () => {
   describe('getWarmthColor', () => {
-    test('returns very cold color for 0-20', () => {
+    test('returns cold color for 0-19 (cold band)', () => {
       expect(getWarmthColor(0)).toBe('#B91C1C');
       expect(getWarmthColor(10)).toBe('#B91C1C');
-      expect(getWarmthColor(20)).toBe('#B91C1C');
+      expect(getWarmthColor(19)).toBe('#B91C1C');
     });
 
-    test('returns cold color for 21-40', () => {
-      expect(getWarmthColor(21)).toBe('#DC2626');
+    test('returns cool color for 20-39 (cool band)', () => {
+      expect(getWarmthColor(20)).toBe('#DC2626');
       expect(getWarmthColor(30)).toBe('#DC2626');
-      expect(getWarmthColor(40)).toBe('#DC2626');
+      expect(getWarmthColor(39)).toBe('#DC2626');
     });
 
-    test('returns neutral color for 41-60', () => {
-      expect(getWarmthColor(41)).toBe('#F59E0B');
+    test('returns neutral color for 40-59 (neutral band)', () => {
+      expect(getWarmthColor(40)).toBe('#F59E0B');
       expect(getWarmthColor(50)).toBe('#F59E0B');
-      expect(getWarmthColor(60)).toBe('#F59E0B');
+      expect(getWarmthColor(59)).toBe('#F59E0B');
     });
 
-    test('returns warm color for 61-80', () => {
-      expect(getWarmthColor(61)).toBe('#10B981');
+    test('returns warm color for 60-79 (warm band)', () => {
+      expect(getWarmthColor(60)).toBe('#10B981');
       expect(getWarmthColor(70)).toBe('#10B981');
-      expect(getWarmthColor(80)).toBe('#10B981');
+      expect(getWarmthColor(79)).toBe('#10B981');
     });
 
-    test('returns very warm color for 81-100', () => {
-      expect(getWarmthColor(81)).toBe('#059669');
+    test('returns hot color for 80-100 (hot band)', () => {
+      expect(getWarmthColor(80)).toBe('#059669');
       expect(getWarmthColor(90)).toBe('#059669');
       expect(getWarmthColor(100)).toBe('#059669');
     });
@@ -48,22 +48,22 @@ describe('warmth color utilities', () => {
   });
 
   describe('getWarmthLabel', () => {
-    test('returns correct labels for ranges', () => {
-      expect(getWarmthLabel(0)).toBe('Very Cold');
-      expect(getWarmthLabel(20)).toBe('Very Cold');
-      expect(getWarmthLabel(30)).toBe('Cold');
-      expect(getWarmthLabel(40)).toBe('Cold');
-      expect(getWarmthLabel(50)).toBe('Neutral');
-      expect(getWarmthLabel(60)).toBe('Neutral');
-      expect(getWarmthLabel(70)).toBe('Warm');
-      expect(getWarmthLabel(80)).toBe('Warm');
-      expect(getWarmthLabel(90)).toBe('Very Warm');
-      expect(getWarmthLabel(100)).toBe('Very Warm');
+    test('returns correct EWMA labels for ranges', () => {
+      expect(getWarmthLabel(0)).toBe('Cold');
+      expect(getWarmthLabel(19)).toBe('Cold');
+      expect(getWarmthLabel(20)).toBe('Cool');
+      expect(getWarmthLabel(39)).toBe('Cool');
+      expect(getWarmthLabel(40)).toBe('Neutral');
+      expect(getWarmthLabel(59)).toBe('Neutral');
+      expect(getWarmthLabel(60)).toBe('Warm');
+      expect(getWarmthLabel(79)).toBe('Warm');
+      expect(getWarmthLabel(80)).toBe('Hot');
+      expect(getWarmthLabel(100)).toBe('Hot');
     });
 
     test('clamps edge cases', () => {
-      expect(getWarmthLabel(-10)).toBe('Very Cold');
-      expect(getWarmthLabel(150)).toBe('Very Warm');
+      expect(getWarmthLabel(-10)).toBe('Cold');
+      expect(getWarmthLabel(150)).toBe('Hot');
     });
   });
 
@@ -78,7 +78,7 @@ describe('warmth color utilities', () => {
       expect(scheme.gradient).toHaveLength(2);
     });
 
-    test('returns very cold scheme for 0-20', () => {
+    test('returns cold scheme for 0-19', () => {
       const scheme = getWarmthColorScheme(10);
       expect(scheme.background).toBe('#FEE2E2');
       expect(scheme.text).toBe('#991B1B');
@@ -90,7 +90,7 @@ describe('warmth color utilities', () => {
       expect(scheme.text).toBe('#92400E');
     });
 
-    test('returns very warm scheme for 81-100', () => {
+    test('returns hot scheme for 80-100', () => {
       const scheme = getWarmthColorScheme(100);
       expect(scheme.background).toBe('#A7F3D0');
       expect(scheme.text).toBe('#064E3B');
