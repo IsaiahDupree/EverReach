@@ -66,10 +66,10 @@ export default function WarmthSettingsScreen() {
   const handleReset = async () => {
     // Reset to defaults
     await resetToDefaults();
-    setHotThreshold('60');
-    setWarmThreshold('30');
-    setCoolThreshold('10');
-    setDefaultWarmth('50');
+    setHotThreshold('80');
+    setWarmThreshold('60');
+    setCoolThreshold('20');
+    setDefaultWarmth('30');
     console.log('Reset Complete: Settings have been reset to defaults.');
   };
 
@@ -154,7 +154,7 @@ export default function WarmthSettingsScreen() {
           <View style={styles.sectionContent}>
             <View style={styles.thresholdItem}>
               <View style={styles.thresholdLeft}>
-                <View style={[styles.statusDot, { backgroundColor: getStatusColor(parseInt(defaultWarmth) || 50) }]} />
+                <View style={[styles.statusDot, { backgroundColor: getStatusColor(parseInt(defaultWarmth) || 30) }]} />
                 <Text style={styles.thresholdLabel}>Default Warmth for New Leads</Text>
               </View>
               <CrossPlatformTextInput
@@ -162,7 +162,7 @@ export default function WarmthSettingsScreen() {
                 value={defaultWarmth}
                 onChangeText={setDefaultWarmth}
                 keyboardType="numeric"
-                placeholder="50"
+                placeholder="30"
               />
             </View>
           </View>
