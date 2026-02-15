@@ -483,9 +483,10 @@ export default function ContactDetailScreen() {
             }
             
             // Final safety: Ensure we always have at least one field
+            // NOTE: Never write warmth — it is computed server-side by EWMA
             if (Object.keys(updatePayload).length === 0) {
-              console.error('[ContactDetail] Empty payload! Adding warmth as fallback');
-              updatePayload.warmth = contact.warmth || 0;
+              console.warn('[ContactDetail] Empty payload — skipping PATCH (no changes)');
+              return;
             }
             
             console.log('[ContactDetail] Update payload:', JSON.stringify(updatePayload, null, 2));

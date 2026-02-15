@@ -165,7 +165,7 @@ export function WarmthProvider({ children }: { children: React.ReactNode }) {
       const newMap = new Map<string, WarmthData>();
 
       contacts.forEach(contact => {
-        const score = contact.warmth ?? 50; // Default to 50 if not set
+        const score = contact.warmth ?? 30; // Default to BASE (30) if not set
         newMap.set(contact.id, createWarmthData(contact.id, score, contact.last_touch_at));
       });
 
