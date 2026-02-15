@@ -242,7 +242,7 @@ export default function ExpandableChatBar({ onQuerySubmit, initialQuery }: Expan
       // Build contact context for AI
       const contactsContext = people.map(person => {
         const warmthStatus = person.warmth ? 
-          (person.warmth >= 70 ? 'hot' : person.warmth >= 50 ? 'warm' : person.warmth >= 30 ? 'cool' : 'cold') : 'unknown';
+          (person.warmth >= 80 ? 'hot' : person.warmth >= 60 ? 'warm' : person.warmth >= 40 ? 'neutral' : person.warmth >= 20 ? 'cool' : 'cold') : 'unknown';
         
         return {
           name: person.fullName || person.name,

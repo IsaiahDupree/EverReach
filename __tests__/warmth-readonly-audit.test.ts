@@ -265,6 +265,44 @@ describe('Warmth Read-Only Audit', () => {
     }
     expect(violations).toEqual([]);
   });
+
+  test('no frontend file uses old warmth band thresholds (70/50/15)', () => {
+    const allDirs = [APP_DIR, PROVIDERS_DIR, HOOKS_DIR, LIB_DIR, FEATURES_DIR, REPOS_DIR,
+      path.resolve(__dirname, '../components')];
+    const files = allDirs.flatMap(dir => getAllTsFiles(dir));
+    
+    // Old thresholds that should NOT appear in warmth band logic
+    const OLD_PATTERNS = [
+      /warmth\s*>=\s*70\s*\?\s*['"]hot['"]/,
+      /warmth\s*>=\s*50\s*\?\s*['"]warm['"]/,
+      /warmth\s*>=\s*15\s*\?\s*['"]cool['"]/,
+    ];
+    
+    const violations: { file: string; line: number; content: string }[] = [];
+    
+    for (const file of files) {
+      const content = fs.readFileSync(file, 'utf-8');
+      const lines = content.split('\n');
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        if (line.trim().startsWith('//') || line.trim().startsWith('*')) continue;
+        for (const pattern of OLD_PATTERNS) {
+          if (pattern.test(line)) {
+            violations.push({
+              file: path.relative(path.resolve(__dirname, '..'), file),
+              line: i + 1,
+              content: line.trim(),
+            });
+          }
+        }
+      }
+    }
+    
+    if (violations.length > 0) {
+      console.error('OLD WARMTH THRESHOLD VIOLATIONS:', violations);
+    }
+    expect(violations).toEqual([]);
+  });
 });
 
 describe('EWMA Formula Consistency (ios-app/backend-vercel)', () => {

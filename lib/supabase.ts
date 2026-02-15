@@ -113,10 +113,10 @@ export async function getMyPeople(options: {
 
   if (options.warmthFilter) {
     const warmthRanges = {
-      hot: [60, 100],
-      warm: [30, 59],
-      cool: [10, 29],
-      cold: [0, 9]
+      hot: [80, 100],
+      warm: [60, 79],
+      cool: [20, 39],
+      cold: [0, 19]
     };
     const [min, max] = warmthRanges[options.warmthFilter];
     query = query.gte('warmth', min).lte('warmth', max);

@@ -28,7 +28,7 @@ export function AlertCard({ alert, onReachOut, onSnooze, onDismiss }: AlertCardP
   const router = useRouter();
 
   const getWarmthColor = (warmth: number) => {
-    if (warmth >= 70) return '#10b981';
+    if (warmth >= 80) return '#10b981';
     if (warmth >= 40) return '#f59e0b';
     return '#ef4444';
   };
