@@ -48,8 +48,8 @@ export interface User {
   email: string;
   full_name?: string;
   avatar_url?: string;
-  subscription_tier: 'free' | 'pro' | 'business';
-  subscription_status: 'active' | 'past_due' | 'canceled' | 'expired';
+  subscription_tier: 'free' | 'core' | 'pro' | 'team';
+  subscription_status: 'trial' | 'active' | 'grace' | 'paused' | 'past_due' | 'canceled' | 'expired' | 'refunded';
   created_at: string;
 }
 
@@ -59,11 +59,50 @@ export interface User {
 export interface Subscription {
   id: string;
   user_id: string;
-  tier: 'free' | 'pro' | 'business';
-  status: 'active' | 'past_due' | 'canceled' | 'expired' | 'trialing';
-  provider: 'stripe' | 'revenuecat' | 'manual';
-  current_period_start?: string;
+  product_id?: string;
+  store: 'app_store' | 'play' | 'stripe';
+  store_account_id?: string;
+  status: 'trial' | 'active' | 'grace' | 'paused' | 'past_due' | 'canceled' | 'expired' | 'refunded';
+  started_at?: string;
   current_period_end?: string;
+  cancel_at?: string;
+  canceled_at?: string;
+  updated_at: string;
+}
+
+// ============================================
+// ✅ KEEP: Entitlements model (derived from subscriptions)
+// ============================================
+export interface Entitlement {
+  user_id: string;
+  plan: 'free' | 'core' | 'pro' | 'team';
+  valid_until?: string;
+  source: 'app_store' | 'play' | 'stripe' | 'manual' | 'revenuecat';
+  subscription_id?: string;
+  updated_at: string;
+}
+
+// ============================================
+// ✅ KEEP: Subscription events audit log
+// ============================================
+export interface SubscriptionEvent {
+  id: string;
+  user_id?: string;
+  event_type: string;
+  product_id?: string;
+  store?: 'app_store' | 'play' | 'stripe';
+  environment?: string;
+  period_type?: string;
+  plan?: string;
+  status?: string;
+  transaction_id?: string;
+  original_transaction_id?: string;
+  revenue?: number;
+  currency?: string;
+  entitlement_ids?: string[];
+  is_trial_conversion?: boolean;
+  occurred_at?: string;
+  created_at: string;
 }
 
 // ============================================
