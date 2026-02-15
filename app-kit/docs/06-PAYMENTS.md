@@ -472,6 +472,56 @@ export function useSubscription() {
 
 ---
 
+## Part 5: Subscription Events Audit Table
+
+Log every webhook event for debugging, analytics, and idempotency:
+
+```sql
+CREATE TABLE public.subscription_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id TEXT,
+  event_type TEXT NOT NULL,
+  product_id TEXT,
+  store TEXT CHECK (store IN ('app_store', 'play', 'stripe')),
+  environment TEXT,
+  period_type TEXT,
+  plan TEXT,
+  status TEXT,
+  transaction_id TEXT,
+  original_transaction_id TEXT,
+  revenue NUMERIC,
+  currency TEXT,
+  entitlement_ids TEXT[],
+  is_trial_conversion BOOLEAN DEFAULT FALSE,
+  raw_payload JSONB,
+  occurred_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_subscription_events_user ON subscription_events(user_id);
+CREATE INDEX idx_subscription_events_type ON subscription_events(event_type);
+```
+
+### Webhook Security Best Practices
+
+```typescript
+// 1. Verify HMAC signature (RevenueCat)
+const isSignatureValid = verifyWebhookSignature(rawBody, signature, secret);
+
+// 2. Fail-closed in production (reject if secret not configured)
+if (!webhookSecret && process.env.NODE_ENV === 'production') {
+  return NextResponse.json({ error: 'Not configured' }, { status: 500 });
+}
+
+// 3. Log event BEFORE processing (for debugging failed webhooks)
+await supabase.from('subscription_events').insert([eventData]);
+
+// 4. Return 200 for duplicates (so provider stops retrying)
+// 5. Never leak error.message — return generic errors only
+```
+
+---
+
 ## Testing Payments
 
 ### Stripe Test Mode

@@ -2,6 +2,8 @@
 
 ## The Complete Full-Stack Mobile & Web App Starter Kit
 
+> **⚠️ DEV MODE**: When you run the app, a floating purple button appears with a customization checklist. This shows you exactly what to replace with your business logic. Set `DEV_MODE: false` in `constants/config.ts` before publishing.
+
 **Build production-ready apps with React Native, Expo, Vercel, and Supabase in hours, not months.**
 
 ---

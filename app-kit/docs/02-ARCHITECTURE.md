@@ -164,8 +164,8 @@ This guide explains the complete system architecture, why each piece exists, and
 3. Backend validates request
    │
    ▼
-4. Backend inserts into Supabase
-   supabase.from('contacts').insert(data)
+4. Backend inserts into Supabase with EWMA defaults
+   supabase.from('contacts').insert({ ...data, warmth: 30, amplitude: 0, warmth_band: 'cool' })
    │
    ▼
 5. Database returns new contact with ID
@@ -306,6 +306,53 @@ project/
 | `SUPABASE_ANON_KEY` | Client | ✅ Yes (limited permissions) |
 | `STRIPE_SECRET_KEY` | Server only | ❌ Never |
 | `SUPABASE_SERVICE_ROLE` | Server only | ❌ Never |
+
+---
+
+## Warmth Scoring (EWMA Model)
+
+Contact warmth is computed **server-side** using an Exponentially Weighted Moving Average:
+
+```
+score = 30 + amplitude × e^(-λ × daysSinceUpdate)
+```
+
+| Component | Value | Notes |
+|-----------|-------|-------|
+| **BASE** | 30 | Neglected contacts settle here |
+| **λ (fast)** | 0.138629 | Half-life ≈ 5 days |
+| **λ (medium)** | 0.085998 | Half-life ≈ 8 days (default) |
+| **λ (slow)** | 0.046210 | Half-life ≈ 15 days |
+
+**Impulse weights** (added to amplitude on each interaction):
+meeting=9, call=7, email=5, sms=4, note=3
+
+**Bands**: hot ≥ 80, warm ≥ 60, neutral ≥ 40, cool ≥ 20, cold < 20
+
+### Data Flow
+
+```
+Interaction recorded → updateAmplitudeForContact() → amplitude increases
+                       → computeWarmthFromAmplitude() → new score + band written to DB
+
+Daily cron (3 AM) → recompute all contacts → scores decay naturally via e^(-λ×days)
+```
+
+> **Important:** The frontend does NOT compute warmth. It only displays the `warmth` and `warmth_band` values stored in the database. See `lib/warmth-ewma.ts` for the backend implementation.
+
+---
+
+## Cron Jobs
+
+| Job | Schedule | Purpose |
+|-----|----------|---------|
+| daily-warmth | 3 AM UTC | Recompute EWMA warmth for all contacts |
+| daily-etl | 4 AM UTC | Data pipeline transforms |
+| monitor | Every 5 min | Health checks |
+| process-queues | Every 1 min | Background job processing |
+| refresh-views | Every 15 min | Materialized view refresh |
+
+All cron routes use `verifyCron()` middleware for authentication (checks `CRON_SECRET` header).
 
 ---
 
