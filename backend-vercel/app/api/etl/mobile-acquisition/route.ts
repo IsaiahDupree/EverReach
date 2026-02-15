@@ -163,7 +163,7 @@ async function runMobileAcquisitionETL(req: NextRequest) {
 
       } catch (error: any) {
         await updateServiceStatus('apple_search_ads', 'degraded', Date.now() - startTime, error.message);
-        results.asa = { error: error.message };
+        results.asa = { error: 'ETL failed' };
       }
     }
 
@@ -235,7 +235,7 @@ async function runMobileAcquisitionETL(req: NextRequest) {
 
       } catch (error: any) {
         await updateServiceStatus('google_play', 'degraded', Date.now() - startTime, error.message);
-        results.play = { error: error.message };
+        results.play = { error: 'ETL failed' };
       }
     }
 
@@ -274,7 +274,7 @@ async function runMobileAcquisitionETL(req: NextRequest) {
       }
     } catch (error: any) {
       console.error('[trial-rate] Error:', error);
-      results.trial_rate = { error: error.message };
+      results.trial_rate = { error: 'Calculation failed' };
     }
 
     return NextResponse.json({

@@ -114,7 +114,7 @@ export async function GET(req: NextRequest) {
       console.error('[run-campaigns] Error fetching campaigns:', error);
       return NextResponse.json({
         success: false,
-        error: error.message
+        error: 'Internal server error'
       }, { status: 500 });
     }
     
@@ -149,7 +149,7 @@ export async function GET(req: NextRequest) {
     console.error('[run-campaigns] Fatal error:', error);
     return NextResponse.json({
       success: false,
-      error: error.message
+      error: 'Internal server error'
     }, { status: 500 });
   }
 }

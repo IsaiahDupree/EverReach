@@ -90,7 +90,7 @@ export async function GET(req: NextRequest) {
   } catch (error: any) {
     console.error('[PhotoWorker] Fatal error:', error);
     return NextResponse.json(
-      { error: error.message, duration_ms: Date.now() - startTime },
+      { error: 'Internal server error', duration_ms: Date.now() - startTime },
       { status: 500 }
     );
   }

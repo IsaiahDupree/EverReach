@@ -97,7 +97,7 @@ export async function GET(req: NextRequest) {
   } catch (error: any) {
     console.error('Dev activity digest error:', error);
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     );
   }

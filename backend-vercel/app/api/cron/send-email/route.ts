@@ -176,7 +176,7 @@ export async function GET(req: NextRequest) {
     console.error('[send-email] Fatal error:', error);
     return NextResponse.json({
       success: false,
-      error: error.message
+      error: 'Internal server error'
     }, { status: 500 });
   }
 }

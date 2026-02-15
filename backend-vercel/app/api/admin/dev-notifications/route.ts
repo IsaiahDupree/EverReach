@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Subscription error:', error);
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     );
   }
