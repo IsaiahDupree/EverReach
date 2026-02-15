@@ -448,7 +448,7 @@ function mapSupabaseContactToPerson(contact: any): Person {
     lastInteraction: contact.last_interaction_at || contact.last_interaction || contact.updated_at,
     lastInteractionSummary: contact.last_interaction_summary || '',
     cadenceDays: contact.cadence_days || 30,
-    warmth: contact.warmth ?? 50,
+    warmth: contact.warmth ?? 30,
     warmth_mode: contact.warmth_mode || 'medium',
     createdAt: contact.created_at ? new Date(contact.created_at).getTime() : Date.now(),
     photo_url: contact.photo_url || undefined, // New: user-uploaded photos

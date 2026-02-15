@@ -12,7 +12,6 @@ import analytics from '@/lib/analytics';
 import { X } from 'lucide-react-native';
 import { useSubscription } from '@/providers/SubscriptionProvider';
 import { MediaRepo } from '@/repos/MediaRepo';
-import { usePaywallGate } from '@/hooks/usePaywallGate';
 import { apiFetch } from '@/lib/api';
 
 export default function GoalPickerRoute() {
@@ -22,8 +21,7 @@ export default function GoalPickerRoute() {
   const { people } = usePeople();
   const [isProcessingScreenshot, setIsProcessingScreenshot] = useState(false);
   const { theme } = useTheme();
-  const { isPaid, isTrialExpired } = useSubscription();
-  const gated = isTrialExpired && !isPaid;
+  const { isPaid } = useSubscription();
   
   // Analytics tracking
   const screenAnalytics = useAnalytics('GoalPicker');
@@ -69,13 +67,6 @@ export default function GoalPickerRoute() {
   // Auto-navigate to message generation if we have suggestion context
   React.useEffect(() => {
     if (suggestionContext && personId) {
-      if (gated) {
-        // Redirect gated users to plans
-        setTimeout(() => {
-          router.replace('/subscription-plans');
-        }, 50);
-        return;
-      }
       const navParams: Record<string, string> = {
         personId,
         channel,
@@ -97,10 +88,8 @@ export default function GoalPickerRoute() {
         router.replace(`/message-results?${query}`);
       }, 100);
     }
-  }, [suggestionContext, personId, channel, router, gated]);
+  }, [suggestionContext, personId, channel, router]);
 
-  // Auto-show paywall if user is not paid
-  usePaywallGate();
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -130,10 +119,6 @@ export default function GoalPickerRoute() {
           personId={personId}
           isProcessingScreenshot={isProcessingScreenshot}
           onGenerate={async (payload) => {
-          if (gated) {
-            router.push('/subscription-plans');
-            return;
-          }
           // Create a default personId if none provided
           const finalPersonId = personId || 'default-person';
           if (payload.mode === 'screenshot') {

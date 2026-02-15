@@ -496,7 +496,10 @@ export default function OnboardingV2Screen() {
         await supabase.from('contacts').insert({
           user_id: user.id,
           display_name: responses.first_person_name,
-          warmth_score: 30,
+          warmth: 30,
+          amplitude: 0,
+          warmth_band: 'cool',
+          warmth_last_updated_at: new Date().toISOString(),
         });
       }
       

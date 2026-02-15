@@ -52,8 +52,7 @@ export default function MessageResultsScreen() {
   const { refreshWarmth } = useWarmth();
   const { addMessage } = useMessages();
   const { templates } = useTemplates();
-  const { isPaid, isTrialExpired, trialDaysRemaining, trialGateStrategy, trialUsageSeconds, trialUsageSecondsLimit } = useSubscription();
-  const gated = isTrialExpired && !isPaid;
+  const { isPaid, trialDaysRemaining, trialGateStrategy, trialUsageSeconds, trialUsageSecondsLimit } = useSubscription();
   
   // Analytics tracking
   const screenAnalytics = useAnalytics('MessageResults');
@@ -127,11 +126,6 @@ export default function MessageResultsScreen() {
   const generateMessage = useCallback(async () => {
     if (!person) {
       Alert.alert('Error', 'Contact not found');
-      return;
-    }
-
-    // Gate: require active trial or paid subscription
-    if (gated) {
       return;
     }
 
@@ -263,13 +257,10 @@ export default function MessageResultsScreen() {
         console.log('[MessageResults] Skipping completion cleanup for stale reqId=', requestId);
       }
     }
-  }, [person, params.customGoal, params.goalId, channel, selectedTone, templates.voiceContext, router, loadNotesForContext, gated, trialGateStrategy, trialUsageSeconds, trialUsageSecondsLimit, trialDaysRemaining, isPaid, sessionKey]);
+  }, [person, params.customGoal, params.goalId, channel, selectedTone, templates.voiceContext, router, loadNotesForContext, trialGateStrategy, trialUsageSeconds, trialUsageSecondsLimit, trialDaysRemaining, isPaid, sessionKey]);
 
   const initializeMessage = useCallback(() => {
     console.log('[MessageResults] initializeMessage called');
-    if (gated) {
-      return;
-    }
     if (params.generatedSubject || params.generatedBody) {
       setEditedSubject(params.generatedSubject || '');
       setEditedBody(params.generatedBody || '');
@@ -297,7 +288,7 @@ export default function MessageResultsScreen() {
       console.log('[MessageResults] Calling generateMessage from initializeMessage');
       generateMessage();
     }
-  }, [params.generatedSubject, params.generatedBody, params.composeSessionId, channel, generateMessage, gated]);
+  }, [params.generatedSubject, params.generatedBody, params.composeSessionId, channel, generateMessage]);
 
   useEffect(() => {
     const isInitialized = INITIALIZED_SESSIONS.get(sessionKey) || false;
@@ -308,10 +299,6 @@ export default function MessageResultsScreen() {
     }
     INITIALIZED_SESSIONS.set(sessionKey, true);
     
-    // Call directly to avoid dependency issues
-    if (gated) {
-      return;
-    }
     // Serve from local cache if recent
     const cached = LOCAL_COMPOSE_CACHE.get(sessionKey);
     if (cached && Date.now() - cached.ts < LOCAL_CACHE_TTL_MS) {
@@ -405,9 +392,6 @@ export default function MessageResultsScreen() {
 
   const handleRegenerateAll = async () => {
     console.log('[MessageResults] Regenerate button pressed');
-    if (gated) {
-      return;
-    }
     
     // Track regeneration
     screenAnalytics.track('message_regenerated', {

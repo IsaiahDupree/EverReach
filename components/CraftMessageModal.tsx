@@ -22,7 +22,7 @@ import { useMessages } from '@/providers/MessageProvider';
 import { getGoalById } from '@/constants/messageGoals';
 import { composeMessage } from '@/lib/agent-api';
 import { useSubscription } from '@/providers/SubscriptionProvider';
-import PremiumGate from '@/components/PremiumGate';
+
 
 interface Person {
   id: string;
@@ -59,8 +59,7 @@ export default function CraftMessageModal({ visible, onClose, person, initialAdd
   const { voiceNotes } = useVoiceNotes();
   const { getAllGoals } = useMessages();
   const { theme } = useAppSettings();
-  const { isPaid, isTrialExpired } = useSubscription();
-  const gated = isTrialExpired && !isPaid;
+  const { isPaid } = useSubscription();
   const [currentStep, setCurrentStep] = useState<WizardStep>('goal');
   const [selectedGoal, setSelectedGoal] = useState<string>('check_in');
   const [customGoal, setCustomGoal] = useState<string>('');
@@ -214,11 +213,6 @@ export default function CraftMessageModal({ visible, onClose, person, initialAdd
       }
     }
 
-    if (gated) {
-      setCurrentStep('preview');
-      return;
-    }
-
     onClose();
     router.push({
       pathname: '/message-results',
@@ -231,12 +225,9 @@ export default function CraftMessageModal({ visible, onClose, person, initialAdd
         additionalContext: additionalContext || undefined,
       },
     });
-  }, [additionalContext, getAllGoals, onClose, person.id, router, selectedChannel, selectedTone, gated]);
+  }, [additionalContext, getAllGoals, onClose, person.id, router, selectedChannel, selectedTone]);
 
   const generateMessage = async () => {
-    if (gated) {
-      return;
-    }
     setIsGenerating(true);
     
     try {
@@ -607,9 +598,6 @@ export default function CraftMessageModal({ visible, onClose, person, initialAdd
 
           {currentStep === 'preview' && (
             <View style={styles.section}>
-              {gated ? (
-                <PremiumGate />
-              ) : (
                 <View style={styles.previewCard}>
                   <Text style={styles.previewTitle}>Ready to Generate</Text>
                   <View style={styles.previewItem}>
@@ -633,7 +621,6 @@ export default function CraftMessageModal({ visible, onClose, person, initialAdd
                     </View>
                   )}
                 </View>
-              )}
             </View>
           )}
         </ScrollView>
@@ -655,10 +642,10 @@ export default function CraftMessageModal({ visible, onClose, person, initialAdd
           <TouchableOpacity
             style={[
               styles.nextButton,
-              (!canProceed() || isGenerating || (gated && currentStep === 'preview')) && styles.nextButtonDisabled
+              (!canProceed() || isGenerating) && styles.nextButtonDisabled
             ]}
             onPress={nextStep}
-            disabled={!canProceed() || isGenerating || (gated && currentStep === 'preview')}
+            disabled={!canProceed() || isGenerating}
           >
             {isGenerating && currentStep === 'preview' ? (
               <ActivityIndicator size="small" color={theme.colors.surface} />

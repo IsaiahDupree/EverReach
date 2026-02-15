@@ -36,7 +36,7 @@ export default function MessageSentSuccessScreen() {
   
   const person = people.find(p => p.id === params.personId);
   const personName = params.personName || person?.fullName || 'Contact';
-  const oldWarmth = person?.warmth ?? 50;
+  const oldWarmth = person?.warmth ?? 30;
   const warmthIncrease = 5;
   const newWarmth = Math.min(100, oldWarmth + warmthIncrease);
   

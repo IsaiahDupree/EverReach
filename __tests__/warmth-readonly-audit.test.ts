@@ -204,6 +204,67 @@ describe('Warmth Read-Only Audit', () => {
     // but warmth score itself should not be set
     expect(warmthAssignments).toEqual([]);
   });
+
+  test('SupabaseContactsRepo should default warmth to 30 (not 50)', () => {
+    const repoPath = path.resolve(__dirname, '../repos/SupabaseContactsRepo.ts');
+    if (!fs.existsSync(repoPath)) {
+      console.warn('SupabaseContactsRepo.ts not found — skipping');
+      return;
+    }
+    
+    const content = fs.readFileSync(repoPath, 'utf-8');
+    
+    // Should NOT default to 50
+    expect(content).not.toMatch(/warmth.*\?\?\s*50/);
+    
+    // Should default to 30 (BASE)
+    expect(content).toMatch(/warmth.*\?\?\s*30/);
+  });
+
+  test('onboarding should not write warmth_score (stale column name)', () => {
+    const onboardingPath = path.resolve(APP_DIR, 'onboarding-v2.tsx');
+    if (!fs.existsSync(onboardingPath)) {
+      console.warn('onboarding-v2.tsx not found — skipping');
+      return;
+    }
+    
+    const content = fs.readFileSync(onboardingPath, 'utf-8');
+    
+    // Should NOT use the old column name
+    expect(content).not.toContain('warmth_score');
+    
+    // Should set amplitude=0 and warmth_band on contact creation
+    expect(content).toContain('amplitude: 0');
+    expect(content).toContain("warmth_band: 'cool'");
+  });
+
+  test('no file in the codebase defaults warmth to 50', () => {
+    const allDirs = [APP_DIR, PROVIDERS_DIR, HOOKS_DIR, LIB_DIR, FEATURES_DIR, REPOS_DIR];
+    const files = allDirs.flatMap(dir => getAllTsFiles(dir));
+    
+    const violations: { file: string; line: number; content: string }[] = [];
+    
+    for (const file of files) {
+      const content = fs.readFileSync(file, 'utf-8');
+      const lines = content.split('\n');
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        if (line.trim().startsWith('//') || line.trim().startsWith('*')) continue;
+        if (/warmth\s*\?\?\s*50/.test(line)) {
+          violations.push({
+            file: path.relative(path.resolve(__dirname, '..'), file),
+            line: i + 1,
+            content: line.trim(),
+          });
+        }
+      }
+    }
+    
+    if (violations.length > 0) {
+      console.error('WARMTH DEFAULT 50 VIOLATIONS:', violations);
+    }
+    expect(violations).toEqual([]);
+  });
 });
 
 describe('EWMA Formula Consistency (ios-app/backend-vercel)', () => {
