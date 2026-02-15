@@ -36,8 +36,7 @@ export async function GET(req: NextRequest) {
     if (integrationsError) {
       console.error('[Cron] Error fetching integrations:', integrationsError);
       return NextResponse.json({ 
-        error: 'Failed to fetch integrations',
-        details: integrationsError.message 
+        error: 'Failed to fetch integrations'
       }, { status: 500 });
     }
 
@@ -108,7 +107,7 @@ export async function GET(req: NextRequest) {
           workspace_id: integration.workspace_id,
           service: integration.service,
           metrics_count: 0,
-          error: error.message,
+          error: 'Ingestion failed',
         });
       }
     }

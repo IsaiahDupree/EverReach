@@ -6,6 +6,8 @@
  * - /api/cron/process-enrichment-queue — User enrichment (10/batch)
  * - /api/cron/process-imports — Contact import jobs (2/batch)
  * - /api/cron/process-contact-photos — Photo download/optimize (10/batch)
+ * - /api/cron/send-email — Email delivery queue (Resend)
+ * - /api/cron/send-sms — SMS delivery queue (Twilio)
  * 
  * Each sub-task is wrapped in its own try/catch so one failure
  * doesn't block the others.
@@ -16,7 +18,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 export async function GET(req: NextRequest) {
   try {
@@ -57,7 +59,7 @@ export async function GET(req: NextRequest) {
         results[name] = {
           status: 'error',
           duration_ms: Date.now() - stepStart,
-          error: e.message,
+          error: 'Sub-queue failed',
         };
       }
     }
@@ -66,6 +68,8 @@ export async function GET(req: NextRequest) {
     await runSubQueue('enrichment', '/api/cron/process-enrichment-queue');
     await runSubQueue('imports', '/api/cron/process-imports');
     await runSubQueue('photos', '/api/cron/process-contact-photos');
+    await runSubQueue('email', '/api/cron/send-email');
+    await runSubQueue('sms', '/api/cron/send-sms');
 
     const duration = Date.now() - startTime;
     const successCount = Object.values(results).filter((r: any) => r.status === 'success').length;

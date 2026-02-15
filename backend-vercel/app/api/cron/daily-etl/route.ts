@@ -7,6 +7,7 @@
  * 2. /api/etl/meta-ads      — Spend, impressions, clicks, ROAS, CPA
  * 3. /api/etl/mobile-acquisition — ASA + Google Play installs, trial rate
  * 4. /api/etl/openai-usage  — Token usage, costs by model/feature
+ * 5. /api/cron/sync-email-metrics — Resend email delivery metrics
  * 
  * Each sub-task is wrapped in its own try/catch so one failure
  * doesn't block the others.
@@ -62,7 +63,7 @@ export async function GET(req: NextRequest) {
         results[name] = {
           status: 'error',
           duration_ms: duration,
-          error: e.message,
+          error: 'Sub-ETL failed',
         };
       }
     }
@@ -72,6 +73,7 @@ export async function GET(req: NextRequest) {
     await runSubETL('meta_ads', '/api/etl/meta-ads');
     await runSubETL('mobile_acquisition', '/api/etl/mobile-acquisition');
     await runSubETL('openai_usage', '/api/etl/openai-usage');
+    await runSubETL('email_metrics', '/api/cron/sync-email-metrics');
 
     const duration = Date.now() - startTime;
     const successCount = Object.values(results).filter((r: any) => r.status === 'success').length;

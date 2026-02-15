@@ -46,6 +46,14 @@
     {
       "path": "/api/cron/dev-activity-digest",
       "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/run-campaigns",
+      "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/cron/aggregate-superwall",
+      "schedule": "*/15 * * * *"
     }
   ]
 }
