@@ -12,10 +12,10 @@ export interface WarmthSettings {
 }
 
 const DEFAULT_WARMTH_SETTINGS: WarmthSettings = {
-  hotThreshold: 60,
-  warmThreshold: 30,
-  coolThreshold: 10,
-  defaultWarmthForNewLeads: 50, // New leads start as "warm"
+  hotThreshold: 80,
+  warmThreshold: 60,
+  coolThreshold: 20,
+  defaultWarmthForNewLeads: 0, // New leads start as "cold" (EWMA BASE=0)
 };
 
 const [WarmthSettingsProviderInternal, useWarmthSettingsInternal] = createContextHook(() => {
