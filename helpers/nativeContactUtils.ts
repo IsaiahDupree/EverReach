@@ -110,7 +110,7 @@ export function mapContactToPerson(c: Contacts.Contact): Person | null {
       createdAt: Date.now(),
       tags: ['imported'],
       // Explicitly set warmth to undefined so PeopleProvider.addPerson 
-      // will use settings.defaultWarmthForNewLeads (default: 30)
+      // will use settings.defaultWarmthForNewLeads (default: 0)
       warmth: undefined,
     };
 

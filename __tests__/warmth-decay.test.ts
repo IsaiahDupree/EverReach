@@ -8,7 +8,7 @@
  *
  * Formula:
  *   score = BASE + amplitude × e^(-λ × daysSinceUpdate)
- *   BASE = 30
+ *   BASE = 0
  *   λ depends on warmth_mode:
  *     fast    = 0.138629  (half-life ≈ 5 days)
  *     medium  = 0.085998  (half-life ≈ 8 days)
@@ -25,7 +25,7 @@
  *   meeting = 9, call = 7, email = 5, sms = 4, note = 3
  */
 
-const BASE = 30;
+const BASE = 0;
 const LAMBDA = {
   fast: 0.138629,
   medium: 0.085998,
@@ -48,14 +48,14 @@ function getBand(score: number): string {
 
 describe('EWMA Warmth Decay', () => {
   describe('base score (no interactions)', () => {
-    test('amplitude 0 always gives base score 30', () => {
+    test('amplitude 0 always gives base score 0', () => {
       expect(computeEWMA(0, 0)).toBe(BASE);
       expect(computeEWMA(0, 30)).toBe(BASE);
       expect(computeEWMA(0, 365)).toBe(BASE);
     });
 
-    test('base score is in cool band', () => {
-      expect(getBand(BASE)).toBe('cool');
+    test('base score is in cold band', () => {
+      expect(getBand(BASE)).toBe('cold');
     });
   });
 
@@ -63,21 +63,21 @@ describe('EWMA Warmth Decay', () => {
     const amplitude = 50; // high amplitude (several interactions)
 
     test('day 0: full amplitude added to base', () => {
-      expect(computeEWMA(amplitude, 0)).toBe(80); // 30 + 50
+      expect(computeEWMA(amplitude, 0)).toBe(50); // 0 + 50
     });
 
     test('day 8: approximately half amplitude (medium mode half-life)', () => {
       const score = computeEWMA(amplitude, 8);
-      // 50 * e^(-0.086 * 8) ≈ 25.2 → 30 + 25 = 55
-      expect(score).toBeGreaterThan(50);
-      expect(score).toBeLessThan(70);
+      // 50 * e^(-0.086 * 8) ≈ 25.2 → 0 + 25 = 25
+      expect(score).toBeGreaterThan(20);
+      expect(score).toBeLessThan(35);
     });
 
     test('day 30: mostly decayed', () => {
       const score = computeEWMA(amplitude, 30);
-      // 50 * e^(-0.086 * 30) ≈ 3.8 → 30 + 4 = 34
+      // 50 * e^(-0.086 * 30) ≈ 3.8 → 0 + 4 = 4
       expect(score).toBeGreaterThanOrEqual(BASE);
-      expect(score).toBeLessThan(40);
+      expect(score).toBeLessThan(10);
     });
 
     test('day 60: negligible amplitude, near base', () => {
@@ -107,7 +107,7 @@ describe('EWMA Warmth Decay', () => {
       }
     });
 
-    test('score never drops below base (30)', () => {
+    test('score never drops below base (0)', () => {
       for (let day = 0; day <= 365; day++) {
         const score = computeEWMA(20, day);
         expect(score).toBeGreaterThanOrEqual(BASE);
@@ -145,17 +145,17 @@ describe('EWMA Warmth Decay', () => {
       expect(computeEWMA(IMPULSE.note, 0)).toBeLessThan(computeEWMA(IMPULSE.sms, 0));
     });
 
-    test('single meeting: score = 39', () => {
-      expect(computeEWMA(IMPULSE.meeting, 0)).toBe(39); // 30 + 9
+    test('single meeting: score = 9', () => {
+      expect(computeEWMA(IMPULSE.meeting, 0)).toBe(9); // 0 + 9
     });
 
-    test('single sms: score = 34', () => {
-      expect(computeEWMA(IMPULSE.sms, 0)).toBe(34); // 30 + 4
+    test('single sms: score = 4', () => {
+      expect(computeEWMA(IMPULSE.sms, 0)).toBe(4); // 0 + 4
     });
 
-    test('meeting + call + email: score = 51', () => {
+    test('meeting + call + email: score = 21', () => {
       const combined = IMPULSE.meeting + IMPULSE.call + IMPULSE.email; // 21
-      expect(computeEWMA(combined, 0)).toBe(51); // 30 + 21
+      expect(computeEWMA(combined, 0)).toBe(21); // 0 + 21
     });
   });
 
@@ -187,20 +187,20 @@ describe('EWMA Warmth Decay', () => {
   });
 
   describe('real-world scenarios', () => {
-    test('new contact: starts at base 30 (cool)', () => {
-      expect(computeEWMA(0, 0)).toBe(30);
-      expect(getBand(30)).toBe('cool');
+    test('new contact: starts at base 0 (cold)', () => {
+      expect(computeEWMA(0, 0)).toBe(0);
+      expect(getBand(0)).toBe('cold');
     });
 
-    test('5 rapid interactions (meeting+call+email+sms+note = 28): warm', () => {
-      expect(computeEWMA(28, 0)).toBe(58);
-      expect(getBand(58)).toBe('neutral');
+    test('5 rapid interactions (meeting+call+email+sms+note = 28): cool', () => {
+      expect(computeEWMA(28, 0)).toBe(28);
+      expect(getBand(28)).toBe('cool');
     });
 
-    test('heavy engagement (amp=50): hits hot, decays to cool in ~30d', () => {
-      expect(getBand(computeEWMA(50, 0))).toBe('hot');    // 80
-      expect(getBand(computeEWMA(50, 8))).toBe('neutral');  // 55
-      expect(getBand(computeEWMA(50, 30))).toBe('cool');   // ~34
+    test('heavy engagement (amp=50): hits neutral, decays to cold in ~30d', () => {
+      expect(getBand(computeEWMA(50, 0))).toBe('neutral');  // 50
+      expect(getBand(computeEWMA(50, 8))).toBe('cool');     // ~25
+      expect(getBand(computeEWMA(50, 30))).toBe('cold');    // ~4
     });
 
     test('neglected contact (amp=5, 90d ago): at base', () => {

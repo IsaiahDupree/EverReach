@@ -15,7 +15,7 @@ const DEFAULT_WARMTH_SETTINGS: WarmthSettings = {
   hotThreshold: 80,
   warmThreshold: 60,
   coolThreshold: 20,
-  defaultWarmthForNewLeads: 30, // New leads start at EWMA base (cool)
+  defaultWarmthForNewLeads: 0, // New leads start at 0 (cold) — warmth earned through interactions
 };
 
 const [WarmthSettingsProviderInternal, useWarmthSettingsInternal] = createContextHook(() => {

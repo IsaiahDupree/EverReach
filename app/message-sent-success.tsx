@@ -29,13 +29,13 @@ export default function MessageSentSuccessScreen() {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.5)).current;
   const warmthScaleAnim = useRef(new Animated.Value(0)).current;
-  const warmthSlideAnim = useRef(new Animated.Value(30)).current;
+  const warmthSlideAnim = useRef(new Animated.Value(0)).current;
   const scoreCountAnim = useRef(new Animated.Value(0)).current;
   const insets = useSafeAreaInsets();
   
   const person = people.find(p => p.id === params.personId);
   const personName = params.personName || person?.fullName || 'Contact';
-  const oldWarmthRef = useRef<number>(person?.warmth ?? 30);
+  const oldWarmthRef = useRef<number>(person?.warmth ?? 0);
   
   const [newWarmth, setNewWarmth] = useState<number>(oldWarmthRef.current);
   const [warmthIncrease, setWarmthIncrease] = useState<number>(0);

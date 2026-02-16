@@ -8,10 +8,10 @@
  * 4. Full multi-week lifecycle: create → interact → decay → interact → decay
  * 5. Different cadence modes produce different decay curves
  *
- * Formula: score = 30 + amplitude × e^(-λ × daysSinceUpdate)
+ * Formula: score = 0 + amplitude × e^(-λ × daysSinceUpdate)
  */
 
-const BASE = 30;
+const BASE = 0;
 const LAMBDA: Record<string, number> = {
   fast: 0.138629,   // half-life ~5 days
   medium: 0.085998,  // half-life ~8 days
@@ -89,13 +89,13 @@ describe('Warmth Lifecycle Simulation', () => {
       // No more interactions — decay through days 10→60
     });
 
-    test('contact starts at base score 30 (cool)', () => {
-      expect(timeline[0].score).toBe(30);
-      expect(timeline[0].band).toBe('cool');
+    test('contact starts at base score 0 (cold)', () => {
+      expect(timeline[0].score).toBe(0);
+      expect(timeline[0].band).toBe('cold');
     });
 
-    test('first meeting increases score from 30 to 39', () => {
-      expect(timeline[1].score).toBe(39);
+    test('first meeting increases score from 0 to 9', () => {
+      expect(timeline[1].score).toBe(9);
       expect(timeline[1].amplitude).toBe(9);
     });
 
@@ -118,7 +118,7 @@ describe('Warmth Lifecycle Simulation', () => {
       }
     });
 
-    test('score reaches base (30) within 60 days of last interaction', () => {
+    test('score reaches base (0) within 60 days of last interaction', () => {
       const lastAmp = timeline[3].amplitude;
       const score = computeScore(lastAmp, 50, mode);
       expect(score).toBe(BASE);
@@ -153,28 +153,28 @@ describe('Warmth Lifecycle Simulation', () => {
   });
 
   describe('message-sent flow: interaction increases warmth', () => {
-    test('sending SMS increases score from base', () => {
+    test('sending SMS increases score from base (0 to 4)', () => {
       const before = computeScore(0, 0);
+      expect(before).toBe(0);
       const newAmp = addInteraction(0, 0, 'sms');
       const after = computeScore(newAmp, 0);
-      expect(after).toBeGreaterThan(before);
-      expect(after - before).toBe(IMPULSE.sms); // +4
+      expect(after).toBe(IMPULSE.sms); // 4
     });
 
-    test('sending email increases score from base', () => {
+    test('sending email increases score from base (0 to 5)', () => {
       const before = computeScore(0, 0);
+      expect(before).toBe(0);
       const newAmp = addInteraction(0, 0, 'email');
       const after = computeScore(newAmp, 0);
-      expect(after).toBeGreaterThan(before);
-      expect(after - before).toBe(IMPULSE.email); // +5
+      expect(after).toBe(IMPULSE.email); // 5
     });
 
-    test('sending DM increases score from base', () => {
+    test('sending DM increases score from base (0 to 4)', () => {
       const before = computeScore(0, 0);
+      expect(before).toBe(0);
       const newAmp = addInteraction(0, 0, 'dm');
       const after = computeScore(newAmp, 0);
-      expect(after).toBeGreaterThan(before);
-      expect(after - before).toBe(IMPULSE.dm); // +4
+      expect(after).toBe(IMPULSE.dm); // 4
     });
 
     test('delta is visible immediately after interaction', () => {
@@ -230,7 +230,7 @@ describe('Warmth Lifecycle Simulation', () => {
   });
 
   describe('daily interaction burst then silence', () => {
-    test('5 days of daily meetings → hot, then decays to cool in ~30 days', () => {
+    test('5 days of daily meetings → cool, then decays to cold in ~30 days', () => {
       let amplitude = 0;
       const mode = 'medium';
 
@@ -240,7 +240,7 @@ describe('Warmth Lifecycle Simulation', () => {
       }
 
       const peakScore = computeScore(amplitude, 0, mode);
-      expect(peakScore).toBeGreaterThanOrEqual(60); // at least warm
+      expect(peakScore).toBeGreaterThanOrEqual(30); // accumulated amplitude with decay
 
       // Decay checkpoints
       const day7 = computeScore(amplitude, 7, mode);
@@ -294,14 +294,14 @@ describe('Warmth Lifecycle Simulation', () => {
   describe('edge cases', () => {
     test('zero amplitude never changes score regardless of time', () => {
       for (let day = 0; day <= 365; day += 30) {
-        expect(computeScore(0, day)).toBe(BASE);
+        expect(computeScore(0, day)).toBe(0);
       }
     });
 
-    test('maximum amplitude (100) starts at 100 and decays', () => {
+    test('maximum amplitude (100) starts at 100 and decays to 0', () => {
       expect(computeScore(100, 0)).toBe(100);
       expect(computeScore(100, 30)).toBeLessThan(100);
-      expect(computeScore(100, 180)).toBe(BASE);
+      expect(computeScore(100, 180)).toBe(0);
     });
 
     test('score never goes below 0 or above 100', () => {
@@ -319,7 +319,7 @@ describe('Warmth Lifecycle Simulation', () => {
     test('single note interaction barely moves the needle', () => {
       const amp = addInteraction(0, 0, 'note');
       const score = computeScore(amp, 0);
-      expect(score).toBe(33); // 30 + 3
+      expect(score).toBe(3); // 0 + 3
       // And it decays fast
       expect(computeScore(amp, 30)).toBe(BASE);
     });

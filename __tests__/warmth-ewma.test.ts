@@ -6,7 +6,7 @@
  * - GET /api/cron/daily-warmth (via computeWarmthFromAmplitude)
  * - lib/warmth-ewma.ts
  * 
- * Formula: score = base(30) + amplitude * e^(-λ * dtDays)
+ * Formula: score = base(0) + amplitude * e^(-λ * dtDays)
  * Where λ depends on mode: slow=0.040, medium=0.086, fast=0.172
  * 
  * Bands (unified EWMA standard):
@@ -25,7 +25,7 @@ const LAMBDA: Record<string, number> = {
 };
 
 function computeWarmth(amplitude: number, daysSinceUpdate: number, mode = 'medium'): { score: number; band: string } {
-  const base = 30;
+  const base = 0;
   const lambda = LAMBDA[mode] || LAMBDA.medium;
   const decay = Math.exp(-lambda * daysSinceUpdate);
   const ampNow = amplitude * decay;
@@ -61,69 +61,69 @@ function applyImpulse(currentAmplitude: number, daysSinceUpdate: number, kind: s
 
 describe('EWMA Warmth Formula', () => {
   describe('basic decay behavior', () => {
-    test('fresh contact with 0 amplitude scores base (30)', () => {
+    test('fresh contact with 0 amplitude scores base (0)', () => {
       const { score, band } = computeWarmth(0, 0);
-      expect(score).toBe(30);
-      expect(band).toBe('cool');
+      expect(score).toBe(0);
+      expect(band).toBe('cold');
     });
 
-    test('max amplitude (100) scores 100 at time 0 (base 30 + amp 100 = 130, clamped to 100)', () => {
+    test('max amplitude (100) scores 100 at time 0 (base 0 + amp 100)', () => {
       const { score } = computeWarmth(100, 0);
       expect(score).toBe(100);
     });
 
-    test('amplitude 70 at time 0 scores 100 (30 + 70)', () => {
+    test('amplitude 70 at time 0 scores 70 (0 + 70)', () => {
       const { score } = computeWarmth(70, 0);
-      expect(score).toBe(100);
+      expect(score).toBe(70);
     });
 
-    test('amplitude 50 at time 0 scores 80 (30 + 50)', () => {
+    test('amplitude 50 at time 0 scores 50 (0 + 50)', () => {
       const { score, band } = computeWarmth(50, 0);
-      expect(score).toBe(80);
-      expect(band).toBe('hot');
+      expect(score).toBe(50);
+      expect(band).toBe('neutral');
     });
 
-    test('amplitude 30 at time 0 scores 60 (30 + 30)', () => {
+    test('amplitude 30 at time 0 scores 30 (0 + 30)', () => {
       const { score, band } = computeWarmth(30, 0);
-      expect(score).toBe(60);
-      expect(band).toBe('warm');
+      expect(score).toBe(30);
+      expect(band).toBe('cool');
     });
   });
 
   describe('medium mode decay over time (amplitude=50)', () => {
     // medium λ = 0.085998, half-life ≈ 8.1 days
-    test('day 0: score = 80 (hot)', () => {
+    test('day 0: score = 50 (neutral)', () => {
       const { score, band } = computeWarmth(50, 0);
-      expect(score).toBe(80);
-      expect(band).toBe('hot');
-    });
-
-    test('day 8 (half-life): amplitude halved, score ≈ 55', () => {
-      const { score, band } = computeWarmth(50, 8);
-      // 50 * e^(-0.086 * 8) = 50 * 0.503 = 25.15 → 30 + 25 = 55
-      expect(score).toBeGreaterThanOrEqual(53);
-      expect(score).toBeLessThanOrEqual(57);
+      expect(score).toBe(50);
       expect(band).toBe('neutral');
     });
 
-    test('day 14: score drops to ~40s', () => {
+    test('day 8 (half-life): amplitude halved, score ≈ 25', () => {
+      const { score, band } = computeWarmth(50, 8);
+      // 50 * e^(-0.086 * 8) = 50 * 0.503 = 25.15 → 0 + 25 = 25
+      expect(score).toBeGreaterThanOrEqual(23);
+      expect(score).toBeLessThanOrEqual(27);
+      expect(band).toBe('cool');
+    });
+
+    test('day 14: score drops to ~15', () => {
       const { score } = computeWarmth(50, 14);
-      // 50 * e^(-0.086 * 14) = 50 * 0.299 = 14.96 → 30 + 15 = 45
-      expect(score).toBeGreaterThanOrEqual(43);
-      expect(score).toBeLessThanOrEqual(47);
+      // 50 * e^(-0.086 * 14) = 50 * 0.299 = 14.96 → 0 + 15 = 15
+      expect(score).toBeGreaterThanOrEqual(13);
+      expect(score).toBeLessThanOrEqual(17);
     });
 
     test('day 30: score approaches base', () => {
       const { score } = computeWarmth(50, 30);
-      // 50 * e^(-0.086 * 30) = 50 * 0.075 = 3.77 → 30 + 4 = 34
-      expect(score).toBeGreaterThanOrEqual(32);
-      expect(score).toBeLessThanOrEqual(36);
+      // 50 * e^(-0.086 * 30) = 50 * 0.075 = 3.77 → 0 + 4 = 4
+      expect(score).toBeGreaterThanOrEqual(2);
+      expect(score).toBeLessThanOrEqual(6);
     });
 
-    test('day 90: score = base (30)', () => {
+    test('day 90: score = base (0)', () => {
       const { score } = computeWarmth(50, 90);
-      // 50 * e^(-0.086 * 90) = 50 * 0.00044 ≈ 0 → 30 + 0 = 30
-      expect(score).toBe(30);
+      // 50 * e^(-0.086 * 90) = 50 * 0.00044 ≈ 0 → 0 + 0 = 0
+      expect(score).toBe(0);
     });
   });
 
@@ -147,11 +147,11 @@ describe('EWMA Warmth Formula', () => {
       }
     });
 
-    test('score never drops below base (30) for any amplitude/time', () => {
+    test('score never drops below base (0) for any amplitude/time', () => {
       for (let amp = 0; amp <= 100; amp += 5) {
         for (let day = 0; day <= 365; day += 10) {
           const { score } = computeWarmth(amp, day);
-          expect(score).toBeGreaterThanOrEqual(30);
+          expect(score).toBeGreaterThanOrEqual(0);
         }
       }
     });
@@ -170,24 +170,24 @@ describe('EWMA Warmth Formula', () => {
       expect(slow.score).toBeGreaterThan(medium.score);
     });
 
-    test('all modes converge to base (30) after enough time', () => {
+    test('all modes converge to base (0) after enough time', () => {
       for (const mode of ['slow', 'medium', 'fast']) {
         const { score } = computeWarmth(70, 365, mode);
-        expect(score).toBe(30);
+        expect(score).toBe(0);
       }
     });
 
     test('fast mode: half-life ~4 days', () => {
-      // At half-life, amplitude halves: 50 * 0.5 = 25 → 30 + 25 = 55
+      // At half-life, amplitude halves: 50 * 0.5 = 25 → 0 + 25 = 25
       const { score } = computeWarmth(50, 4, 'fast');
-      expect(score).toBeGreaterThanOrEqual(53);
-      expect(score).toBeLessThanOrEqual(57);
+      expect(score).toBeGreaterThanOrEqual(23);
+      expect(score).toBeLessThanOrEqual(27);
     });
 
     test('slow mode: half-life ~17 days', () => {
       const { score } = computeWarmth(50, 17, 'slow');
-      expect(score).toBeGreaterThanOrEqual(53);
-      expect(score).toBeLessThanOrEqual(57);
+      expect(score).toBeGreaterThanOrEqual(23);
+      expect(score).toBeLessThanOrEqual(27);
     });
   });
 
@@ -227,46 +227,44 @@ describe('EWMA Warmth Formula', () => {
 
   describe('band thresholds (unified EWMA standard)', () => {
     test('hot: score >= 80', () => {
-      expect(computeWarmth(50, 0).band).toBe('hot'); // 30 + 50 = 80
-      expect(computeWarmth(70, 0).band).toBe('hot'); // 30 + 70 = 100
+      expect(computeWarmth(80, 0).band).toBe('hot'); // 0 + 80 = 80
+      expect(computeWarmth(100, 0).band).toBe('hot'); // 0 + 100 = 100
     });
 
     test('warm: 60 <= score < 80', () => {
-      expect(computeWarmth(30, 0).band).toBe('warm'); // 30 + 30 = 60
-      expect(computeWarmth(49, 0).band).toBe('warm'); // 30 + 49 = 79
+      expect(computeWarmth(60, 0).band).toBe('warm'); // 0 + 60 = 60
+      expect(computeWarmth(79, 0).band).toBe('warm'); // 0 + 79 = 79
     });
 
     test('neutral: 40 <= score < 60', () => {
-      expect(computeWarmth(10, 0).band).toBe('neutral'); // 30 + 10 = 40
-      expect(computeWarmth(29, 0).band).toBe('neutral'); // 30 + 29 = 59
+      expect(computeWarmth(40, 0).band).toBe('neutral'); // 0 + 40 = 40
+      expect(computeWarmth(59, 0).band).toBe('neutral'); // 0 + 59 = 59
     });
 
     test('cool: 20 <= score < 40', () => {
-      expect(computeWarmth(0, 0).band).toBe('cool'); // 30 + 0 = 30
-      // To get score 20, need negative amp contribution... but base is 30
-      // So cool band only from contacts with 20-39 from previous scoring
+      expect(computeWarmth(20, 0).band).toBe('cool'); // 0 + 20 = 20
+      expect(computeWarmth(39, 0).band).toBe('cool'); // 0 + 39 = 39
     });
 
     test('cold: score < 20', () => {
-      // With base=30, EWMA can never go below 30 for any amplitude >= 0
-      // cold only applies to manually set scores or legacy data
+      // With base=0, contacts decay all the way to 0
       const { score } = computeWarmth(0, 1000);
-      expect(score).toBe(30); // Never goes below base
+      expect(score).toBe(0); // Decays to 0
     });
   });
 
   describe('real-world scenarios', () => {
-    test('new contact: starts at base 30 (cool) with 0 amplitude', () => {
+    test('new contact: starts at base 0 (cold) with 0 amplitude', () => {
       const { score, band } = computeWarmth(0, 0);
-      expect(score).toBe(30);
-      expect(band).toBe('cool');
+      expect(score).toBe(0);
+      expect(band).toBe('cold');
     });
 
-    test('contact after first meeting: score jumps to 39 (cool)', () => {
+    test('contact after first meeting: score jumps to 9 (cold)', () => {
       // Meeting impulse adds 9 to amplitude
       const amp = applyImpulse(0, 0, 'meeting');
       const { score } = computeWarmth(amp, 0);
-      expect(score).toBe(39); // 30 + 9
+      expect(score).toBe(9); // 0 + 9
     });
 
     test('active contact with daily emails for a week', () => {
@@ -276,15 +274,15 @@ describe('EWMA Warmth Formula', () => {
         amp = applyImpulse(amp, day === 0 ? 0 : 1, 'email');
       }
       const { score } = computeWarmth(amp, 0);
-      // Accumulated amplitude with decay: should be significant
-      expect(score).toBeGreaterThan(50);
+      // Accumulated amplitude with decay: ~27 with BASE=0
+      expect(score).toBeGreaterThan(20);
     });
 
     test('neglected contact: score stabilizes at base after months', () => {
       // Had a meeting (amp=9) 90 days ago
       const { score, band } = computeWarmth(9, 90);
-      expect(score).toBe(30);
-      expect(band).toBe('cool');
+      expect(score).toBe(0);
+      expect(band).toBe('cold');
     });
   });
 });

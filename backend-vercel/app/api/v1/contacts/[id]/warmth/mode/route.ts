@@ -95,7 +95,7 @@ export async function PATCH(
     const scoreBefore = contact.warmth ?? null;
 
     // Preserve continuity: compute current score at change time using previous mode & anchor, and set anchor to now
-    const anchorScore = (contact as any).warmth_anchor_score ?? contact.warmth ?? 30;
+    const anchorScore = (contact as any).warmth_anchor_score ?? contact.warmth ?? 0;
     const anchorAt = (contact as any).warmth_anchor_at ?? contact.last_interaction_at ?? new Date().toISOString();
     const prevMode = (contact.warmth_mode ?? 'medium') as any;
     const currentAtChange = warmthScoreFromAnchor(anchorScore, anchorAt, prevMode);

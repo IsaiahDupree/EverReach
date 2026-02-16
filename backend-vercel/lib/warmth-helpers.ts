@@ -1,7 +1,7 @@
 import { getWarmthBand, warmthScoreFromAnchor, WarmthMode } from './warmth-ewma';
 
 export function withCurrentWarmth(contact: any) {
-  const anchorScore = contact.warmth_anchor_score ?? contact.warmth ?? 30;
+  const anchorScore = contact.warmth_anchor_score ?? contact.warmth ?? 0;
   const anchorAt = contact.warmth_anchor_at ?? contact.last_interaction_at ?? contact.updated_at ?? new Date().toISOString();
   const modeInput: WarmthMode = contact.warmth_mode ?? 'medium';
   const warmth_score_current = warmthScoreFromAnchor(anchorScore, anchorAt, modeInput);

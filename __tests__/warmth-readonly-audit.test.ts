@@ -152,7 +152,7 @@ describe('Warmth Read-Only Audit', () => {
     expect(content).not.toMatch(/supabase.*\.from\(['"]contacts['"]\).*\.update\(\{[^}]*warmth\s*:/s);
   });
 
-  test('WarmthProvider default score should be 30 (EWMA BASE)', () => {
+  test('WarmthProvider default score should be 0 (EWMA BASE)', () => {
     const warmthProviderPath = path.resolve(PROVIDERS_DIR, 'WarmthProvider.tsx');
     if (!fs.existsSync(warmthProviderPath)) {
       console.warn('WarmthProvider.tsx not found — skipping');
@@ -161,11 +161,12 @@ describe('Warmth Read-Only Audit', () => {
     
     const content = fs.readFileSync(warmthProviderPath, 'utf-8');
     
-    // Should NOT default to 50
+    // Should NOT default to 50 or 30
     expect(content).not.toMatch(/warmth\s*\?\?\s*50/);
+    expect(content).not.toMatch(/warmth\s*\?\?\s*30/);
     
-    // Should default to 30 (BASE)
-    expect(content).toMatch(/warmth\s*\?\?\s*30/);
+    // Should default to 0 (BASE)
+    expect(content).toMatch(/warmth\s*\?\?\s*0/);
   });
 
   test('contact detail page should not include warmth in PATCH payload', () => {
@@ -205,7 +206,7 @@ describe('Warmth Read-Only Audit', () => {
     expect(warmthAssignments).toEqual([]);
   });
 
-  test('SupabaseContactsRepo should default warmth to 30 (not 50)', () => {
+  test('SupabaseContactsRepo should default warmth to 0 (not 50 or 30)', () => {
     const repoPath = path.resolve(__dirname, '../repos/SupabaseContactsRepo.ts');
     if (!fs.existsSync(repoPath)) {
       console.warn('SupabaseContactsRepo.ts not found — skipping');
@@ -214,11 +215,12 @@ describe('Warmth Read-Only Audit', () => {
     
     const content = fs.readFileSync(repoPath, 'utf-8');
     
-    // Should NOT default to 50
+    // Should NOT default to 50 or 30
     expect(content).not.toMatch(/warmth.*\?\?\s*50/);
+    expect(content).not.toMatch(/warmth.*\?\?\s*30/);
     
-    // Should default to 30 (BASE)
-    expect(content).toMatch(/warmth.*\?\?\s*30/);
+    // Should default to 0 (BASE)
+    expect(content).toMatch(/warmth.*\?\?\s*0/);
   });
 
   test('onboarding should not write warmth_score (stale column name)', () => {
@@ -235,7 +237,7 @@ describe('Warmth Read-Only Audit', () => {
     
     // Should set amplitude=0 and warmth_band on contact creation
     expect(content).toContain('amplitude: 0');
-    expect(content).toContain("warmth_band: 'cool'");
+    expect(content).toContain("warmth_band: 'cold'");
   });
 
   test('no file in the codebase defaults warmth to 50', () => {
