@@ -67,9 +67,9 @@ export default function WarmthSettingsScreen() {
     // Reset to defaults
     await resetToDefaults();
     setHotThreshold('60');
-    setWarmThreshold('30');
-    setCoolThreshold('10');
-    setDefaultWarmth('50');
+    setWarmThreshold('60');
+    setCoolThreshold('20');
+    setDefaultWarmth('0');
     console.log('Reset Complete: Settings have been reset to defaults.');
   };
 

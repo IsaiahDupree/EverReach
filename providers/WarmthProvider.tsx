@@ -111,7 +111,7 @@ export function WarmthProvider({ children }: { children: React.ReactNode }) {
     }
 
     // Default fallback for unknown contacts
-    return createWarmthData(contactId, 30); // Default to EWMA base (cool)
+    return createWarmthData(contactId, 0); // Default to EWMA base (cold)
   }, [warmthMap]);
 
   // Set/update warmth data for a contact
@@ -165,7 +165,7 @@ export function WarmthProvider({ children }: { children: React.ReactNode }) {
       const newMap = new Map<string, WarmthData>();
 
       contacts.forEach(contact => {
-        const score = contact.warmth ?? 30; // Default to EWMA base (cool)
+        const score = contact.warmth ?? 0; // Default to EWMA base (cold)
         newMap.set(contact.id, createWarmthData(contact.id, score, contact.last_touch_at));
       });
 

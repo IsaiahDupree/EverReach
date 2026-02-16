@@ -62,7 +62,7 @@ export function WatchStatusToggle({
           icon: AlertTriangle,
           color: '#FF6B6B',
           bgColor: '#FFE6E6',
-          description: 'Alert when warmth < 30'
+          description: 'Alert when warmth drops low'
         };
       case 'watch':
         return {

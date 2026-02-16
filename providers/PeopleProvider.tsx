@@ -26,7 +26,7 @@ export const [PeopleProvider, usePeople] = createContextHook<PeopleContextType>(
   const queryClient = useQueryClient();
   const warmthSettings = useWarmthSettings();
   const { refreshAllWarmth } = useWarmth();
-  const settings = warmthSettings?.settings || { defaultWarmthForNewLeads: 50, hotThreshold: 60, warmThreshold: 30, coolThreshold: 10 };
+  const settings = warmthSettings?.settings || { defaultWarmthForNewLeads: 0, hotThreshold: 80, warmThreshold: 60, coolThreshold: 20 };
   const getWarmthStatus = warmthSettings?.getWarmthStatus || ((score: number) => 'cold' as const);
   const authContext = useAuth();
   const { user, session } = authContext || { user: null, session: null };
