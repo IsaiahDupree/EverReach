@@ -30,7 +30,7 @@ export function WatchStatusToggle({ contactId, currentStatus = 'none' }: WatchSt
     { 
       value: 'important', 
       label: 'Important', 
-      description: 'Alert at warmth 30',
+      description: 'Alert when warmth drops low',
       icon: <AlertCircle className="h-4 w-4" />,
     },
     { 

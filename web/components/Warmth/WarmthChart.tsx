@@ -51,10 +51,11 @@ export function WarmthChart({ data, height = 200, className }: WarmthChartProps)
   // Get color based on latest score
   const latestScore = data[data.length - 1]?.score ?? 0
   const getColor = () => {
-    if (latestScore >= 70) return '#14b8a6' // teal
-    if (latestScore >= 40) return '#fbbf24' // yellow
-    if (latestScore >= 20) return '#60a5fa' // blue
-    return '#ef4444' // red
+    if (latestScore >= 80) return '#14b8a6' // teal (hot)
+    if (latestScore >= 60) return '#fbbf24' // yellow (warm)
+    if (latestScore >= 40) return '#fb923c' // orange (neutral)
+    if (latestScore >= 20) return '#60a5fa' // blue (cool)
+    return '#ef4444' // red (cold)
   }
 
   return (

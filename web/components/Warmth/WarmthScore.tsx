@@ -34,8 +34,9 @@ export function WarmthScore({
   // Color based on warmth
   const getStrokeColor = () => {
     if (warmth == null) return '#9ca3af' // gray
-    if (warmth >= 70) return '#14b8a6' // teal (hot)
-    if (warmth >= 40) return '#fbbf24' // yellow (warm)
+    if (warmth >= 80) return '#14b8a6' // teal (hot)
+    if (warmth >= 60) return '#fbbf24' // yellow (warm)
+    if (warmth >= 40) return '#fb923c' // orange (neutral)
     if (warmth >= 20) return '#60a5fa' // blue (cool)
     return '#ef4444' // red (cold)
   }

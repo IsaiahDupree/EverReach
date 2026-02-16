@@ -118,8 +118,9 @@ export function ContactAnalysisPanel({ contactId, className }: ContactAnalysisPa
               <span
                 className={cn(
                   'text-2xl font-bold',
-                  health.score >= 70 ? 'text-green-600' :
-                  health.score >= 40 ? 'text-yellow-600' :
+                  health.score >= 80 ? 'text-green-600' :
+                  health.score >= 60 ? 'text-yellow-600' :
+                  health.score >= 40 ? 'text-orange-600' :
                   'text-red-600'
                 )}
               >
@@ -144,8 +145,9 @@ export function ContactAnalysisPanel({ contactId, className }: ContactAnalysisPa
                       <div
                         className={cn(
                           'h-full rounded-full',
-                          numValue >= 70 ? 'bg-green-500' :
-                          numValue >= 40 ? 'bg-yellow-500' :
+                          numValue >= 80 ? 'bg-green-500' :
+                          numValue >= 60 ? 'bg-yellow-500' :
+                          numValue >= 40 ? 'bg-orange-500' :
                           'bg-red-500'
                         )}
                         style={{ width: `${numValue}%` }}

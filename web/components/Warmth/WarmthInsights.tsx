@@ -29,7 +29,7 @@ export function WarmthInsights({
       }
     }
     
-    if (score >= 70) {
+    if (score >= 80) {
       return {
         icon: CheckCircle,
         color: 'text-teal-600',

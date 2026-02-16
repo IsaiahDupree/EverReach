@@ -236,10 +236,11 @@ function ContactCard({
         <div className="mt-2">
           <span className={cn(
             'text-xs px-2 py-0.5 rounded font-medium capitalize',
-            contact.contact.warmth_band === 'hot' && 'bg-red-100 text-red-700',
-            contact.contact.warmth_band === 'warm' && 'bg-orange-100 text-orange-700',
-            contact.contact.warmth_band === 'cooling' && 'bg-yellow-100 text-yellow-700',
-            contact.contact.warmth_band === 'cold' && 'bg-blue-100 text-blue-700'
+            contact.contact.warmth_band === 'hot' && 'bg-teal-100 text-teal-700',
+            contact.contact.warmth_band === 'warm' && 'bg-yellow-100 text-yellow-700',
+            contact.contact.warmth_band === 'neutral' && 'bg-orange-100 text-orange-700',
+            contact.contact.warmth_band === 'cool' && 'bg-blue-100 text-blue-700',
+            contact.contact.warmth_band === 'cold' && 'bg-red-100 text-red-700'
           )}>
             {contact.contact.warmth_band}
           </span>

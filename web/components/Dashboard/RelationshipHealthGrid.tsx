@@ -21,8 +21,9 @@ export function RelationshipHealthGrid() {
   }
 
   // Calculate counts by warmth level
-  const hotContacts = contacts?.filter((c) => (c.warmth ?? 0) >= 70) || []
-  const warmContacts = contacts?.filter((c) => (c.warmth ?? 0) >= 40 && (c.warmth ?? 0) < 70) || []
+  const hotContacts = contacts?.filter((c) => (c.warmth ?? 0) >= 80) || []
+  const warmContacts = contacts?.filter((c) => (c.warmth ?? 0) >= 60 && (c.warmth ?? 0) < 80) || []
+  const neutralContacts = contacts?.filter((c) => (c.warmth ?? 0) >= 40 && (c.warmth ?? 0) < 60) || []
   const coolContacts = contacts?.filter((c) => (c.warmth ?? 0) >= 20 && (c.warmth ?? 0) < 40) || []
   const coldContacts = contacts?.filter((c) => (c.warmth ?? 0) < 20) || []
 
