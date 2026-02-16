@@ -58,7 +58,7 @@ export async function updateAmplitudeForContact(supabase: any, contactId: string
 }
 
 export function computeWarmthFromAmplitude(prevAmp: number, lastUpdatedAt: string | null, nowIso?: string, mode: WarmthMode = DEFAULT_MODE) {
-  const base = 30;
+  const base = WMIN;  // decays to 0 with no interactions
   const lambda = LAMBDA_PER_DAY[mode];
   const now = nowIso ? new Date(nowIso) : new Date();
   const nowMs = now.getTime();
