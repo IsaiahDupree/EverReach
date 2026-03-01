@@ -673,6 +673,63 @@ vercel --prod
 
 ---
 
+## EverReach Warmth System Architecture (Updated Feb 2026)
+
+### EWMA Formula
+
+```
+score = BASE + amplitude × e^(-λ × daysSinceLastUpdate)
+```
+
+| Parameter | Value |
+|-----------|-------|
+| **BASE** | 0 (contacts decay to cold with no interaction) |
+| **λ (fast)** | 0.171996 |
+| **λ (medium)** | 0.085998 |
+| **λ (slow)** | 0.040132 |
+
+### Impulse Weights
+
+| Interaction | Weight |
+|-------------|--------|
+| Meeting | 9 |
+| Call | 7 |
+| Email | 5 |
+| SMS | 4 |
+| Note | 3 |
+
+### Warmth Bands (EWMA Standard)
+
+| Band | Threshold | Color (Tailwind) | Hex |
+|------|-----------|-------------------|-----|
+| Hot | ≥ 80 | `bg-teal-500` | `#14b8a6` |
+| Warm | ≥ 60 | `bg-yellow-400` | `#fbbf24` |
+| Neutral | ≥ 40 | `bg-orange-300` | `#fb923c` |
+| Cool | ≥ 20 | `bg-blue-300` | `#60a5fa` |
+| Cold | < 20 | `bg-red-500` | `#ef4444` |
+
+### Key Behaviors
+
+- **New contacts** start at warmth=0, amplitude=0, band='cold'
+- **Daily cron** recomputes all contacts at midnight UTC
+- **Frontend** is read-only — never writes warmth directly; calls backend recompute API
+- **112 warmth tests** across 5 suites validate the system
+
+### Web Dashboard Files (backend/web/)
+
+| File | Purpose |
+|------|---------|
+| `lib/utils.ts` | `getWarmthColor()` / `getWarmthLabel()` |
+| `components/Warmth/WarmthScore.tsx` | Circular score widget |
+| `components/Warmth/WarmthBadge.tsx` | Inline badge |
+| `components/Warmth/WarmthChart.tsx` | Sparkline chart |
+| `components/Warmth/WarmthInsights.tsx` | Relationship health insight card |
+| `components/Dashboard/RelationshipHealthGrid.tsx` | Band distribution grid |
+| `components/Pipelines/KanbanBoard.tsx` | Pipeline warmth badges |
+| `components/Agent/ContactAnalysisPanel.tsx` | AI analysis health bars |
+
+---
+
 ## Next Steps
 
 1. **Approve this PRD**

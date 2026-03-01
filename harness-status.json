@@ -1,0 +1,16 @@
+{
+  "projectId": "everreach-appkit",
+  "projectRoot": "/Users/isaiahdupree/Documents/Software/EverReachOrganized/app-kit",
+  "lastUpdated": "2026-02-20T17:52:18.851Z",
+  "sessionType": "error",
+  "status": "max_errors",
+  "stats": {
+    "total": 300,
+    "passing": 135,
+    "pending": 165,
+    "percentComplete": "45.0"
+  },
+  "pid": 96196,
+  "message": "Stopped after 3 consecutive errors",
+  "lastError": "rate_limit"
+}
