@@ -254,3 +254,44 @@ export async function restorePurchases(): Promise<any | null> {
     return null;
   }
 }
+
+/**
+ * Set subscriber attributes for better attribution and matching.
+ * Key attributes:
+ *   $email         — used by RC to enrich Meta CAPI events
+ *   $displayName   — shown in RC dashboard
+ *   $fbClickId     — raw Meta fbclid (RC forwards to Meta automatically)
+ *   $fbAnonId      — Meta anonymous device ID (improves match rate)
+ *   $phoneNumber   — phone (RC formats as E.164 before sending)
+ */
+export async function setAttributes(attrs: Record<string, string | null>): Promise<boolean> {
+  try {
+    if (Platform.OS === 'web') return false;
+    if (Constants.appOwnership === 'expo') return false;
+    const Purchases = await loadPurchases();
+    if (!Purchases) return false;
+    await Purchases.setAttributes(attrs);
+    if (__DEV__) {
+      console.log('[RevenueCat] Attributes set:', Object.keys(attrs));
+    }
+    return true;
+  } catch (e) {
+    console.warn('[RevenueCat] setAttributes error:', (e as any)?.message || e);
+    return false;
+  }
+}
+
+/**
+ * Get the Meta anonymous device ID from the native Facebook SDK.
+ * Returns null if the SDK is not available (requires native build + Client Token).
+ */
+export async function getFbAnonId(): Promise<string | null> {
+  try {
+    if (Platform.OS === 'web') return null;
+    const fbsdk = require('react-native-fbsdk-next');
+    const anonId = await fbsdk.AppEventsLogger.getAnonymousID();
+    return anonId || null;
+  } catch {
+    return null;
+  }
+}

@@ -24,7 +24,8 @@ import type { Session, User } from '@supabase/supabase-js';
 import { identifyUser, resetPostHog } from '@/lib/posthog';
 import { getLocales } from 'expo-localization';
 import { SubscriptionRepo } from '@/repos/SubscriptionRepo';
-import { logIn as revenueCatLogIn, logOut as revenueCatLogOut } from '@/lib/revenuecat';
+import { logIn as revenueCatLogIn, logOut as revenueCatLogOut, setAttributes as rcSetAttributes } from '@/lib/revenuecat';
+import { identifyMetaUser, resetMetaUser } from '@/lib/metaAppEvents';
 
 // Complete auth session for WebBrowser (native only)
 if (Platform.OS !== 'web') {
@@ -137,7 +138,26 @@ export const [AuthProvider, useAuth] = createContextHook<AuthContextValue>(() =>
                 locale: getLocales()[0]?.languageTag || 'en',
                 platform: Platform.OS,
               }).catch(err => console.error('[Auth] Failed to identify user:', err));
-              
+
+              // Identify Meta with user ID + email for CAPI event matching
+              // (persists hashed email to AsyncStorage for all future events)
+              const userEmail = newSession.user.email;
+              const userName = newSession.user.user_metadata?.full_name as string | undefined;
+              identifyMetaUser(newSession.user.id, userEmail, undefined, {
+                firstName: userName?.split(' ')[0],
+                lastName: userName?.split(' ').slice(1).join(' ') || undefined,
+              }).catch(err => console.error('[Auth] Failed to identify Meta user:', err));
+
+              // Set RC subscriber attributes for Meta attribution
+              // $email → RC uses this to enrich webhook CAPI events
+              // $displayName → shown in RC dashboard
+              if (userEmail) {
+                rcSetAttributes({
+                  '$email': userEmail,
+                  ...(userName ? { '$displayName': userName } : {}),
+                }).catch(err => console.error('[Auth] Failed to set RC attributes:', err));
+              }
+
               // CRITICAL: Identify RevenueCat with the authenticated user ID
               // This ensures subscriptions are tied to THIS user account, not the device/Apple ID
               console.log('[Auth] 🔐 Identifying RevenueCat with user ID:', newSession.user.id);
@@ -168,7 +188,10 @@ export const [AuthProvider, useAuth] = createContextHook<AuthContextValue>(() =>
 
           case 'SIGNED_OUT':
             console.log('[Auth] 👋 User signed out');
-            
+
+            // Clear Meta user identity (removes hashed email/phone from future events)
+            resetMetaUser();
+
             // CRITICAL: Log out RevenueCat to prevent subscription leakage
             // This ensures the next user who signs in doesn't get access to previous user's subscription
             console.log('[Auth] 🔐 Logging out RevenueCat...');

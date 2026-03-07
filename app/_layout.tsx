@@ -58,7 +58,7 @@ import { initializeEnvelope } from "@/lib/eventEnvelope";
 import { initializeMarketingFunnel } from "@/lib/marketingFunnel";
 import { initializePerformanceMonitoring } from "@/lib/performanceMonitor";
 import { initializePostHog, identifyUser } from "@/lib/posthog";
-import { initializeMetaAppEvents, identifyMetaUser, resetMetaUser, captureClickId, setTrackingConsent } from '@/lib/metaAppEvents';
+import { initializeMetaAppEvents, identifyMetaUser, resetMetaUser, captureClickId, setTrackingConsent, syncMetaAttributesToRc } from '@/lib/metaAppEvents';
 import { requestTrackingPermissionsAsync } from 'expo-tracking-transparency';
 import { supabase } from "@/lib/supabase";
 import * as Linking from "expo-linking";
@@ -114,6 +114,9 @@ initializePostHog();
   }
   // Initialize Meta AFTER consent is resolved
   initializeMetaAppEvents();
+  // Sync $fbAnonId from native SDK into RC subscriber attributes
+  // (non-blocking — improves Meta match rate for non-click-attributed users)
+  syncMetaAttributesToRc().catch(() => {});
 })();
 
 // Capture fbclid from deep links (Facebook ad attribution)

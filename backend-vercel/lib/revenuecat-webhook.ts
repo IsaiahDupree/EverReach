@@ -57,6 +57,9 @@ export interface RevenueCatWebhookEvent {
     transaction_id?: string;
     purchase_token?: string;
     cancellation_date_ms?: number;
+    price?: number;
+    price_in_purchased_currency?: number;
+    currency?: string;
   };
 }
 
@@ -292,6 +295,8 @@ function mapEventToNormalized(event: RevenueCatWebhookEvent['event'], status: Su
     purchased_at_ms: event.purchased_at_ms,
     expiration_at_ms: event.expiration_at_ms,
     country_code: event.country_code || null,
+    price_usd: event.price ?? undefined,
+    currency: event.currency ?? undefined,
   };
 }
 
@@ -360,6 +365,13 @@ export async function processWebhookEvent(
   // Analytics fan-out (guarded by feature flags)
   try {
     const normalized = mapEventToNormalized(event, status);
+    // Enrich with email for better Meta CAPI user matching
+    try {
+      const { data: { user: authUser } } = await supabase.auth.admin.getUserById(userId);
+      if (authUser?.email) normalized.email = authUser.email;
+    } catch {
+      // Non-fatal — proceed without email
+    }
     await emitAll(normalized);
   } catch (e: any) {
     console.error('[RevenueCat] Analytics emit failed:', e?.message || e);

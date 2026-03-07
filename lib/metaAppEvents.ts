@@ -27,6 +27,7 @@ import Constants from 'expo-constants';
 import * as Crypto from 'expo-crypto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '@/lib/supabase';
+import { setAttributes as rcSetAttributes, getFbAnonId } from '@/lib/revenuecat';
 
 // ============================================================================
 // Configuration
@@ -786,16 +787,41 @@ export function captureClickId(url: string): void {
     const urlObj = new URL(url);
     const fbclid = urlObj.searchParams.get('fbclid');
     if (fbclid) {
-      // fbc format: fb.1.{timestamp}.{fbclid}
-      _fbc = `fb.1.${Date.now()}.${fbclid}`;
+      const now = Date.now();
+      // fbc format: fb.1.{timestamp}.{fbclid} — used by Meta CAPI
+      _fbc = `fb.1.${now}.${fbclid}`;
       AsyncStorage.multiSet([
         [STORAGE_KEYS.fbc, _fbc],
-        [STORAGE_KEYS.fbc_timestamp, Date.now().toString()],
+        [STORAGE_KEYS.fbc_timestamp, now.toString()],
       ]).catch(() => {});
-      console.log('[MetaAppEvents] Click ID captured from URL');
+
+      // Store raw fbclid as RC $fbClickId — RevenueCat forwards this to Meta
+      // automatically for attribution linking (ad click → subscriber)
+      rcSetAttributes({ '$fbClickId': fbclid }).catch(() => {});
+
+      console.log('[MetaAppEvents] Click ID captured and stored in RC');
     }
   } catch {
     // URL parsing failed — ignore
+  }
+}
+
+/**
+ * Sync Meta SDK device identifiers into RevenueCat subscriber attributes.
+ * Call once after both RC and Meta SDK are initialized (after ATT prompt resolves).
+ * Sets $fbAnonId so RC can improve Meta match rate even without a click ID.
+ */
+export async function syncMetaAttributesToRc(): Promise<void> {
+  try {
+    const fbAnonId = await getFbAnonId();
+    if (fbAnonId) {
+      await rcSetAttributes({ '$fbAnonId': fbAnonId });
+      if (__DEV__) {
+        console.log('[MetaAppEvents] $fbAnonId synced to RC:', fbAnonId.substring(0, 8) + '...');
+      }
+    }
+  } catch (e) {
+    if (__DEV__) console.warn('[MetaAppEvents] syncMetaAttributesToRc failed:', e);
   }
 }
 

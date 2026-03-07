@@ -30,6 +30,9 @@ export interface NormalizedRcEvent {
   purchased_at_ms: number;
   expiration_at_ms: number;
   country_code: string | null;
+  price_usd?: number;
+  currency?: string;
+  email?: string;
 }
 
 export interface Emitter {

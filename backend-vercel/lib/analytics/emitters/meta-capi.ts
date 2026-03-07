@@ -30,7 +30,8 @@ function mapToMetaEvent(event: NormalizedRcEvent): {
       return {
         event_name: 'Purchase',
         custom_data: {
-          currency: 'USD',
+          value: event.price_usd,
+          currency: event.currency || 'USD',
           content_name: event.product_id,
           content_type: 'subscription',
         },
@@ -40,8 +41,9 @@ function mapToMetaEvent(event: NormalizedRcEvent): {
       return {
         event_name: 'StartTrial',
         custom_data: {
-          predicted_ltv: 0,
-          currency: 'USD',
+          value: 0,
+          predicted_ltv: event.price_usd || 0,
+          currency: event.currency || 'USD',
           content_name: event.product_id,
         },
       };
@@ -50,7 +52,8 @@ function mapToMetaEvent(event: NormalizedRcEvent): {
       return {
         event_name: 'Purchase',
         custom_data: {
-          currency: 'USD',
+          value: event.price_usd,
+          currency: event.currency || 'USD',
           content_name: event.product_id,
           content_type: 'subscription_renewal',
         },
@@ -120,14 +123,18 @@ function sha256(value: string): string {
 
 /**
  * Build user_data for the Conversions API event.
- * On the server side we only have user_id — no email/phone unless
- * we look it up from Supabase. We rely on external_id matching.
+ * external_id is always sent. em (email hash) is added when available
+ * from the Supabase auth lookup done in processWebhookEvent.
  */
 function buildUserData(event: NormalizedRcEvent) {
-  return {
+  const userData: Record<string, any> = {
     external_id: [sha256(event.user_id)],
     client_user_agent: 'EverReach-Server/1.0',
   };
+  if (event.email) {
+    userData.em = [sha256(event.email)];
+  }
+  return userData;
 }
 
 /**
