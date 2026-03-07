@@ -1,6 +1,6 @@
 import { jwtVerify, decodeProtectedHeader, decodeJwt } from 'jose';
 
-export type User = { id: string } | null;
+export type User = { id: string; email?: string } | null;
 
 const enc = new TextEncoder();
 

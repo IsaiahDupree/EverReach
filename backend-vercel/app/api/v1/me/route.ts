@@ -86,7 +86,7 @@ export async function PATCH(req: Request) {
   return ok({
     user: {
       id: user.id,
-      email: profile?.email ?? user.email ?? null,
+      email: profile?.email ?? (user as any).email ?? null,
       display_name: profile?.display_name ?? null,
       avatar_url: profile?.avatar_url ?? null,
       about: profile?.about ?? null,
