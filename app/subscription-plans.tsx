@@ -693,27 +693,11 @@ export default function SubscriptionPlansScreen() {
             trial_days_remaining: trialDaysRemaining,
           });
 
-          // Fire purchase_completed → Meta Purchase (critical for ROAS)
-          screenAnalytics.track('purchase_completed', {
-            amount: planId.includes('annual') ? 49.99 : 4.99,
-            currency: 'USD',
-            plan: planId,
-            product_id: rcPkg,
-            payment_platform: Platform.OS === 'ios' ? 'apple' : 'google',
-          });
-
-          // Detect trial start → Meta StartTrial
-          const activeSubs = result.customerInfo?.entitlements?.active;
-          const hasTrialPeriod = activeSubs && Object.values(activeSubs).some(
-            (ent: any) => ent.periodType === 'TRIAL' || ent.periodType === 'trial'
-          );
-          if (hasTrialPeriod) {
-            screenAnalytics.track('trial_started', {
-              trial_days: 7,
-              plan: planId,
-              product_id: rcPkg,
-            });
-          }
+          // Update SKAdNetwork conversion value via native FB SDK (no client CAPI).
+          // Server-side RC webhook is the authoritative source for Meta Purchase events.
+          // This native call is solely to update SKAdNetwork for ATT-denied users.
+          const { logNativePurchaseForSkAdNetwork } = await import('@/lib/metaAppEvents');
+          logNativePurchaseForSkAdNetwork(result.price ?? 14.99, result.currency ?? 'USD');
           
           screenAnalytics.track('subscription_upgraded', analytics.withTrialProps({
             plan_id: planId,

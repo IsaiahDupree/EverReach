@@ -386,6 +386,22 @@ export function trackPurchase(
 }
 
 /**
+ * Log a purchase to the native FB SDK ONLY (no client CAPI queue).
+ * Purpose: update SKAdNetwork conversion value so Meta can attribute
+ * iOS installs even when ATT is denied. The server-side RC webhook
+ * handles the authoritative CAPI Purchase event — this call is only
+ * for the SKAdNetwork/native-SDK channel.
+ */
+export function logNativePurchaseForSkAdNetwork(price: number, currency: string = 'USD'): void {
+  if (!HAS_NATIVE_SDK || !AppEventsLogger) return;
+  try {
+    AppEventsLogger.logPurchase(price, currency, { fb_content_type: 'subscription' });
+  } catch (e) {
+    console.warn('[MetaAppEvents] logNativePurchaseForSkAdNetwork failed:', e);
+  }
+}
+
+/**
  * Track screen/content view (ViewContent)
  */
 export function trackContentView(

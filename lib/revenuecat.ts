@@ -216,7 +216,7 @@ export async function fetchOfferings(): Promise<any | null> {
   }
 }
 
-export async function purchasePackageById(packageIdentifier: string): Promise<{ customerInfo: any } | null> {
+export async function purchasePackageById(packageIdentifier: string): Promise<{ customerInfo: any; price?: number; currency?: string } | null> {
   try {
     if (Platform.OS === 'web') return null;
     if (Constants.appOwnership === 'expo') return null;
@@ -234,7 +234,11 @@ export async function purchasePackageById(packageIdentifier: string): Promise<{ 
     const pkg = allPkgs.find(p => p?.identifier === packageIdentifier || p?.packageType === packageIdentifier);
     if (!pkg) throw new Error(`Package not found: ${packageIdentifier}`);
     const { customerInfo } = await Purchases.purchasePackage(pkg);
-    return { customerInfo };
+    return {
+      customerInfo,
+      price: pkg?.product?.price as number | undefined,
+      currency: pkg?.product?.currencyCode as string | undefined,
+    };
   } catch (e) {
     console.warn('[RevenueCat] purchasePackageById error:', (e as any)?.message || e);
     return null;
