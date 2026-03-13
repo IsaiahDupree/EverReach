@@ -14,9 +14,13 @@ function buildUserData(event: NormalizedRcEvent): Record<string, any> {
   };
   if (event.email) ud.em = [sha256(event.email)];
   if (event.phone) ud.ph = [sha256(event.phone.replace(/\D/g, ''))];
-  // fbc, fbp, madid passed raw (not hashed per Meta spec)
-  if (event.fbc) ud.fbc = event.fbc;
+  // fbc: Meta requires fb.{subdomain}.{timestamp}.{fbclid} format.
+  // App stores raw fbclid in $fbClickId — wrap it here if needed.
+  if (event.fbc) {
+    ud.fbc = event.fbc.startsWith('fb.') ? event.fbc : `fb.1.${Math.floor(Date.now() / 1000)}.${event.fbc}`;
+  }
   if (event.fbp) ud.fbp = event.fbp;
+  // madid (IDFA) passed raw, lowercase — implies ATT granted
   if (event.madid) ud.madid = event.madid.toLowerCase();
   return ud;
 }
@@ -61,7 +65,9 @@ export class MetaEmitter implements AnalyticsEmitter {
       event_id: `rc_${event.event_id}`,
       action_source: 'app',
       user_data: buildUserData(event),
-      app_data: { application_tracking_enabled: 1 },
+      // Only send app_data when madid is present (implies ATT granted).
+      // Hardcoding advertiser_tracking_enabled: 1 without IDFA is invalid per Meta spec.
+      ...(event.madid ? { app_data: { advertiser_tracking_enabled: 1, application_tracking_enabled: 1 } } : {}),
       custom_data: {
         currency: event.currency || 'USD',
         value: event.value,
