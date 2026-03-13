@@ -26,6 +26,12 @@ export interface NormalizedRcEvent {
   purchased_at_ms?: number;
   expiration_at_ms?: number;
   country_code?: string | null;
+  // Attribution signals from RC subscriber_attributes
+  email?: string;
+  fbc?: string;   // Facebook Click ID (from $fbClickId) — NOT hashed
+  fbp?: string;   // Facebook Browser/Anon ID (from $fbAnonId) — NOT hashed
+  madid?: string; // Mobile Advertiser ID / IDFA (from $idfa/$madid) — NOT hashed
+  phone?: string; // E.164 phone number (from $phoneNumber) — hashed before sending
 }
 
 export interface AnalyticsEmitter {

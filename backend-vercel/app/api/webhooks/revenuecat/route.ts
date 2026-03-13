@@ -15,6 +15,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServiceClient } from '@/lib/supabase';
 import { options } from '@/lib/cors';
 import { verifyWebhookSignature } from '@/lib/revenuecat-webhook';
+import { emitAll } from '@/lib/analytics/emitters';
+import type { NormalizedRcEvent } from '@/lib/analytics/emitters/base';
 
 export const runtime = 'nodejs'; // Need Node for crypto.createHmac in signature verification
 
@@ -56,6 +58,9 @@ interface RevenueCatWebhookEvent {
         price_in_purchased_currency?: number;
         currency?: string;
         country_code?: string;
+        subscriber_attributes?: {
+            [key: string]: { value: string; updated_at_ms: number } | null;
+        };
     };
 }
 
@@ -89,6 +94,66 @@ function deriveStatus(event: RevenueCatWebhookEvent['event']): string {
             return event.period_type === 'TRIAL' ? 'trial' : 'active';
         default: return 'active';
     }
+}
+
+function getAttr(attrs: RevenueCatWebhookEvent['event']['subscriber_attributes'], key: string): string | undefined {
+    return attrs?.[key]?.value || undefined;
+}
+
+function mapEventKind(event: RevenueCatWebhookEvent['event']): NormalizedRcEvent['kind'] {
+    switch (event.type) {
+        case 'INITIAL_PURCHASE': return event.period_type === 'TRIAL' ? 'trial_started' : 'initial_purchase';
+        case 'RENEWAL': return 'renewal';
+        case 'EXPIRATION': return 'expiration';
+        case 'CANCELLATION': return 'cancellation';
+        case 'UNCANCELLATION': return 'uncancellation';
+        case 'PRODUCT_CHANGE': return 'product_change';
+        case 'REFUND': return 'refund';
+        case 'BILLING_ISSUE': return 'billing_issue';
+        case 'NON_RENEWING_PURCHASE': return 'non_subscription_purchase';
+        default: return 'initial_purchase';
+    }
+}
+
+function mapStore(store?: string): 'app_store' | 'play' | 'other' {
+    if (!store) return 'other';
+    if (store === 'PLAY_STORE') return 'play';
+    if (store === 'APP_STORE') return 'app_store';
+    return 'other';
+}
+
+function deriveLegacyStatus(event: RevenueCatWebhookEvent['event']): NormalizedRcEvent['status'] {
+    switch (event.type) {
+        case 'CANCELLATION': return 'canceled';
+        case 'EXPIRATION': case 'REFUND': return 'expired';
+        default: return event.period_type === 'TRIAL' ? 'trial' : 'active';
+    }
+}
+
+function buildNormalizedEvent(event: RevenueCatWebhookEvent['event'], email?: string): NormalizedRcEvent {
+    const attrs = event.subscriber_attributes;
+    return {
+        kind: mapEventKind(event),
+        event_id: event.transaction_id || `${event.app_user_id}_${event.type}_${event.purchased_at_ms}`,
+        user_id: event.app_user_id,
+        product_id: event.product_id,
+        entitlements: event.entitlement_ids || [],
+        environment: event.environment,
+        platform: mapStore(event.store),
+        period_type: event.period_type,
+        status: deriveLegacyStatus(event),
+        value: event.price_in_purchased_currency ?? undefined,
+        currency: event.currency ?? undefined,
+        purchased_at_ms: event.purchased_at_ms,
+        expiration_at_ms: event.expiration_at_ms ?? undefined,
+        country_code: event.country_code ?? null,
+        // Attribution signals from subscriber_attributes
+        email: email || getAttr(attrs, '$email'),
+        fbc: getAttr(attrs, '$fbClickId'),
+        fbp: getAttr(attrs, '$fbAnonId'),
+        madid: getAttr(attrs, '$idfa') || getAttr(attrs, '$madid') || getAttr(attrs, '$gpsAdid'),
+        phone: getAttr(attrs, '$phoneNumber'),
+    };
 }
 
 export async function POST(req: NextRequest) {
@@ -232,6 +297,19 @@ export async function POST(req: NextRequest) {
         console.log(`[RevenueCat Webhook] ${hasErrors ? '⚠️ Partial' : '✅'} Processed:`, {
             type: event.type, user_id: userId, plan: entPlan, status, store,
         });
+
+        // Analytics fan-out (fire-and-forget, non-blocking)
+        try {
+            let email: string | undefined;
+            try {
+                const { data: { user: authUser } } = await supabase.auth.admin.getUserById(userId);
+                email = authUser?.email ?? undefined;
+            } catch { /* non-fatal */ }
+            const normalized = buildNormalizedEvent(event, email);
+            void emitAll(normalized);
+        } catch (e: any) {
+            console.error('[RevenueCat Webhook] Analytics emit error:', e?.message);
+        }
 
         return NextResponse.json({
             success: !hasErrors,

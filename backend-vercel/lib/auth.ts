@@ -1,7 +1,7 @@
 import 'server-only';
 import { jwtVerify } from 'jose';
 
-export type User = { id: string } | null;
+export type User = { id: string; email?: string } | null;
 
 export async function getUser(req: Request): Promise<User> {
   const auth = req.headers.get('authorization') || req.headers.get('Authorization');
@@ -20,7 +20,7 @@ export async function getUser(req: Request): Promise<User> {
     });
     const sub = payload?.sub;
     if (!sub || typeof sub !== 'string') return null;
-    return { id: sub };
+    return { id: sub, email: payload.email as string | undefined };
   } catch (e: any) {
     console.error('[auth] jwt verify failed:', e?.message);
     return null;

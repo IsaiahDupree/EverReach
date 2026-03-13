@@ -1,47 +1,101 @@
+import * as crypto from 'crypto';
 import type { AnalyticsEmitter, NormalizedRcEvent } from './base';
+
+const META_APP_ID = '453049510987286'; // EverReach Meta App ID
+const API_VERSION = 'v21.0';
+
+function sha256(value: string): string {
+  return crypto.createHash('sha256').update(value.trim().toLowerCase()).digest('hex');
+}
+
+function buildUserData(event: NormalizedRcEvent): Record<string, any> {
+  const ud: Record<string, any> = {
+    external_id: [sha256(event.user_id)],
+  };
+  if (event.email) ud.em = [sha256(event.email)];
+  if (event.phone) ud.ph = [sha256(event.phone.replace(/\D/g, ''))];
+  // fbc, fbp, madid passed raw (not hashed per Meta spec)
+  if (event.fbc) ud.fbc = event.fbc;
+  if (event.fbp) ud.fbp = event.fbp;
+  if (event.madid) ud.madid = event.madid.toLowerCase();
+  return ud;
+}
+
+function mapKindToMetaEvent(kind: NormalizedRcEvent['kind']): string | null {
+  switch (kind) {
+    case 'initial_purchase':   return 'Purchase';
+    case 'trial_started':      return 'StartTrial';
+    case 'trial_converted':    return 'Purchase';
+    case 'renewal':            return 'Purchase';
+    case 'product_change':     return 'Subscribe';
+    case 'cancellation':       return 'Cancel';
+    case 'expiration':         return 'Churn';
+    case 'billing_issue':      return 'BillingIssue';
+    case 'uncancellation':     return 'Reactivate';
+    case 'refund':             return 'Refund';
+    case 'non_subscription_purchase': return 'Purchase';
+    default:                   return null;
+  }
+}
 
 export class MetaEmitter implements AnalyticsEmitter {
   async emit(event: NormalizedRcEvent): Promise<void> {
     const pixelId = process.env.META_PIXEL_ID;
-    const token = process.env.META_CAPI_TOKEN;
+    const token = process.env.META_CONVERSIONS_API_TOKEN || process.env.META_CAPI_TOKEN;
 
-    if (!pixelId || !token) {
-      // Destination disabled/misconfigured; noop
+    if (!pixelId || !token) return;
+    if (event.environment === 'SANDBOX') {
+      console.log('[MetaEmitter] Skipping sandbox event:', event.kind);
       return;
     }
 
-    // Prepare minimal payload shape (no network call in scaffold)
-    const payload = {
-      event_name: mapKindToMetaEvent(event.kind),
+    const eventName = mapKindToMetaEvent(event.kind);
+    if (!eventName) {
+      console.log('[MetaEmitter] No mapping for:', event.kind);
+      return;
+    }
+
+    const capiEvent: Record<string, any> = {
+      event_name: eventName,
       event_time: Math.floor((event.purchased_at_ms || Date.now()) / 1000),
-      action_source: 'other',
-      event_id: event.event_id,
-      user_data: {
-        // Placeholders; add hashed identifiers when available
-      },
+      event_id: `rc_${event.event_id}`,
+      action_source: 'app',
+      user_data: buildUserData(event),
+      app_data: { application_tracking_enabled: 1 },
       custom_data: {
-        currency: event.currency,
+        currency: event.currency || 'USD',
         value: event.value,
-        subscription_id: event.product_id,
-        product_id: event.product_id,
+        content_name: event.product_id,
+        content_type: 'subscription',
         environment: event.environment,
         platform: event.platform,
         status: event.status,
       },
     };
 
-    // Intentionally no HTTP call here; real sending will be added in implementation
-    // console.debug('[MetaEmitter] prepared payload', { pixelId, payload });
-  }
-}
+    const testCode = process.env.META_TEST_EVENT_CODE;
+    const body: Record<string, any> = { data: [capiEvent] };
+    if (testCode) body.test_event_code = testCode;
 
-function mapKindToMetaEvent(kind: NormalizedRcEvent['kind']): string {
-  switch (kind) {
-    case 'trial_started':
-      return 'StartTrial';
-    case 'non_subscription_purchase':
-      return 'Purchase';
-    default:
-      return 'Subscribe';
+    const url = `https://graph.facebook.com/${API_VERSION}/${pixelId}/events?access_token=${token}`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`Meta CAPI ${res.status}: ${errText.slice(0, 200)}`);
+    }
+
+    const result = await res.json();
+    console.log('[MetaEmitter] Sent:', {
+      event_name: eventName,
+      events_received: result.events_received,
+      user_id: event.user_id,
+      has_fbc: !!event.fbc,
+      has_madid: !!event.madid,
+    });
   }
 }
