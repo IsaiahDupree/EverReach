@@ -101,7 +101,7 @@
       },
       "usesAppleSignIn": true,
       "accessesContactNotes": true,
-      "buildNumber": "2"
+      "buildNumber": "3"
     },
     "android": {
       "jsEngine": "hermes",
@@ -166,7 +166,6 @@
       "expo-web-browser",
       [
         "expo-tracking-transparency",
-
         {
           "userTrackingPermission": "EverReach uses this identifier to measure ad effectiveness and personalize your experience. Your data is hashed for privacy. You can change this anytime in Settings."
         }

@@ -18,6 +18,29 @@ export const uploadSignSchema = z.object({
 
 export type UploadSignInput = z.infer<typeof uploadSignSchema>;
 
+// Social Channels
+const socialChannelSchema = z.object({
+  handle: z.string().max(100).optional(),
+  profile_url: z.string().url().optional(),
+  followers: z.number().int().nonnegative().optional(),
+  bio: z.string().max(500).optional(),
+  profile_pic: z.string().url().optional(),
+  headline: z.string().max(200).optional(),
+  company: z.string().max(120).optional(),
+  connections: z.string().max(50).optional(),
+  location: z.string().max(120).optional(),
+  website: z.string().url().optional(),
+  likes: z.number().int().nonnegative().optional(),
+}).optional();
+
+export const socialChannelsSchema = z.object({
+  instagram: socialChannelSchema,
+  twitter: socialChannelSchema,
+  linkedin: socialChannelSchema,
+  facebook: socialChannelSchema,
+  tiktok: socialChannelSchema,
+}).optional();
+
 // Contacts
 export const contactCreateSchema = z.object({
   display_name: z.string().min(1, 'display_name is required').max(120),
@@ -28,7 +51,7 @@ export const contactCreateSchema = z.object({
   tags: z.array(z.string().min(1).max(40)).max(50).optional(),
   avatar_url: z.string().url().optional(),
   metadata: z.record(z.any()).optional(),
-  // Note: social_channels removed - column doesn't exist in DB yet
+  social_channels: socialChannelsSchema,
 }).refine(
   (data) => {
     const hasEmail = data.emails && data.emails.length > 0;
@@ -52,7 +75,7 @@ export const contactUpdateSchema = z.object({
   warmth: z.number().int().min(0).max(100).optional(),
   warmth_override: z.boolean().optional(),
   warmth_override_reason: z.string().max(500).optional(),
-  // Note: social_channels removed - column doesn't exist in DB yet
+  social_channels: socialChannelsSchema,
 }).refine(obj => Object.keys(obj).length > 0, { message: 'At least one field must be provided' });
 
 export type ContactUpdateInput = z.infer<typeof contactUpdateSchema>;
@@ -350,3 +373,34 @@ export const screenshotAnalysisCreateSchema = z.object({
   contact_id: z.string().uuid().optional(),
 });
 export type ScreenshotAnalysisCreateInput = z.infer<typeof screenshotAnalysisCreateSchema>;
+
+// Social imports
+export const socialLookupSchema = z.object({
+  platform: z.enum(['instagram','twitter','linkedin','facebook','tiktok']),
+  handle: z.string().min(1).max(100).optional(),
+  profile_url: z.string().url().optional(),
+}).refine(o => !!(o.handle || o.profile_url), { message: 'handle or profile_url required' });
+export type SocialLookupInput = z.infer<typeof socialLookupSchema>;
+
+export const socialImportSchema = z.object({
+  platform: z.enum(['instagram','twitter','linkedin','facebook','tiktok']),
+  handle: z.string().min(1).max(100).optional(),
+  display_name: z.string().min(1).max(120),
+  profile_url: z.string().url(),
+  bio: z.string().max(500).optional(),
+  followers: z.number().int().nonnegative().optional(),
+  following: z.number().int().nonnegative().optional(),
+  profile_pic: z.string().url().optional(),
+  company: z.string().max(120).optional(),
+  headline: z.string().max(200).optional(),
+  location: z.string().max(120).optional(),
+  website: z.string().url().optional(),
+  emails: z.array(z.string().email()).max(10).optional(),
+  phones: z.array(z.string().min(3).max(40)).max(10).optional(),
+});
+export type SocialImportInput = z.infer<typeof socialImportSchema>;
+
+export const socialBulkImportSchema = z.object({
+  contacts: z.array(socialImportSchema).min(1).max(100),
+});
+export type SocialBulkImportInput = z.infer<typeof socialBulkImportSchema>;

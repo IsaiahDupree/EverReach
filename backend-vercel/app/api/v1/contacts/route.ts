@@ -94,7 +94,7 @@ export async function GET(req: Request) {
 
   // Try contacts table first; fallback to people if contacts doesn't exist
   let sel = supabase.from('contacts')
-    .select('id, display_name, emails, phones, tags, warmth, warmth_band, warmth_updated_at, last_interaction_at, photo_url, avatar_url, company, created_at, updated_at')
+    .select('id, display_name, emails, phones, tags, warmth, warmth_band, warmth_updated_at, last_interaction_at, photo_url, avatar_url, company, social_channels, created_at, updated_at')
     .is('deleted_at', null);
   if (filteredContactIds) sel = sel.in('id', filteredContactIds);
 

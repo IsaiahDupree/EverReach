@@ -16,7 +16,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   const supabase = getClientOrThrow(req);
   const { data, error } = await supabase
     .from('contacts')
-    .select('id, display_name, emails, phones, company, notes, tags, photo_url, avatar_url, metadata, warmth, warmth_band, warmth_override, warmth_override_reason, warmth_updated_at, last_interaction_at, created_at, updated_at')
+    .select('id, display_name, emails, phones, company, notes, tags, photo_url, avatar_url, metadata, social_channels, warmth, warmth_band, warmth_override, warmth_override_reason, warmth_updated_at, last_interaction_at, created_at, updated_at')
     .eq('id', params.id)
     .is('deleted_at', null)
     .maybeSingle();
@@ -43,7 +43,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     .from('contacts')
     .update(parsed.data as any)
     .eq('id', params.id)
-    .select('id, display_name, emails, phones, company, notes, tags, photo_url, avatar_url, metadata, warmth, warmth_band, updated_at')
+    .select('id, display_name, emails, phones, company, notes, tags, photo_url, avatar_url, metadata, social_channels, warmth, warmth_band, updated_at')
     .maybeSingle();
 
   if (error) return new Response(JSON.stringify({ error: 'db_update_failed', details: error.message }), { status: 500 });
