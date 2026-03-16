@@ -1,21 +1,30 @@
 /**
  * RevenueCat Webhook Handler
- * 
+ *
  * Receives subscription events from RevenueCat and updates backend database.
  * Triggered on purchase, renewal, cancellation, etc.
- * 
+ *
  * DB Tables Updated:
  *   - subscriptions (id, user_id, product_id, store, store_account_id, status,
  *                    started_at, current_period_end, cancel_at, canceled_at, updated_at)
  *   - entitlements  (user_id, plan, valid_until, source, updated_at, subscription_id)
  *   - subscription_events (audit log of every webhook — see migration)
+ *
+ * Attribution:
+ *   - Verifies X-RevenueCat-Signature (REVENUECAT_WEBHOOK_SECRET env var)
+ *   - Fans out to Meta CAPI via emitAll() after DB writes succeed
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import * as crypto from 'crypto';
 import { getServiceClient } from '@/lib/supabase';
 import { options } from '@/lib/cors';
+import { emitAll } from '@/lib/analytics/emitters';
+import type { NormalizedRcEvent } from '@/lib/analytics/emitters/base';
+import { createClient } from '@supabase/supabase-js';
 
-export const runtime = 'edge';
+// nodejs runtime required — edge does not support Node.js crypto module
+export const runtime = 'nodejs';
 
 export function OPTIONS(req: Request) {
   return options(req);
@@ -92,7 +101,35 @@ function deriveStatus(event: RevenueCatWebhookEvent['event']): string {
 
 export async function POST(req: NextRequest) {
     try {
-        const payload: RevenueCatWebhookEvent = await req.json();
+        // ── Signature verification ──
+        const rawBody = await req.text();
+        const signature = req.headers.get('X-RevenueCat-Signature');
+        const secret = process.env.REVENUECAT_WEBHOOK_SECRET;
+
+        if (secret) {
+            if (!signature) {
+                console.error('[RevenueCat Webhook] Missing X-RevenueCat-Signature header');
+                return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+            }
+            const hmac = crypto.createHmac('sha256', secret);
+            hmac.update(rawBody);
+            const expected = hmac.digest('hex');
+            const signatureValid = (() => {
+                try {
+                    return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
+                } catch {
+                    return false;
+                }
+            })();
+            if (!signatureValid) {
+                console.error('[RevenueCat Webhook] Invalid signature');
+                return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+            }
+        } else {
+            console.warn('[RevenueCat Webhook] REVENUECAT_WEBHOOK_SECRET not set — skipping signature check');
+        }
+
+        const payload: RevenueCatWebhookEvent = JSON.parse(rawBody);
         const event = payload.event;
 
         console.log('[RevenueCat Webhook] Received:', {
@@ -191,6 +228,56 @@ export async function POST(req: NextRequest) {
 
         // ── 3. Log to subscription_events audit table ──
         await logSubscriptionEvent(supabase, event, payload, plan, status, store);
+
+        // ── 4. Analytics fan-out (Meta CAPI + future emitters) ──
+        // Fire-and-forget — never block the 200 response to RC
+        if (event.environment === 'PRODUCTION') {
+            const kindMap: Record<string, NormalizedRcEvent['kind']> = {
+                INITIAL_PURCHASE: event.period_type === 'TRIAL' ? 'trial_started' : 'initial_purchase',
+                RENEWAL: 'renewal',
+                EXPIRATION: 'expiration',
+                CANCELLATION: 'cancellation',
+                UNCANCELLATION: 'uncancellation',
+                PRODUCT_CHANGE: 'product_change',
+                REFUND: 'refund',
+                BILLING_ISSUE: 'billing_issue',
+            };
+            const kind = kindMap[event.type];
+            if (kind) {
+                const normalized: NormalizedRcEvent = {
+                    kind,
+                    event_id: event.transaction_id || event.original_transaction_id,
+                    user_id: userId,
+                    product_id: event.product_id,
+                    entitlements: event.entitlement_ids || [],
+                    environment: event.environment,
+                    platform: store === 'play' ? 'play' : 'app_store',
+                    period_type: event.period_type,
+                    status,
+                    purchased_at_ms: event.purchased_at_ms,
+                    expiration_at_ms: event.expiration_at_ms ?? 0,
+                    country_code: event.country_code || null,
+                    price_usd: event.price_in_purchased_currency,
+                    currency: event.currency,
+                };
+
+                // Enrich with email for better Meta EMQ score
+                try {
+                    const adminClient = createClient(
+                        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+                        process.env.SUPABASE_SERVICE_ROLE_KEY!
+                    );
+                    const { data: { user: authUser } } = await adminClient.auth.admin.getUserById(userId);
+                    if (authUser?.email) normalized.email = authUser.email;
+                } catch {
+                    // Non-fatal
+                }
+
+                emitAll(normalized).catch((e: any) =>
+                    console.error('[RevenueCat Webhook] Analytics emit failed:', e?.message)
+                );
+            }
+        }
 
         const hasErrors = subError || entError;
         console.log(`[RevenueCat Webhook] ${hasErrors ? '⚠️ Partial' : '✅'} Processed:`, {
