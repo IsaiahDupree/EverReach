@@ -33,11 +33,11 @@ export async function verifyAuth(request: NextRequest): Promise<{
         email: user.email,
         authenticated: true
       };
-    } catch (error) {
-      throw new Error('Authentication failed');
+    } catch {
+      return { userId: '', authenticated: false };
     }
   }
-  
+
   // Fallback: Check for X-User-Id header (for testing/internal APIs)
   const userIdHeader = request.headers.get('x-user-id');
   if (userIdHeader) {
@@ -46,8 +46,8 @@ export async function verifyAuth(request: NextRequest): Promise<{
       authenticated: true
     };
   }
-  
-  throw new Error('No authentication provided');
+
+  return { userId: '', authenticated: false };
 }
 
 /**

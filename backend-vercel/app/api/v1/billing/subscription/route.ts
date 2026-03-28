@@ -15,7 +15,12 @@ export async function GET(req: NextRequest) {
   try {
     const supabase = getSupabase();
     // Verify authentication
-    const auth = await verifyAuth(req);
+    let auth;
+    try {
+      auth = await verifyAuth(req);
+    } catch {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     if (!auth.authenticated) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
