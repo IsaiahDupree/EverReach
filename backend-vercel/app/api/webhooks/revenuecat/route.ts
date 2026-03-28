@@ -187,8 +187,14 @@ export async function POST(req: NextRequest) {
         }
         const event = payload.event;
 
-        if (!event || !event.type || !event.app_user_id) {
+        if (!event || !event.type) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+        }
+
+        // TRANSFER events have no app_user_id — log and ack so RC stops retrying
+        if (event.type === 'TRANSFER' || !event.app_user_id) {
+            console.log('[RevenueCat Webhook] TRANSFER/no-user event, acknowledging:', event.type);
+            return NextResponse.json({ success: true, skipped: event.type });
         }
 
         console.log('[RevenueCat Webhook] Received:', {
