@@ -36,7 +36,8 @@ type RevenueCatEventType =
     | 'BILLING_ISSUE'
     | 'PRODUCT_CHANGE'
     | 'REFUND'
-    | 'SUBSCRIBER_ALIAS';
+    | 'SUBSCRIBER_ALIAS'
+    | 'TRANSFER';
 
 interface RevenueCatWebhookEvent {
     api_version: string;
