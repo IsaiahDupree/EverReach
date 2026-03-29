@@ -80,6 +80,3 @@ ios/.xcode.env.local
 
 # npm config (may contain local settings)
 
-# Prevent bun from being used (force npm)
-bun.lock
-bun.lockb
