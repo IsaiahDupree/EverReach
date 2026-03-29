@@ -8,6 +8,8 @@ import { useLivePaywall } from '@/hooks/useLivePaywall';
 import { useSubscription } from '@/providers/SubscriptionProvider';
 import analytics from '@/lib/analytics';
 import { safeGoBack } from '@/lib/navigation';
+import { trackPaywallEvent } from '@/lib/paywallAnalytics';
+import { trackPurchase, syncMetaAttributesToRc } from '@/lib/metaAppEvents';
 
 interface PaywallRouterProps {
   plans: PaywallPlan[];
@@ -26,6 +28,13 @@ export function PaywallRouter(props: PaywallRouterProps) {
   
   // CRITICAL: All hooks must be at the top before any conditional returns
   const [isPurchasing, setIsPurchasing] = React.useState(false);
+
+  // Track paywall impression once on mount (iOS Superwall path)
+  React.useEffect(() => {
+    if (Platform.OS === 'ios' && !isPaid) {
+      trackPaywallEvent('impression', { provider: 'superwall', placement: 'main_pay_wall' });
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // If user is already paid, don't show Superwall paywall on iOS
   // (Allow custom paywall to show upgrade options)
@@ -78,6 +87,11 @@ export function PaywallRouter(props: PaywallRouterProps) {
           console.log('[PaywallRouter] onPurchaseComplete called - verifying subscription');
           setIsPurchasing(true);
 
+          // Fire analytics immediately on purchase
+          trackPaywallEvent('checkout_completed', { provider: 'superwall', placement: 'main_pay_wall' });
+          trackPurchase('pro', 14.99);
+          void syncMetaAttributesToRc();
+
           try {
             // CRITICAL: Refresh subscription state from backend (force sync)
             // This now polls the backend for up to 5 seconds to handle webhook latency
@@ -122,6 +136,7 @@ export function PaywallRouter(props: PaywallRouterProps) {
         }}
         onDismiss={() => {
           // console.log('[PaywallRouter] Paywall dismissed - navigating back');
+          trackPaywallEvent('dismissed', { provider: 'superwall', placement: 'main_pay_wall' });
           safeGoBack(router);
         }}
       />
@@ -194,6 +209,10 @@ export function PaywallRouter(props: PaywallRouterProps) {
           onPurchaseComplete={async () => {
             console.log('[PaywallRouter] Purchase completed - refreshing entitlements');
 
+            trackPaywallEvent('checkout_completed', { provider: 'superwall', placement: config.paywall_id || 'main_pay_wall' });
+            trackPurchase('pro', 14.99);
+            void syncMetaAttributesToRc();
+
             try {
               // CRITICAL: Refresh subscription state from backend
               await refreshEntitlements();
@@ -218,6 +237,7 @@ export function PaywallRouter(props: PaywallRouterProps) {
           }}
           onDismiss={() => {
             console.log('[PaywallRouter] Paywall dismissed - navigating back');
+            trackPaywallEvent('dismissed', { provider: 'superwall', placement: config.paywall_id || 'main_pay_wall' });
             safeGoBack(router);
           }}
         />

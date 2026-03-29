@@ -142,9 +142,16 @@ export function PaywallGate({
           <Text style={styles.lockedMessage}>
             {lockedMessage || `This feature requires a premium subscription.`}
           </Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.lockedButton}
-            onPress={() => setShowPaywallModal(true)}
+            onPress={() => {
+              trackPaywallEvent('cta_click', {
+                source: 'paywall_gate',
+                feature_area: featureArea,
+                trigger: 'unlock_now_button',
+              }).catch(err => console.warn('Failed to track paywall CTA click:', err));
+              setShowPaywallModal(true);
+            }}
           >
             <Text style={styles.lockedButtonText}>
               Unlock Now
