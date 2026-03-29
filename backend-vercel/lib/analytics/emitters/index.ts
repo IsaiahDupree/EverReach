@@ -28,7 +28,12 @@ let cached: AnalyticsEmitter[] | null = null;
 export async function emitAll(event: NormalizedRcEvent): Promise<void> {
   try {
     if (!cached) cached = buildEmitters();
-    if (!cached.length) return; // no destinations enabled
+    if (!cached.length) {
+      console.warn('[AnalyticsEmitter] emitAll called but no destinations are enabled. ' +
+        'Set ANALYTICS_ENABLE_META=true (and/or GA4/TIKTOK) to activate emitters. ' +
+        `Event dropped: ${event.kind} / user=${event.user_id}`);
+      return;
+    }
 
     await Promise.all(
       cached.map(async (emitter) => {
