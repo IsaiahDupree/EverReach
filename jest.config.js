@@ -10,11 +10,20 @@ module.exports = {
   ],
   moduleNameMapper: {
     '^@/lib/analytics$': '<rootDir>/__mocks__/analytics.js',
+    '^@/constants/config$': '<rootDir>/templates/constants/config.ts',
+    '^@/types/models$': '<rootDir>/templates/types/models.ts',
+    '^@/services/api$': '<rootDir>/templates/services/api.ts',
+    '^@/store/(.*)$': '<rootDir>/store/$1',
     '^@/(.*)$': '<rootDir>/$1',
     '^expo-constants$': '<rootDir>/__mocks__/expo-constants.js',
     '^expo-superwall$': '<rootDir>/__mocks__/expo-superwall.js',
     '^@react-native-async-storage/async-storage$': '<rootDir>/__mocks__/async-storage.js'
   },
+  setupFiles: [
+    '<rootDir>/jest-fix-expo.js',
+    require.resolve('react-native/jest/setup'),
+    require.resolve('jest-expo/src/preset/setup'),
+  ],
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   globals: {
     __DEV__: true,
@@ -37,6 +46,8 @@ module.exports = {
     '<rootDir>/providers',
     '<rootDir>/lib',
     '<rootDir>/__tests__',
-    '<rootDir>/test'
+    '<rootDir>/test',
+    '<rootDir>/templates',
+    '<rootDir>/store'
   ]
 };
