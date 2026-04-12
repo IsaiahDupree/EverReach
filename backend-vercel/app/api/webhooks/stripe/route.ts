@@ -2,6 +2,7 @@ import { ok, options, badRequest, serverError } from "@/lib/cors";
 import Stripe from "stripe";
 import { getServiceClient } from "@/lib/supabase";
 import { getProductIdForStoreSku, insertSubscriptionSnapshot, recomputeEntitlementsForUser } from "@/lib/entitlements";
+import { trackPurchase, trackSubscribe } from "@/lib/meta-conversions";
 
 export const runtime = 'nodejs';
 
@@ -53,9 +54,13 @@ export async function POST(req: Request){
     return serverError('Server misconfigured: STRIPE_WEBHOOK_SECRET not set');
   }
 
-  // We don't actually need the Stripe secret key to verify signatures, but we may use it to expand objects if needed
+  // Verify signature using webhook secret
   const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
-  const stripe = STRIPE_SECRET_KEY ? new Stripe(STRIPE_SECRET_KEY, { apiVersion: '2023-10-16' }) : new Stripe('sk_test_dummy', { apiVersion: '2023-10-16' });
+  if (!STRIPE_SECRET_KEY) {
+    return serverError('Server misconfigured: STRIPE_SECRET_KEY not set');
+  }
+
+  const stripe = new Stripe(STRIPE_SECRET_KEY, { apiVersion: '2023-10-16' });
 
   let event: Stripe.Event;
   try {
@@ -76,12 +81,14 @@ export async function POST(req: Request){
         let priceId: string | null = null;
         let status: string | null = null;
         let currentPeriodEnd: string | null = null;
+        let priceAmount: number | null = null;
 
         if (STRIPE_SECRET_KEY && subscriptionId) {
           try {
             const sub = await stripe.subscriptions.retrieve(subscriptionId);
             priceId = sub.items?.data?.[0]?.price?.id ?? null;
             status = sub.status ?? null;
+            priceAmount = (sub.items?.data?.[0]?.price?.unit_amount ?? null);
             if (sub.current_period_end) {
               currentPeriodEnd = new Date(sub.current_period_end * 1000).toISOString();
             }
@@ -119,6 +126,28 @@ export async function POST(req: Request){
             currentPeriodEndISO: currentPeriodEnd,
           });
           await recomputeEntitlementsForUser(serviceSupabase as any, resolvedUserId);
+
+          // Track Purchase event for Meta Pixel
+          try {
+            const { data: profile } = await serviceSupabase
+              .from('profiles')
+              .select('email')
+              .eq('user_id', resolvedUserId)
+              .maybeSingle();
+
+            if (profile?.email && priceAmount !== null) {
+              await trackPurchase({
+                email: profile.email,
+                userId: resolvedUserId,
+                value: priceAmount / 100, // Convert cents to dollars
+                currency: 'USD',
+                contentName: 'Subscription',
+              });
+            }
+          } catch (metaError) {
+            // Log but don't fail if Meta tracking fails
+            console.error('[Meta] Purchase tracking failed:', metaError);
+          }
         }
         break;
       }
@@ -132,6 +161,7 @@ export async function POST(req: Request){
         const priceId = sub.items?.data?.[0]?.price?.id ?? null;
         const status = sub.status ?? null;
         const currentPeriodEnd = sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : null;
+        const priceAmount = (sub.items?.data?.[0]?.price?.unit_amount ?? null);
 
         const patch: Record<string, any> = {
           stripe_customer_id: customerId || undefined,
@@ -155,6 +185,32 @@ export async function POST(req: Request){
             currentPeriodEndISO: currentPeriodEnd,
           });
           await recomputeEntitlementsForUser(serviceSupabase as any, resolvedUserId);
+
+          // Track Subscribe event for Meta Pixel when subscription becomes active
+          if (event.type === 'customer.subscription.updated' && status === 'active') {
+            try {
+              const { data: profile } = await serviceSupabase
+                .from('profiles')
+                .select('email')
+                .eq('user_id', resolvedUserId)
+                .maybeSingle();
+
+              if (profile?.email && priceAmount !== null) {
+                const billingPeriod = sub.items?.data?.[0]?.billing_thresholds?.usage_gte ? 'annual' : 'monthly';
+                await trackSubscribe({
+                  email: profile.email,
+                  userId: resolvedUserId,
+                  value: priceAmount / 100, // Convert cents to dollars
+                  currency: 'USD',
+                  planName: 'Subscription',
+                  billingPeriod: billingPeriod as 'monthly' | 'annual',
+                });
+              }
+            } catch (metaError) {
+              // Log but don't fail if Meta tracking fails
+              console.error('[Meta] Subscribe tracking failed:', metaError);
+            }
+          }
         }
         break;
       }

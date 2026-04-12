@@ -17,6 +17,7 @@ import { options } from '@/lib/cors';
 import { verifyWebhookSignature } from '@/lib/revenuecat-webhook';
 import { emitAll } from '@/lib/analytics/emitters';
 import type { NormalizedRcEvent } from '@/lib/analytics/emitters/base';
+import { trackStartTrial, trackPurchase, trackSubscribe } from '@/lib/meta-conversions';
 
 export const runtime = 'nodejs'; // Need Node for crypto.createHmac in signature verification
 
@@ -306,8 +307,8 @@ export async function POST(req: NextRequest) {
         });
 
         // Analytics fan-out (fire-and-forget, non-blocking)
+        let email: string | undefined;
         try {
-            let email: string | undefined;
             try {
                 const { data: { user: authUser } } = await supabase.auth.admin.getUserById(userId);
                 email = authUser?.email ?? undefined;
@@ -316,6 +317,60 @@ export async function POST(req: NextRequest) {
             void emitAll(normalized);
         } catch (e: any) {
             console.error('[RevenueCat Webhook] Analytics emit error:', e?.message);
+        }
+
+        // Track Meta events (fire-and-forget, non-blocking)
+        try {
+            if (!email) {
+                try {
+                    const { data: { user: authUser } } = await supabase.auth.admin.getUserById(userId);
+                    email = authUser?.email ?? undefined;
+                } catch { /* non-fatal */ }
+            }
+
+            if (email) {
+                const userAgent = 'RevenueCat Mobile App';
+                const value = event.price_in_purchased_currency ? event.price_in_purchased_currency / 100 : 0;
+                const currency = event.currency || 'USD';
+
+                // Track StartTrial event
+                if (event.type === 'INITIAL_PURCHASE' && event.period_type === 'TRIAL') {
+                    await trackStartTrial({
+                        email,
+                        userId,
+                        trialDays: event.expiration_at_ms && event.purchased_at_ms
+                            ? Math.ceil((event.expiration_at_ms - event.purchased_at_ms) / (1000 * 60 * 60 * 24))
+                            : 7,
+                        userAgent,
+                    });
+                }
+                // Track Purchase event (non-trial initial purchase)
+                else if (event.type === 'INITIAL_PURCHASE' && event.period_type !== 'TRIAL') {
+                    await trackPurchase({
+                        email,
+                        userId,
+                        value,
+                        currency,
+                        contentName: plan,
+                        userAgent,
+                    });
+                }
+                // Track Subscribe event (renewals or trial conversions)
+                else if (event.type === 'RENEWAL' || (event.type === 'INITIAL_PURCHASE' && event.is_trial_conversion)) {
+                    const billingPeriod = event.product_id?.includes('annual') ? 'annual' : 'monthly';
+                    await trackSubscribe({
+                        email,
+                        userId,
+                        value,
+                        currency,
+                        planName: plan,
+                        billingPeriod: billingPeriod as 'monthly' | 'annual',
+                        userAgent,
+                    });
+                }
+            }
+        } catch (e: any) {
+            console.error('[RevenueCat Webhook] Meta event tracking error:', e?.message);
         }
 
         return NextResponse.json({

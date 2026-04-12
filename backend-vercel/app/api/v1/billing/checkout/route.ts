@@ -2,6 +2,7 @@ import { options, ok, badRequest, unauthorized, serverError } from "@/lib/cors";
 import { getUser } from "@/lib/auth";
 import { getClientOrThrow } from "@/lib/supabase";
 import Stripe from "stripe";
+import { trackInitiateCheckout } from "@/lib/meta-conversions";
 
 export const runtime = "nodejs";
 
@@ -59,6 +60,35 @@ export async function POST(req: Request) {
     });
 
     if (!session.url) return serverError('failed_to_create_checkout', req);
+
+    // Track InitiateCheckout event for Meta Pixel
+    try {
+      const userAgent = req.headers.get('user-agent') || undefined;
+      const ipAddress = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+                        req.headers.get('x-real-ip') ||
+                        undefined;
+
+      // Get user email from profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      await trackInitiateCheckout({
+        email: profile?.email || user.email || '',
+        userId: user.id,
+        value: 0, // We don't have the actual price here, will be captured on purchase
+        currency: 'USD',
+        planName: 'Subscription',
+        userAgent,
+        ipAddress,
+      });
+    } catch (metaError) {
+      // Log but don't fail the checkout if Meta tracking fails
+      console.error('[Meta] InitiateCheckout tracking failed:', metaError);
+    }
+
     return ok({ url: session.url }, req);
   } catch (e: any) {
     return serverError(e?.message || 'stripe_error', req);
