@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "AI-Enhanced Personal CRM",
-    "slug": "ai-enhanced-personal-crm",
+    "name": "SunTrace",
+    "slug": "suntrace",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "everreach",
+    "scheme": "suntrace",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": false,
     "splash": {
@@ -16,13 +16,17 @@
     "ios": {
       "jsEngine": "jsc",
       "supportsTablet": true,
-      "bundleIdentifier": "com.everreach.app",
+      "bundleIdentifier": "com.suntrace.app",
       "infoPlist": {
-        "NSMicrophoneUsageDescription": "EverReach uses your microphone to record voice notes about your contacts. For example, you can say 'Remind me to follow up with Sarah about the project meeting' and it will be transcribed and saved. Your audio is processed securely and only used for transcription.",
-        "NSPhotoLibraryUsageDescription": "EverReach needs photo access to let you add profile pictures and share images with your contacts.",
-        "NSCameraUsageDescription": "EverReach needs camera access to take photos for contact profiles and capture moments.",
-        "NSContactsUsageDescription": "EverReach needs contacts access to import your existing contacts into your personal CRM.",
-        "NSUserTrackingUsageDescription": "EverReach uses this to measure advertising effectiveness and personalize your experience. Your data is handled securely.",
+        "NSLocationWhenInUseUsageDescription": "SunTrace uses your location to provide accurate UV readings for your area",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "SunTrace tracks your outdoor sessions in the background",
+        "NSHealthShareUsageDescription": "SunTrace reads your outdoor activity to correlate with sun exposure",
+        "NSHealthUpdateUsageDescription": "SunTrace writes outdoor minutes to Apple Health",
+        "UIBackgroundModes": ["location"],
+        "NSMicrophoneUsageDescription": "SunTrace uses your microphone to record voice notes about your sun exposure sessions.",
+        "NSPhotoLibraryUsageDescription": "SunTrace needs photo access to let you add photos to your sun sessions.",
+        "NSCameraUsageDescription": "SunTrace needs camera access to capture photos during your outdoor sessions.",
+        "NSUserTrackingUsageDescription": "SunTrace uses this to measure advertising effectiveness and personalize your experience. Your data is handled securely.",
         "ITSAppUsesNonExemptEncryption": false,
         "LSApplicationQueriesSchemes": [
           "mailto",
@@ -30,11 +34,7 @@
           "telprompt",
           "sms",
           "http",
-          "https",
-          "fbapi",
-          "fb-messenger-share-api",
-          "fbauth2",
-          "fbshareextension"
+          "https"
         ],
         "SKAdNetworkItems": [
           { "SKAdNetworkIdentifier": "v9wttpbfk9.skadnetwork" },
@@ -59,8 +59,7 @@
           { "SKAdNetworkIdentifier": "hs6bdukanm.skadnetwork" }
         ]
       },
-      "usesAppleSignIn": true,
-      "accessesContactNotes": true
+      "usesAppleSignIn": true
     },
     "android": {
       "jsEngine": "hermes",
@@ -68,19 +67,20 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.everreach.crm",
+      "package": "com.suntrace.app",
       "permissions": [
         "android.permission.RECORD_AUDIO",
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.INTERNET",
         "android.permission.CAMERA",
-        "android.permission.READ_CONTACTS",
-        "android.permission.WRITE_CONTACTS",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_BACKGROUND_LOCATION",
         "android.permission.VIBRATE",
         "android.permission.RECEIVE_BOOT_COMPLETED",
         "android.permission.SCHEDULE_EXACT_ALARM",
-        "android.permission.MODIFY_AUDIO_SETTINGS"
+        "android.permission.ACTIVITY_RECOGNITION"
       ]
     },
     "web": {
@@ -90,33 +90,27 @@
       [
         "expo-router",
         {
-          "origin": "https://everreach.app/"
+          "origin": "https://suntrace.app/"
         }
       ],
       [
         "expo-av",
         {
-          "microphonePermission": "EverReach uses your microphone to record voice notes about your contacts. For example, you can say 'Remind me to follow up with Sarah' and it will be transcribed and saved."
+          "microphonePermission": "SunTrace uses your microphone to record voice notes about your sun exposure sessions."
         }
       ],
       "expo-apple-authentication",
       [
         "expo-image-picker",
         {
-          "photosPermission": "The app accesses your photos to let you share them with your friends."
-        }
-      ],
-      [
-        "expo-contacts",
-        {
-          "contactsPermission": "Allow $(PRODUCT_NAME) to access your contacts to import people into your CRM."
+          "photosPermission": "SunTrace accesses your photos to let you add images to your sun sessions."
         }
       ],
       "expo-localization",
       [
         "expo-notifications",
         {
-          "color": "#ffffff",
+          "color": "#F97316",
           "defaultChannel": "default",
           "enableBackgroundRemoteNotifications": false
         }
@@ -124,21 +118,17 @@
       "expo-font",
       "expo-web-browser",
       [
-        "expo-tracking-transparency",
+        "expo-location",
         {
-          "userTrackingPermission": "EverReach uses this identifier to measure ad effectiveness and personalize your experience. Your data is hashed for privacy. You can change this anytime in Settings."
+          "locationAlwaysAndWhenInUsePermission": "SunTrace tracks your outdoor sessions in the background",
+          "locationWhenInUsePermission": "SunTrace uses your location to provide accurate UV readings for your area",
+          "isIosBackgroundLocationEnabled": true
         }
       ],
       [
-        "react-native-fbsdk-next",
+        "expo-tracking-transparency",
         {
-          "appID": "453049510987286",
-          "clientToken": "3206c77601ed76cd74b6276904c20548",
-          "displayName": "EverReach",
-          "scheme": "fb453049510987286",
-          "advertiserIDCollectionEnabled": true,
-          "autoLogAppEventsEnabled": true,
-          "isAutoInitEnabled": true
+          "userTrackingPermission": "SunTrace uses this identifier to measure ad effectiveness and personalize your experience. Your data is hashed for privacy. You can change this anytime in Settings."
         }
       ]
     ],
@@ -147,7 +137,7 @@
     },
     "extra": {
       "router": {
-        "origin": "https://everreach.app/"
+        "origin": "https://suntrace.app/"
       },
       "eas": {
         "projectId": "c4c7bc9d-c16c-4a08-bfa4-80abb3ebead4"

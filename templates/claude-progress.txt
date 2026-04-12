@@ -1,0 +1,65 @@
+PulseLense — Initializer Session Log
+=====================================
+Date: 2026-04-05
+Session: INITIALIZER (Session 1)
+Model: claude-sonnet-4-6
+
+Project
+-------
+Real-time analytics and monitoring dashboard.
+Tech stack: React Native + Expo Router, Supabase, RevenueCat.
+Core entities: Dashboard, Metric, Alert.
+
+Work completed this session
+---------------------------
+[DONE] types/models.ts
+  - Removed placeholder Item/Category entities
+  - Added Dashboard, DashboardLayout, CreateDashboardInput, UpdateDashboardInput
+  - Added Metric, MetricType, MetricPeriod, CreateMetricInput, UpdateMetricInput
+  - Added Alert, AlertSeverity, AlertStatus, AlertCondition, NotificationChannel,
+    CreateAlertInput, UpdateAlertInput
+  - Kept User, Subscription, Entitlement, SubscriptionEvent, ApiResponse,
+    PaginatedResponse (shared infrastructure)
+
+[DONE] services/api.ts
+  - Replaced placeholder Item CRUD with full Dashboard CRUD (real Supabase)
+  - Added full Metric CRUD including sort_order management
+  - Added full Alert CRUD + updateAlertStatus with timestamp tracking
+  - All functions authenticate via getAuthenticatedUser() helper
+  - No mock data; all queries use real Supabase tables
+
+[DONE] constants/config.ts
+  - Branding updated to PulseLense
+  - DEV_MODE loaded from EXPO_PUBLIC_DEV_MODE env var
+  - Added REAL_TIME config (metric poll: 30s, alert check: 60s)
+  - Free/Pro tier limits reflect PulseLense business model
+  - Removed hardcoded placeholder URLs
+
+[DONE] templates/.env.example
+  - Documents all required EXPO_PUBLIC_* variables
+  - No secrets committed
+
+[DONE] supabase/migrations/001_pulselense_core.sql
+  - Creates dashboards, metrics, alerts tables
+  - RLS enabled + owner-only policies (select/insert/update/delete)
+  - Indexes on user_id, dashboard_id, status, sort_order
+  - Auto updated_at trigger on all three tables
+
+Coding principles enforced
+--------------------------
+PULSELENSE-001  No mock data in production code              ✓
+PULSELENSE-002  Real API endpoints (Supabase)                ✓
+PULSELENSE-003  Supabase with RLS policies                   ✓
+PULSELENSE-004  Env vars for secrets, no hardcoding          ✓
+PULSELENSE-005  TypeScript strict mode (tsconfig strict:true) ✓
+PULSELENSE-006  Existing code style followed                 ✓
+PULSELENSE-007  Features verified before marking complete    ✓
+
+Next steps for coding agents
+-----------------------------
+- Implement Dashboard screen (app/(tabs)/index.tsx)
+- Implement Metric detail screen (app/metric/[id].tsx)
+- Implement Alert management screen (app/alerts.tsx)
+- Implement real-time Supabase subscriptions for live metric updates
+- Wire up RevenueCat for subscription gating
+- Add push notification handling for triggered alerts
