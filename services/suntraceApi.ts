@@ -138,6 +138,26 @@ export async function getSessions(limit: number = 20): Promise<SunSession[]> {
   return data ?? [];
 }
 
+export async function getWeekStats(): Promise<DailyStats[]> {
+  const user = await getUser();
+  const today = new Date();
+  const sevenDaysAgo = new Date(today);
+  sevenDaysAgo.setDate(today.getDate() - 6);
+  const fromDate = sevenDaysAgo.toISOString().split('T')[0];
+  const toDate = today.toISOString().split('T')[0];
+
+  const { data, error } = await supabase
+    .from('sun_daily_stats')
+    .select('*')
+    .eq('user_id', user.id)
+    .gte('date', fromDate)
+    .lte('date', toDate)
+    .order('date', { ascending: true });
+
+  if (error) throw error;
+  return data ?? [];
+}
+
 export async function getTodayStats(): Promise<DailyStats | null> {
   const user = await getUser();
   const today = new Date().toISOString().split('T')[0];

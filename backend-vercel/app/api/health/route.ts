@@ -5,8 +5,8 @@ export const runtime = 'edge';
 export async function GET(req: Request) {
   return ok({
     status: 'ok',
-    message: 'Ever Reach Backend API is running',
-    time: new Date().toISOString(),
+    timestamp: new Date().toISOString(),
+    env: process.env.NODE_ENV ?? 'production',
   }, req);
 }
 

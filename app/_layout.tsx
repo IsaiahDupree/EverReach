@@ -495,21 +495,20 @@ function RootLayoutNav() {
 
   // Show welcome screens for first-time users (before auth)
   // OnboardingV2 handles the welcome screen (S1) and pre-auth questions
-  if (!isAuthenticated && !welcomeSeen) {
+  const isOnboardingDisabledPreAuth = process.env.EXPO_PUBLIC_DISABLE_ONBOARDING === 'true';
+  if (!isAuthenticated && !welcomeSeen && !isOnboardingDisabledPreAuth) {
     console.log('[Layout v2] → Onboarding V2 (Welcome/Pre-auth)');
     return <OnboardingV2Screen />;
   }
 
   // Show sign-in if not authenticated, except for public routes
-  if (!isAuthenticated) {
+  const isAuthDisabled = process.env.EXPO_PUBLIC_DISABLE_ONBOARDING === 'true';
+  if (!isAuthenticated && !isAuthDisabled) {
     const path = pathname || '/';
     const allowUnauthed = path.startsWith('/auth') || path.startsWith('/sign-in') || path.startsWith('/billing') || path === '/terms' || path === '/privacy-policy' || path === '/telemetry-debug' || path === '/welcome';
-    // console.log('[Layout v2] Auth check - path:', path, 'allowUnauthed:', allowUnauthed);
     if (!allowUnauthed) {
-      // console.log('[Layout v2] → Auth');
       return <Auth />;
     }
-    // console.log('[Layout v2] → Allowing public route:', path);
   }
 
   // Show onboarding for first-time users (only after authentication)
@@ -704,39 +703,31 @@ export default function RootLayout() {
                     android: process.env.EXPO_PUBLIC_SUPERWALL_ANDROID_KEY || ''
                   }}
                 >
-                  <SuperwallLoading>
-                    <View style={styles.loadingContainer}>
-                      <ActivityIndicator size="large" color="#007AFF" />
-                      <Text style={styles.loadingText}>Loading Superwall...</Text>
-                    </View>
-                  </SuperwallLoading>
-                  <SuperwallLoaded>
-                    <OnboardingProvider>
-                      <WarmthSettingsProvider>
-                        <WarmthProvider>
-                          <TemplatesContext>
-                            <SubscriptionProvider>
-                              <EntitlementsProviderV3>
-                                <PaywallProvider>
-                                  <PeopleProvider>
-                                    <InteractionsProvider>
-                                      <VoiceNotesProvider>
-                                        <MessageProvider>
-                                          <NotesComposerProvider>
-                                            <RootLayoutNav />
-                                          </NotesComposerProvider>
-                                        </MessageProvider>
-                                      </VoiceNotesProvider>
-                                    </InteractionsProvider>
-                                  </PeopleProvider>
-                                </PaywallProvider>
-                              </EntitlementsProviderV3>
-                            </SubscriptionProvider>
-                          </TemplatesContext>
-                        </WarmthProvider>
-                      </WarmthSettingsProvider>
-                    </OnboardingProvider>
-                  </SuperwallLoaded>
+                  <OnboardingProvider>
+                    <WarmthSettingsProvider>
+                      <WarmthProvider>
+                        <TemplatesContext>
+                          <SubscriptionProvider>
+                            <EntitlementsProviderV3>
+                              <PaywallProvider>
+                                <PeopleProvider>
+                                  <InteractionsProvider>
+                                    <VoiceNotesProvider>
+                                      <MessageProvider>
+                                        <NotesComposerProvider>
+                                          <RootLayoutNav />
+                                        </NotesComposerProvider>
+                                      </MessageProvider>
+                                    </VoiceNotesProvider>
+                                  </InteractionsProvider>
+                                </PeopleProvider>
+                              </PaywallProvider>
+                            </EntitlementsProviderV3>
+                          </SubscriptionProvider>
+                        </TemplatesContext>
+                      </WarmthProvider>
+                    </WarmthSettingsProvider>
+                  </OnboardingProvider>
                 </SuperwallProvider>
               </CustomPurchaseControllerProvider>
             </AuthProvider>

@@ -278,7 +278,7 @@ export default function Auth() {
             {/* Header */}
             <View style={styles.header}>
               <LinearGradient
-                colors={['#F3E8FF', '#E9D5FF', '#DDD6FE']}
+                colors={['#FFF3E0', '#FFE0B2', '#FFD180']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.logoContainer}
@@ -289,7 +289,7 @@ export default function Auth() {
                   resizeMode="contain"
                 />
               </LinearGradient>
-              <Text style={styles.title}>Welcome to EverReach</Text>
+              <Text style={styles.title}>Welcome to SunTrace</Text>
               <Text style={styles.subtitle}>
                 {isSignUp ? 'Create your account' : 'Sign in to continue'}
               </Text>

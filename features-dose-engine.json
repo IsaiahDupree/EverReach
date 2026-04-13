@@ -1,0 +1,265 @@
+{
+  "project": "suntrace-dose-engine",
+  "description": "UV Dose Engine upgrade for SunTrace — adds weather-weighted session scoring, user modifiers, outdoor confidence, daily summaries, and session history UI",
+  "target_path": "/Users/isaiahdupree/Documents/Software/SunTrace",
+  "prd": "docs/prd/PRD_SUNLIGHT_DOSE_ENGINE.md",
+  "features": [
+    {
+      "id": "DE-001",
+      "title": "sunDoseCalculator service",
+      "description": "Pure TypeScript module at services/sunDoseCalculator.ts. Exports calcSessionUVDose(inputs: DoseInputs): number and calcDailyTotals(sessions: ScoredSession[]): DailyTotals. Uses formula: durationMinutes × uvIndex × outdoorConfidence × cloudFactor × shadeFactor × exposureFactor × protectionFactor. No side effects, fully unit-testable.",
+      "priority": "critical",
+      "file": "services/sunDoseCalculator.ts"
+    },
+    {
+      "id": "DE-002",
+      "title": "Cloud factor derivation from cloudCover percentage",
+      "description": "In sunDoseCalculator.ts, export function cloudFactor(cloudCoverPct: number): number. Thresholds: 0–15% → 1.00, 16–40% → 0.85, 41–65% → 0.65, 66–100% → 0.40. Used in session dose calc.",
+      "priority": "critical",
+      "file": "services/sunDoseCalculator.ts"
+    },
+    {
+      "id": "DE-003",
+      "title": "Factor lookup tables and type exports",
+      "description": "Export SHADE_FACTORS, EXPOSURE_FACTORS, PROTECTION_FACTORS as const lookup objects. Export types ShadeFactor, ExposureFactor, ProtectionFactor. Include all values from PRD factor tables. Used across UI and calculator.",
+      "priority": "critical",
+      "file": "services/sunDoseCalculator.ts"
+    },
+    {
+      "id": "DE-004",
+      "title": "outdoorConfidence service",
+      "description": "Create services/outdoorConfidence.ts. Exports calcOutdoorConfidence(signals: SessionSignals): number. Signals: motionType, isDaylight, locationFreshSeconds, distanceMovedMeters, speed, durationMinutes. Uses weighted scoring: walking +0.25, running +0.30, cycling +0.20, automotive → 0.05 override, daylight +0.15, fresh location +0.10, movement >50m +0.10. Clamp 0–1.",
+      "priority": "critical",
+      "file": "services/outdoorConfidence.ts"
+    },
+    {
+      "id": "DE-005",
+      "title": "weatherEnrichment service with Open-Meteo integration",
+      "description": "Create services/weatherEnrichment.ts. Export getWeatherForSession(lat, lon, timestamp): Promise<WeatherSnapshot>. Calls Open-Meteo forecast API for hourly uv_index, cloudcover, is_day, plus daily sunrise/sunset. Cache results by (geohash5, hourBucket) using weather_cache Supabase table. On fetch error, use nearest cached bucket within 2 hours.",
+      "priority": "critical",
+      "file": "services/weatherEnrichment.ts"
+    },
+    {
+      "id": "DE-006",
+      "title": "Geohash utility for weather caching",
+      "description": "Create utils/geohash.ts. Export encode(lat: number, lon: number, precision: number): string. Implement standard base-32 geohash encoding. Used by weatherEnrichment to create cache keys (precision=5 for ~5km cells).",
+      "priority": "high",
+      "file": "utils/geohash.ts"
+    },
+    {
+      "id": "DE-007",
+      "title": "Supabase migration: add dose columns to sun_sessions",
+      "description": "Create supabase/migrations/add_session_dose_columns.sql. Add columns: uv_dose_score DECIMAL(8,2), outdoor_confidence DECIMAL(4,2) DEFAULT 0.8, motion_type TEXT CHECK IN ('walking','running','cycling','automotive','stationary','unknown'), calc_version INTEGER DEFAULT 1, daylight_minutes_effective DECIMAL(8,2). Apply via mcp__supabase__apply_migration.",
+      "priority": "critical",
+      "file": "supabase/migrations/add_session_dose_columns.sql"
+    },
+    {
+      "id": "DE-008",
+      "title": "Supabase migration: session_modifiers table",
+      "description": "Create supabase/migrations/create_session_modifiers.sql. Table: session_id UUID FK sun_sessions, shade_factor DECIMAL(4,2) DEFAULT 1.0, exposure_factor DECIMAL(4,2) DEFAULT 0.75, protection_factor DECIMAL(4,2) DEFAULT 1.0, source TEXT ('default'|'manual'|'inferred'), updated_at TIMESTAMPTZ. Add RLS: users can read/write their own via session join.",
+      "priority": "critical",
+      "file": "supabase/migrations/create_session_modifiers.sql"
+    },
+    {
+      "id": "DE-009",
+      "title": "Supabase migration: session_weather table",
+      "description": "Create supabase/migrations/create_session_weather.sql. Columns: session_id UUID FK, uv_index DECIMAL, cloud_cover INTEGER, cloud_factor DECIMAL, condition TEXT, sunrise_time TIMESTAMPTZ, sunset_time TIMESTAMPTZ, temperature_c DECIMAL, provider TEXT DEFAULT 'open-meteo', fetched_at TIMESTAMPTZ. RLS: read own via session join.",
+      "priority": "critical",
+      "file": "supabase/migrations/create_session_weather.sql"
+    },
+    {
+      "id": "DE-010",
+      "title": "Supabase migration: daily_summaries table",
+      "description": "Create supabase/migrations/create_daily_summaries.sql. Columns: user_id UUID FK, date_local DATE, uv_dose_score DECIMAL, daylight_minutes DECIMAL, morning_light_minutes DECIMAL, overexposure_risk TEXT ('low'|'moderate'|'high'|'very_high') DEFAULT 'low', remaining_suggested_min DECIMAL, session_count INTEGER, calc_version INTEGER, recalculated_at TIMESTAMPTZ. PK: (user_id, date_local). RLS: own rows only.",
+      "priority": "critical",
+      "file": "supabase/migrations/create_daily_summaries.sql"
+    },
+    {
+      "id": "DE-011",
+      "title": "Supabase migration: user_sun_profile table",
+      "description": "Create supabase/migrations/create_user_sun_profile.sql. Columns: user_id UUID PK FK auth.users, goal_mode TEXT ('balanced'|'circadian'|'vitamin_d'|'tanning_aware') DEFAULT 'balanced', skin_sensitivity TEXT ('very_fair'|'fair'|'medium'|'olive'|'dark') DEFAULT 'medium', default_shade TEXT, default_exposure TEXT, default_protection TEXT, morning_window_hours INTEGER DEFAULT 3, daily_target_dose DECIMAL DEFAULT 100, notifications_enabled BOOLEAN DEFAULT true, updated_at TIMESTAMPTZ. RLS: own row only.",
+      "priority": "high",
+      "file": "supabase/migrations/create_user_sun_profile.sql"
+    },
+    {
+      "id": "DE-012",
+      "title": "Supabase migration: weather_cache table",
+      "description": "Create supabase/migrations/create_weather_cache.sql. Columns: geohash5 TEXT, hour_bucket TIMESTAMPTZ, uv_index DECIMAL, cloud_cover INTEGER, cloud_factor DECIMAL, sunrise_time TIMESTAMPTZ, sunset_time TIMESTAMPTZ, provider TEXT, fetched_at TIMESTAMPTZ. PK: (geohash5, hour_bucket, provider). No RLS needed — public read, service-role write.",
+      "priority": "high",
+      "file": "supabase/migrations/create_weather_cache.sql"
+    },
+    {
+      "id": "DE-013",
+      "title": "Backend: POST /api/sessions/[id]/score endpoint",
+      "description": "Create backend-vercel/app/api/sessions/[id]/score/route.ts. Accepts POST. Fetches session + location, calls getWeatherForSession, reads session_modifiers (or uses profile defaults), runs calcSessionUVDose, stores results to session_weather + session_modifiers + updates sun_sessions.uv_dose_score. Then rebuilds daily_summaries for that date. Returns updated session + daily totals.",
+      "priority": "critical",
+      "file": "backend-vercel/app/api/sessions/[id]/score/route.ts"
+    },
+    {
+      "id": "DE-014",
+      "title": "Backend: POST /api/daily/recalculate endpoint",
+      "description": "Create backend-vercel/app/api/daily/recalculate/route.ts. Body: { date, userId }. Fetches all sessions for user+date, re-scores each (fetch weather, apply modifiers), recalculates daily_summaries row. Returns updated DailyTotals. Used when modifiers change or after historical backfill.",
+      "priority": "critical",
+      "file": "backend-vercel/app/api/daily/recalculate/route.ts"
+    },
+    {
+      "id": "DE-015",
+      "title": "Backend: GET /api/daily/[date] endpoint",
+      "description": "Create backend-vercel/app/api/daily/[date]/route.ts. Returns daily_summaries row + array of sessions with their weather snapshot and modifiers for that date. Authenticated via Supabase auth header.",
+      "priority": "critical",
+      "file": "backend-vercel/app/api/daily/[date]/route.ts"
+    },
+    {
+      "id": "DE-016",
+      "title": "Backend: PATCH /api/sessions/[id]/modifiers endpoint",
+      "description": "Create backend-vercel/app/api/sessions/[id]/modifiers/route.ts. Accepts { shadeFactor, exposureFactor, protectionFactor }. Upserts session_modifiers row with source='manual'. Triggers re-score of session and daily summary. Returns updated session dose + daily totals.",
+      "priority": "high",
+      "file": "backend-vercel/app/api/sessions/[id]/modifiers/route.ts"
+    },
+    {
+      "id": "DE-017",
+      "title": "Backend: GET /api/weather/snapshot endpoint",
+      "description": "Create backend-vercel/app/api/weather/snapshot/route.ts. Query params: lat, lon, ts (ISO timestamp). Returns WeatherSnapshot: uvIndex, cloudCover, cloudFactor, sunriseTime, sunsetTime, isDaylight. Checks weather_cache first, fetches Open-Meteo on miss. Used by client for live UV display.",
+      "priority": "high",
+      "file": "backend-vercel/app/api/weather/snapshot/route.ts"
+    },
+    {
+      "id": "DE-018",
+      "title": "useDailyDose hook",
+      "description": "Create hooks/useDailyDose.ts. Returns { uvDoseScore, daylightMinutes, morningLightMinutes, overexposureRisk, remainingSuggestedMin, sessionCount, isLoading, refresh }. Reads daily_summaries from Supabase for today (or provided date). Subscribes to realtime updates so display refreshes when sessions are scored.",
+      "priority": "critical",
+      "file": "hooks/useDailyDose.ts"
+    },
+    {
+      "id": "DE-019",
+      "title": "Update useSunTracker to enrich sessions with weather on save",
+      "description": "In hooks/useSunTracker.ts, after saveSession() inserts to sun_sessions, call POST /api/sessions/[id]/score to trigger weather enrichment + dose calculation. Store returned uv_dose_score locally for immediate display. Keep existing simulation mode intact.",
+      "priority": "critical",
+      "file": "hooks/useSunTracker.ts"
+    },
+    {
+      "id": "DE-020",
+      "title": "UV Dose Score ring on sun-home screen",
+      "description": "In app/(tabs)/sun-home.tsx, replace the plain minutes ring with a two-metric display. Large ring shows UV Dose Score (colored by band: gray <30, orange 30–80, amber 80–150, red 150–250, purple 250+). Below it, show Daylight Minutes as secondary metric. Keep existing ring animation and size.",
+      "priority": "critical",
+      "file": "app/(tabs)/sun-home.tsx"
+    },
+    {
+      "id": "DE-021",
+      "title": "DoseBand color utility",
+      "description": "Create utils/doseBand.ts. Export function getDoseBand(score: number): { label: string, color: string, bgColor: string }. Bands: 0–30 low gray, 30–80 building orange, 80–150 good amber, 150–250 caution red, 250+ overexposure purple. Used by ring and dose display.",
+      "priority": "high",
+      "file": "utils/doseBand.ts"
+    },
+    {
+      "id": "DE-022",
+      "title": "Session modifier bottom sheet component",
+      "description": "Create components/SessionModifierSheet.tsx. Bottom sheet that appears after a session is saved. Three row selectors: Shade (Full Sun / Partial / Shade), Skin (Covered / Shorts+Tee / Swimwear), Protection (None / SPF15 / SPF30 / SPF50+). On confirm, calls PATCH /api/sessions/[id]/modifiers. Shows outdoor confidence bar. Dismiss without confirming = keep defaults.",
+      "priority": "high",
+      "file": "components/SessionModifierSheet.tsx"
+    },
+    {
+      "id": "DE-023",
+      "title": "Session history screen",
+      "description": "Create app/(tabs)/history.tsx (or update existing sessions tab). Shows daily summary header (UV Dose Score, Daylight Minutes). List of sessions for today with: time, duration, UV index, dose score, modifier badges (shade/skin/protection). Tap session → open DoseBreakdownModal.",
+      "priority": "high",
+      "file": "app/(tabs)/history.tsx"
+    },
+    {
+      "id": "DE-024",
+      "title": "DoseBreakdownModal component",
+      "description": "Create components/DoseBreakdownModal.tsx. Shows full dose math for a session: Duration, UV Index, Cloud factor (with condition text), Outdoor confidence (with motion type), Shade factor, Skin exposure factor, Protection factor, divider line, final Dose Score. Edit button to open modifier sheet.",
+      "priority": "medium",
+      "file": "components/DoseBreakdownModal.tsx"
+    },
+    {
+      "id": "DE-025",
+      "title": "User sun profile screen",
+      "description": "Create app/sun-profile.tsx. Settings screen for goal mode (Balanced/Circadian/Vitamin D/Tanning-Aware), skin sensitivity picker, default shade/skin/protection defaults. Saves to user_sun_profile table. Accessible from profile or settings.",
+      "priority": "medium",
+      "file": "app/sun-profile.tsx"
+    },
+    {
+      "id": "DE-026",
+      "title": "Overexposure risk derivation",
+      "description": "In sunDoseCalculator.ts, export function deriveOverexposureRisk(dailyScore: number, skinSensitivity: string): OverexposureRisk. Thresholds adjusted by skin sensitivity: very_fair threshold is ~60% of medium; dark threshold is ~150% of medium. Returns 'low'|'moderate'|'high'|'very_high'.",
+      "priority": "medium",
+      "file": "services/sunDoseCalculator.ts"
+    },
+    {
+      "id": "DE-027",
+      "title": "Remaining suggested exposure calculator",
+      "description": "In sunDoseCalculator.ts, export function calcRemainingMinutes(currentDailyScore: number, targetDose: number, currentUV: number, cloudFactor: number, outdoorConfidence: number, exposureFactor: number, protectionFactor: number): number | null. Returns null if target already met or UV=0. Returns estimated minutes until daily target reached given current conditions.",
+      "priority": "medium",
+      "file": "services/sunDoseCalculator.ts"
+    },
+    {
+      "id": "DE-028",
+      "title": "Morning light minutes detection",
+      "description": "In weatherEnrichment.ts or sunDoseCalculator.ts, add isMorningSession(startTime: Date, sunriseTime: Date, morningWindowHours: number): boolean. A session counts as morning light if it starts within morningWindowHours after sunrise. Used to populate daily_summaries.morning_light_minutes.",
+      "priority": "medium",
+      "file": "services/weatherEnrichment.ts"
+    },
+    {
+      "id": "DE-029",
+      "title": "Update TrackingStatus to show live dose accumulation",
+      "description": "In app/(tabs)/sun-home.tsx TrackingStatus component, add a live dose preview: while tracking, show estimated pts accumulating in real-time based on currentUV × outdoorConfidence × cloudFactor × defaultModifiers. Updates every second in tracking state.",
+      "priority": "medium",
+      "file": "app/(tabs)/sun-home.tsx"
+    },
+    {
+      "id": "DE-030",
+      "title": "Unit tests for dose calculator",
+      "description": "Create __tests__/sunDoseCalculator.test.ts. Test cases: (1) UV=8, 20min, SPF30 full sun partly cloudy confidence=0.8 → ~29.4 pts. (2) Vehicle session (confidence=0.05) → very low dose. (3) Indoors (UV=0) → 0. (4) All factors at max → UV×duration only. (5) cloudFactor threshold boundaries. Use real calculations, no mocks.",
+      "priority": "high",
+      "file": "__tests__/sunDoseCalculator.test.ts"
+    },
+    {
+      "id": "DE-031",
+      "title": "Unit tests for outdoorConfidence",
+      "description": "Create __tests__/outdoorConfidence.test.ts. Test: walking in daylight → ≥0.85. Automotive → ≤0.10. Stationary with daylight → ~0.55. No daylight → lower. Walking no daylight → ~0.60. All clamped 0–1.",
+      "priority": "high",
+      "file": "__tests__/outdoorConfidence.test.ts"
+    },
+    {
+      "id": "DE-032",
+      "title": "Unit tests for cloudFactor derivation",
+      "description": "Create __tests__/cloudFactor.test.ts. Test boundary values: 0%, 15%, 16%, 40%, 41%, 65%, 66%, 100% cloud cover → correct factor values from PRD table.",
+      "priority": "high",
+      "file": "__tests__/cloudFactor.test.ts"
+    },
+    {
+      "id": "DE-033",
+      "title": "Integration: session save triggers dose scoring automatically",
+      "description": "End-to-end: when useSunTracker saves a session, it automatically gets scored within 5 seconds. Dose shows up in useDailyDose without user action. Test with simulation mode: run Outside simulation for 2 minutes, verify session saved, verify daily_summaries updated, verify ring updates.",
+      "priority": "critical",
+      "file": "hooks/useSunTracker.ts"
+    },
+    {
+      "id": "DE-034",
+      "title": "Simulation mode integration with dose engine",
+      "description": "When simulation mode is active, use simulated UV and speed values in dose calculation. Outside: UV=4.5, confidence=0.9, cloud=1.0 → high dose rate. In Car: vehicle detected → 0 dose. Indoors: UV=0 → 0 dose. Simulated sessions saved with notes='Simulated (outside)' etc. Already partially in place — wire into dose calculator.",
+      "priority": "high",
+      "file": "hooks/useSunTracker.ts"
+    },
+    {
+      "id": "DE-035",
+      "title": "Weather cache health endpoint",
+      "description": "Create backend-vercel/app/api/health/weather-cache/route.ts. Returns: total cached rows, oldest entry, hit rate (last 24h hits vs misses from logs), provider breakdown. Used for monitoring cache effectiveness.",
+      "priority": "low",
+      "file": "backend-vercel/app/api/health/weather-cache/route.ts"
+    }
+  ],
+  "total_features": 35,
+  "estimated_sessions": 3,
+  "priority_order": [
+    "DE-001", "DE-002", "DE-003", "DE-004", "DE-005",
+    "DE-007", "DE-008", "DE-009", "DE-010", "DE-013",
+    "DE-014", "DE-015", "DE-018", "DE-019", "DE-020",
+    "DE-033", "DE-034",
+    "DE-006", "DE-011", "DE-012", "DE-016", "DE-017",
+    "DE-021", "DE-022", "DE-023", "DE-030", "DE-031", "DE-032",
+    "DE-024", "DE-025", "DE-026", "DE-027", "DE-028", "DE-029",
+    "DE-035"
+  ]
+}

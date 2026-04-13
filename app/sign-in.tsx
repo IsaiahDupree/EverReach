@@ -9,19 +9,19 @@ import { useAuth } from '@/providers/AuthProviderV2';
  */
 export default function SignInRedirect() {
   const router = useRouter();
-  const { session, loading } = useAuth();
+  const { session, loading, isAuthenticated } = useAuth();
 
   useEffect(() => {
     if (loading) return;
 
-    if (session) {
-      // Already signed in, go to home
+    if (isAuthenticated) {
+      // Already signed in (or local-only mode), go to home
       router.replace('/(tabs)/home');
     } else {
       // Not signed in, go to auth page
       router.replace('/auth');
     }
-  }, [session, loading]);
+  }, [isAuthenticated, loading]);
 
   // Show loading spinner while redirecting
   return (

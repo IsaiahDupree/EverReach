@@ -6,7 +6,7 @@
  * Components that need subscription-gating should read subscriptionTier from here.
  */
 import { create } from 'zustand';
-import type { Profile } from '@/types/models';
+import type { UserProfile as Profile } from '@/types/suntrace';
 
 // ============================================
 // Types

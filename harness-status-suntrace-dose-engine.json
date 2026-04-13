@@ -1,0 +1,16 @@
+{
+  "projectId": "suntrace-dose-engine",
+  "projectRoot": "/Users/isaiahdupree/Documents/Software/SunTrace",
+  "lastUpdated": "2026-04-13T00:50:23.541Z",
+  "sessionType": "CODING",
+  "status": "running",
+  "stats": {
+    "total": 35,
+    "passing": 26,
+    "pending": 9,
+    "percentComplete": "74.3"
+  },
+  "pid": 77116,
+  "currentSession": 10,
+  "model": "claude-haiku-4-5-20251001"
+}
