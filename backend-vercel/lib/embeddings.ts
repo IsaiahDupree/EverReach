@@ -6,9 +6,7 @@
 
 import OpenAI from 'openai';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY!,
-});
+function getOpenAI() { return new OpenAI({ apiKey: process.env.OPENAI_API_KEY! }); }
 
 const EMBEDDING_MODEL = 'text-embedding-3-small';
 const EMBEDDING_DIMENSIONS = 1536;
@@ -18,7 +16,7 @@ const EMBEDDING_DIMENSIONS = 1536;
  */
 export async function generateEmbedding(text: string): Promise<number[]> {
   try {
-    const response = await openai.embeddings.create({
+    const response = await getOpenAI().embeddings.create({
       model: EMBEDDING_MODEL,
       input: text.substring(0, 8000), // Limit input size
       dimensions: EMBEDDING_DIMENSIONS,
@@ -67,7 +65,7 @@ export async function generateBucketTitle(
       `- ${r.title}${r.description ? `: ${r.description.substring(0, 100)}` : ''}`
     ).join('\n');
 
-    const response = await openai.chat.completions.create({
+    const response = await getOpenAI().chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
         {
@@ -101,7 +99,7 @@ export async function generateBucketSummary(
       `- ${r.title}${r.description ? `: ${r.description.substring(0, 150)}` : ''}`
     ).join('\n');
 
-    const response = await openai.chat.completions.create({
+    const response = await getOpenAI().chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
         {

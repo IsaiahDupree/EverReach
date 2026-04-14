@@ -13,9 +13,7 @@ import { linkScreenshotToContacts } from '@/lib/screenshot-linker';
 
 function getSupabase() { return getServiceClient(); }
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY!,
-});
+function getOpenAI() { return new OpenAI({ apiKey: process.env.OPENAI_API_KEY! }); }
 
 const ANALYSIS_PROMPT = `You are analyzing a screenshot to extract structured information for a CRM system.
 
@@ -129,7 +127,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     const dataUrl = `data:${mimeType};base64,${base64}`;
 
     // Call GPT-4 Vision for analysis
-    const completion = await openai.chat.completions.create({
+    const completion = await getOpenAI().chat.completions.create({
       model: 'gpt-4o',
       messages: [
         {

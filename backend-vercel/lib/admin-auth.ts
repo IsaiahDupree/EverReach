@@ -13,7 +13,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+function getResend() { return new Resend(process.env.RESEND_API_KEY); }
 
 // ============================================================================
 // TYPES
@@ -292,7 +292,7 @@ export async function requestPasswordReset(
   const resetUrl = `${process.env.NEXT_PUBLIC_DASHBOARD_URL || 'http://localhost:3000'}/admin/reset-password?token=${resetToken}`;
 
   try {
-    await resend.emails.send({
+    await getResend().emails.send({
       from: process.env.RESEND_FROM_EMAIL || 'noreply@everreach.app',
       to: user.email,
       subject: 'Reset Your Admin Dashboard Password',

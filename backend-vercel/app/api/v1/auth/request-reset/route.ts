@@ -8,7 +8,7 @@ export const runtime = "nodejs";
 
 export function OPTIONS(req: Request){ return options(req); }
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+function getResend() { return new Resend(process.env.RESEND_API_KEY); }
 
 /**
  * POST /v1/auth/request-reset
@@ -78,7 +78,7 @@ export async function POST(req: NextRequest){
     const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://everreach.app'}/reset-password?token=${token}`;
 
     // Send email via Resend
-    const { error: emailError } = await resend.emails.send({
+    const { error: emailError } = await getResend().emails.send({
       from: process.env.FROM_EMAIL || 'EverReach <noreply@everreach.app>',
       to: email,
       subject: 'Reset your EverReach password',

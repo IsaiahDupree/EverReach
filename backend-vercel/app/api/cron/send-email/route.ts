@@ -12,7 +12,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServiceClient } from '@/lib/supabase';
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+function getResend() { return new Resend(process.env.RESEND_API_KEY); }
 const FROM_EMAIL = process.env.FROM_EMAIL || 'EverReach <hello@everreach.app>';
 
 function buildDeepLink(path: string, params: Record<string, any>): string {
@@ -86,7 +86,7 @@ async function sendEmail(delivery: any, supabase: ReturnType<typeof getServiceCl
       .replace(/\{reason\}/g, delivery.reason || '');
     
     // Send via Resend
-    const response = await resend.emails.send({
+    const response = await getResend().emails.send({
       from: FROM_EMAIL,
       to: profile.email,
       subject: template.subject,

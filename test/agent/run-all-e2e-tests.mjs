@@ -33,6 +33,10 @@ const E2E_TESTS = [
   { name: 'Trial Expiration & Billing', file: 'e2e-trial-expiration.mjs', priority: 2 },
   { name: 'Multi-Channel Campaigns', file: 'e2e-multi-channel-campaigns.mjs', priority: 2 },
   { name: 'Screenshot Analysis', file: 'e2e-screenshot-analysis.mjs', priority: 3 },
+
+  // Social media integrations
+  { name: 'Social Platform Integrations', file: 'integration-social-platforms.mjs', priority: 2 },
+  { name: 'Instagram Post Publishing', file: 'e2e-instagram-post.mjs', priority: 2 },
 ];
 
 const results = [];

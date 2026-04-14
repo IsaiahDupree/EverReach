@@ -54,6 +54,42 @@
     {
       "path": "/api/cron/aggregate-superwall",
       "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/cron/instagram-publisher",
+      "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/instagram-engagement-sync",
+      "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/cron/signals-sync",
+      "schedule": "30 0 * * *"
+    },
+    {
+      "path": "/api/cron/strategy-generate",
+      "schedule": "40 0 * * *"
+    },
+    {
+      "path": "/api/cron/candidates-generate",
+      "schedule": "45 0 * * *"
+    },
+    {
+      "path": "/api/cron/candidates-score",
+      "schedule": "50 0 * * *"
+    },
+    {
+      "path": "/api/cron/copy-and-assets",
+      "schedule": "55 0 * * *"
+    },
+    {
+      "path": "/api/cron/qa-and-queue-fill",
+      "schedule": "5 1 * * *"
+    },
+    {
+      "path": "/api/cron/content-model-update",
+      "schedule": "20 4 * * *"
     }
   ]
 }

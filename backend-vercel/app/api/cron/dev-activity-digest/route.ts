@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServiceClient } from '@/lib/supabase';
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+function getResend() { return new Resend(process.env.RESEND_API_KEY); }
 
 /**
  * Developer Activity Digest (Cron Job)
@@ -76,7 +76,7 @@ export async function GET(req: NextRequest) {
       <p><a href="https://supabase.com/dashboard/project/utasetfxiqcrnwyfforx/editor">View in Supabase Dashboard</a></p>
     `;
 
-    const { data: emailData, error: emailError } = await resend.emails.send({
+    const { data: emailData, error: emailError } = await getResend().emails.send({
       from: process.env.FROM_EMAIL || 'EverReach Alerts <alerts@everreach.app>',
       to: ['isaiahdupree33@gmail.com'], // Developer email
       subject: `📊 EverReach Activity: ${metrics.unique_users} users, ${metrics.total_events} events`,

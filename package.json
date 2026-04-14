@@ -15,7 +15,9 @@
     "test:e2e:lifecycle": "node test/agent/e2e-contact-lifecycle-complete.mjs",
     "test:e2e:trial": "node test/agent/e2e-trial-expiration.mjs",
     "test:e2e:campaigns": "node test/agent/e2e-multi-channel-campaigns.mjs",
-    "test:e2e:screenshot": "node test/agent/e2e-screenshot-analysis.mjs"
+    "test:e2e:screenshot": "node test/agent/e2e-screenshot-analysis.mjs",
+    "test:e2e:instagram": "node test/agent/e2e-instagram-post.mjs",
+    "test:e2e:social": "node test/agent/integration-social-platforms.mjs"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.1.0",

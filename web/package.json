@@ -19,6 +19,7 @@
     "playwright:install": "playwright install --with-deps"
   },
   "dependencies": {
+    "@seo-workspace/next-seo-kit": "file:../../../seo-workspace/packages/next-seo-kit",
     "@headlessui/react": "^2.2.9",
     "@heroicons/react": "^2.1.5",
     "@supabase/supabase-js": "^2.45.0",
