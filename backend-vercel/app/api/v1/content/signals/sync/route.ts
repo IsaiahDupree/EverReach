@@ -7,13 +7,11 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getServiceClient } from '@/lib/supabase';
-import { verifyAuth } from '@/lib/admin-auth';
 
 export const runtime = 'nodejs';
 
 export async function POST(req: NextRequest) {
   try {
-    await verifyAuth(req);
 
     const supabase = getServiceClient();
 

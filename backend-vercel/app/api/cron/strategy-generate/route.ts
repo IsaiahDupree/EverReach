@@ -111,8 +111,8 @@ Generate a JSON response with these fields (ONLY JSON, no markdown):
   const strategy = JSON.parse(jsonMatch[0]);
 
   // Validate target_mix sums to ~1.0
-  const sum = Object.values(strategy.target_mix || {}).reduce((a: any, b: any) => a + b, 0);
-  if (Math.abs(sum - 1.0) > 0.05) {
+  const sum = Object.values(strategy.target_mix || {}).reduce((a: any, b: any) => (a as number) + (b as number), 0) as number;
+  if (Math.abs((sum as number) - 1.0) > 0.05) {
     console.warn('target_mix does not sum to 1.0, normalizing...');
     const normalized: any = {};
     Object.entries(strategy.target_mix || {}).forEach(([k, v]: any) => {

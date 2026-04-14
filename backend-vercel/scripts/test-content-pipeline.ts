@@ -17,7 +17,7 @@ interface TestResult {
 
 const results: TestResult[] = [];
 
-async function test(name: string, endpoint: string, method: string = 'GET', body?: any): Promise<TestResult> {
+async function testEndpoint(name: string, endpoint: string, method: string = 'GET', body?: any): Promise<TestResult> {
   try {
     const url = `${BASE_URL}${endpoint}`;
     console.log(`\n[${name}] Testing ${method} ${endpoint}`);
@@ -53,28 +53,28 @@ async function runTests() {
   console.log('=== Content Pipeline E2E Test ===\n');
 
   // 1. Health check
-  await test('Health Check', '/api/v1/content/health');
+  await testEndpoint('Health Check', '/api/v1/content/health');
 
   // 2. Signals sync
-  await test('Signals Sync', '/api/cron/signals-sync');
+  await testEndpoint('Signals Sync', '/api/cron/signals-sync');
 
   // 3. Strategy generation
-  await test('Strategy Generate', '/api/cron/strategy-generate');
+  await testEndpoint('Strategy Generate', '/api/cron/strategy-generate');
 
   // 4. Candidates generation
-  await test('Candidates Generate', '/api/cron/candidates-generate');
+  await testEndpoint('Candidates Generate', '/api/cron/candidates-generate');
 
   // 5. Candidates scoring
-  await test('Candidates Score', '/api/cron/candidates-score');
+  await testEndpoint('Candidates Score', '/api/cron/candidates-score');
 
   // 6. Copy and assets
-  await test('Copy and Assets', '/api/cron/copy-and-assets');
+  await testEndpoint('Copy and Assets', '/api/cron/copy-and-assets');
 
   // 7. QA and queue fill
-  await test('QA and Queue Fill', '/api/cron/qa-and-queue-fill');
+  await testEndpoint('QA and Queue Fill', '/api/cron/qa-and-queue-fill');
 
   // 8. Dashboard
-  await test('Dashboard', '/api/v1/content/dashboard');
+  await testEndpoint('Dashboard', '/api/v1/content/dashboard');
 
   // Summary
   const passed = results.filter((r) => r.status === 'PASS').length;
