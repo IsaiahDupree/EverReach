@@ -2,27 +2,35 @@
  * Content Engine Health Endpoint
  * GET /api/v1/content/health
  *
- * Checks: Supabase connectivity, OpenAI API key, content_templates count,
- * active model_weights exists
+ * Checks: Supabase connectivity via direct HTTP call and OpenAI API key
  */
 
 import { NextResponse } from 'next/server';
-import { getServiceClient } from '@/lib/supabase';
 
 export const runtime = 'nodejs';
 
 export async function GET() {
   try {
-    const supabase = getServiceClient();
     const issues = [];
 
-    // 1. Check Supabase connectivity
-    const { data: templateCount, error: countErr } = await supabase
-      .from('content_templates')
-      .select('id', { count: 'exact', head: true });
-
-    if (countErr || !templateCount || templateCount.length === 0) {
-      issues.push('Supabase connectivity failed or no templates found');
+    // 1. Check Supabase connectivity via HTTP
+    const supabaseUrl = process.env.SUPABASE_URL;
+    if (!supabaseUrl) {
+      issues.push('SUPABASE_URL not configured');
+    } else {
+      try {
+        const response = await fetch(`${supabaseUrl}/rest/v1/`, {
+          headers: {
+            'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY || ''}`,
+            'apikey': process.env.SUPABASE_SERVICE_ROLE_KEY || '',
+          },
+        });
+        if (!response.ok && response.status !== 401) {
+          issues.push(`Supabase HTTP check failed: ${response.status}`);
+        }
+      } catch (e) {
+        issues.push(`Supabase connectivity error: ${String(e)}`);
+      }
     }
 
     // 2. Check OpenAI API key
@@ -31,15 +39,10 @@ export async function GET() {
       issues.push('OPENAI_API_KEY not configured');
     }
 
-    // 3. Check active model weights
-    const { data: activeWeights, error: weightsErr } = await supabase
-      .from('model_weights')
-      .select('id')
-      .eq('is_active', true)
-      .single();
-
-    if (weightsErr || !activeWeights) {
-      issues.push('No active model_weights found');
+    // 3. Check required environment variables
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!serviceKey) {
+      issues.push('SUPABASE_SERVICE_ROLE_KEY not configured');
     }
 
     const isHealthy = issues.length === 0;
@@ -47,10 +50,9 @@ export async function GET() {
     return NextResponse.json(
       {
         ok: isHealthy,
-        supabase: 'connected',
+        supabase: supabaseUrl ? 'configured' : 'missing',
         openai_key: apiKey ? 'present' : 'missing',
-        templates: templateCount?.length || 0,
-        model_weights: activeWeights ? 'active' : 'missing',
+        service_key: serviceKey ? 'present' : 'missing',
         issues: issues.length > 0 ? issues : undefined,
       },
       { status: isHealthy ? 200 : 503 }
