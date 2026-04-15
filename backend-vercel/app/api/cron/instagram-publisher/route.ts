@@ -21,7 +21,7 @@ import {
   seedPriors,
 } from '@/lib/instagram-scheduler';
 
-const GRAPH_API = 'https://graph.facebook.com/v22.0';
+const GRAPH_API = 'https://graph.instagram.com/v22.0';
 
 function getToken(): string | undefined {
   return process.env.INSTAGRAM_ACCESS_TOKEN;
@@ -72,7 +72,7 @@ async function publishPost(
     const children = post.children as Array<{ image_url: string }>;
     const childIds = await Promise.all(
       children.map(async c => {
-        const d = await graphPost(`/${igUserId}/media`, {
+        const d = await graphPost(`/me/media`, {
           image_url: c.image_url,
           is_carousel_item: 'true',
           access_token: token,
@@ -87,7 +87,7 @@ async function publishPost(
     };
     if (post.caption) carouselP.caption = post.caption as string;
     if (post.location_id) carouselP.location_id = post.location_id as string;
-    containerId = (await graphPost(`/${igUserId}/media`, carouselP)).id;
+    containerId = (await graphPost(`/me/media`, carouselP)).id;
 
   } else if (post.media_type === 'REELS') {
     const p: Record<string, string> = {
@@ -98,7 +98,7 @@ async function publishPost(
     };
     if (post.caption) p.caption = post.caption as string;
     if (post.location_id) p.location_id = post.location_id as string;
-    containerId = (await graphPost(`/${igUserId}/media`, p)).id;
+    containerId = (await graphPost(`/me/media`, p)).id;
     await waitForContainer(containerId, token);
 
   } else {
@@ -110,10 +110,10 @@ async function publishPost(
     if (post.media_type === 'STORIES') p.media_type = 'STORIES';
     if (post.caption && post.media_type !== 'STORIES') p.caption = post.caption as string;
     if (post.location_id) p.location_id = post.location_id as string;
-    containerId = (await graphPost(`/${igUserId}/media`, p)).id;
+    containerId = (await graphPost(`/me/media`, p)).id;
   }
 
-  const { id: igMediaId } = await graphPost(`/${igUserId}/media_publish`, {
+  const { id: igMediaId } = await graphPost(`/me/media_publish`, {
     creation_id: containerId,
     ...params,
   });
