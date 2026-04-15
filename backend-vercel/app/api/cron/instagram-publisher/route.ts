@@ -111,6 +111,7 @@ async function publishPost(
     if (post.caption && post.media_type !== 'STORIES') p.caption = post.caption as string;
     if (post.location_id) p.location_id = post.location_id as string;
     containerId = (await graphPost(`/me/media`, p)).id;
+    await waitForContainer(containerId, token);
   }
 
   const { id: igMediaId } = await graphPost(`/me/media_publish`, {
