@@ -58,7 +58,7 @@ async function qaAndQueueFill() {
     const lastFiveCtas = recentPublished?.map((p: any) => p.cta_type) || [];
     const recentConcepts = recentPublished?.map((p: any) => p.concept_text) || [];
 
-    for (const candidate of candidates) {
+    for (const candidate of (candidates as any[])) {
       const variant = candidate.content_copy_variants?.[0];
       const hasAsset = (candidate.content_assets?.length || 0) > 0;
 
@@ -97,63 +97,66 @@ async function qaAndQueueFill() {
     }
   }
 
-  // Step 2: Fill queue if below minimum
-  const { data: queuedPosts } = await supabase
-    .from('post_queue')
-    .select('id')
-    .eq('queue_status', 'queued');
+  // Step 2: Queue approved static-format posts (IMAGE / founder_note / static_truth).
+  // Carousel posts are handled separately by the carousel-render cron which
+  // generates actual DALL-E slide images and inserts CAROUSEL_ALBUM rows directly.
+  const { data: approvedStatic } = await supabase
+    .from('content_candidates')
+    .select(
+      'id, total_score, concept_text, format, ' +
+      'content_copy_variants(caption, hook_sentence, cta_line), ' +
+      'content_assets(public_url, render_status)'
+    )
+    .eq('status', 'approved')
+    .in('format', ['static_truth', 'founder_note', 'product_screenshot'])
+    .order('total_score', { ascending: false })
+    .limit(3);
 
-  let queueDepth = queuedPosts?.length || 0;
+  let queueDepth = 0;
 
-  if (queueDepth < 7) {
-    const needToAdd = Math.min(14 - queueDepth, 7);
+  if (approvedStatic && approvedStatic.length > 0) {
+    for (const candidate of (approvedStatic as any[])) {
+      try {
+        const variant = (candidate.content_copy_variants as any[])?.[0];
+        const asset = (candidate.content_assets as any[])?.[0];
 
-    const { data: approvedCandidates } = await supabase
-      .from('content_candidates')
-      .select('id, total_score, concept_text')
-      .eq('status', 'approved')
-      .order('total_score', { ascending: false })
-      .limit(needToAdd);
+        // Only queue if we have a caption and a rendered image URL
+        if (!variant?.caption || !asset?.public_url) continue;
 
-    if (approvedCandidates && approvedCandidates.length > 0) {
-      for (const candidate of approvedCandidates) {
-        try {
-          const dedupeKey = `instagram:${candidate.id}:v1`;
+        // Deduplicate
+        const dedupeKey = `ig_static:${candidate.id}:v1`;
+        const { data: existing } = await supabase
+          .from('instagram_post_queue')
+          .select('id')
+          .eq('id', candidate.id) // check via concept lookup below instead
+          .limit(1);
 
-          const { data: existing } = await supabase
-            .from('post_queue')
-            .select('id')
-            .eq('dedupe_key', dedupeKey)
-            .single();
+        // Simple dedupe via a comment-free lookup
+        const { data: dupCheck } = await supabase
+          .from('instagram_post_queue')
+          .select('id')
+          .eq('caption', variant.caption as string)
+          .limit(1);
+        if (dupCheck && dupCheck.length > 0) continue;
 
-          if (existing) continue;
+        const { error: igErr } = await supabase.from('instagram_post_queue').insert({
+          media_type: 'IMAGE',
+          image_url: asset.public_url as string,
+          caption: variant.caption as string,
+          auto_schedule: true,
+          priority: 3,
+          status: 'queued',
+        });
 
-          const { data: queueItem, error: insertErr } = await supabase
-            .from('post_queue')
-            .insert({
-              content_candidate_id: candidate.id,
-              queue_status: 'queued',
-              queue_source: 'autonomous',
-              dedupe_key: dedupeKey,
-              auto_schedule: true,
-            })
-            .select('id')
-            .single();
-
-          if (insertErr) continue;
-
-          const { error: igErr } = await supabase.from('instagram_post_queue').insert({
-            content_candidate_id: candidate.id,
-            post_queue_id: queueItem?.id,
-            caption: `Post: ${candidate.concept_text}`,
-            priority: 1,
-            status: 'pending',
-          });
-
-          if (!igErr) queueDepth++;
-        } catch (error) {
-          console.error(`Queuing failed for candidate ${candidate.id}:`, error);
+        if (!igErr) {
+          await supabase
+            .from('content_candidates')
+            .update({ status: 'queued' })
+            .eq('id', candidate.id);
+          queueDepth++;
         }
+      } catch (error) {
+        console.error(`Queuing failed for candidate ${candidate.id}:`, error);
       }
     }
   }
@@ -176,6 +179,6 @@ export async function GET() {
     return NextResponse.json(result);
   } catch (error) {
     console.error('QA-and-queue-fill cron failed:', error);
-    return NextResponse.json({ ok: false, error: String(error) }, { status: 500 });
+    const msg = (error as any)?.message || JSON.stringify(error); return NextResponse.json({ ok: false, error: msg }, { status: 500 });
   }
 }

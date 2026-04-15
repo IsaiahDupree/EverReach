@@ -87,7 +87,7 @@ JSON response:
           const { error } = await supabase
             .from('content_copy_variants')
             .insert({
-              content_candidate_id: candidate.id,
+              candidate_id: candidate.id,
               variant_type: 'primary',
               hook_sentence: copy.hook_sentence,
               caption: fullCaption,
@@ -121,7 +121,7 @@ JSON response:
       try {
         if (['static_truth', 'founder_note'].includes(candidate.format)) {
           const { error } = await supabase.from('content_assets').insert({
-            content_candidate_id: candidate.id,
+            candidate_id: candidate.id,
             asset_type: candidate.format,
             render_status: 'pending_render',
             render_spec: { format: candidate.format, caption: variant.caption },
@@ -133,7 +133,7 @@ JSON response:
           }
         } else {
           const { error } = await supabase.from('content_assets').insert({
-            content_candidate_id: candidate.id,
+            candidate_id: candidate.id,
             asset_type: candidate.format,
             render_status: 'spec_ready',
             render_spec: { format: candidate.format, caption: variant.caption },
@@ -168,6 +168,6 @@ export async function GET() {
     return NextResponse.json(result);
   } catch (error) {
     console.error('Copy-and-assets cron failed:', error);
-    return NextResponse.json({ ok: false, error: String(error) }, { status: 500 });
+    const msg = (error as any)?.message || JSON.stringify(error); return NextResponse.json({ ok: false, error: msg }, { status: 500 });
   }
 }
