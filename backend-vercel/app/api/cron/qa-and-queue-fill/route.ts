@@ -18,17 +18,19 @@ async function qaAndQueueFill() {
 
   const now = new Date();
   const dateKey = now.toISOString().split('T')[0];
+  const slot = now.getUTCHours() < 12 ? 'am' : 'pm';
+  const runKey = `${dateKey}-${slot}`;
 
-  // Check if already run today
+  // Check if already run this slot
   const { data: existingRun } = await supabase
     .from('job_runs')
     .select('id')
     .eq('job_name', 'qa-and-queue-fill')
-    .eq('run_key', dateKey)
+    .eq('run_key', runKey)
     .single();
 
   if (existingRun) {
-    return { ok: true, approved: 0, rejected: 0, queue_depth: 0, note: 'Already ran today' };
+    return { ok: true, approved: 0, rejected: 0, queue_depth: 0, note: 'Already ran this slot' };
   }
 
   let approved = 0;
@@ -164,7 +166,7 @@ async function qaAndQueueFill() {
   // Record job run
   const { error: jobRunErr } = await supabase.from('job_runs').insert({
     job_name: 'qa-and-queue-fill',
-    run_key: dateKey,
+    run_key: runKey,
     status: 'completed',
     completed_at: new Date().toISOString(),
   });

@@ -21,17 +21,19 @@ async function copyAndAssets() {
 
   const now = new Date();
   const dateKey = now.toISOString().split('T')[0];
+  const slot = now.getUTCHours() < 12 ? 'am' : 'pm';
+  const runKey = `${dateKey}-${slot}`;
 
-  // Check if already run today
+  // Check if already run this slot
   const { data: existingRun } = await supabase
     .from('job_runs')
     .select('id')
     .eq('job_name', 'copy-and-assets')
-    .eq('run_key', dateKey)
+    .eq('run_key', runKey)
     .single();
 
   if (existingRun) {
-    return { ok: true, copy_generated: 0, assets_rendered: 0, note: 'Already ran today' };
+    return { ok: true, copy_generated: 0, assets_rendered: 0, note: 'Already ran this slot' };
   }
 
   let copyGenerated = 0;
@@ -153,7 +155,7 @@ JSON response:
   // Record job run
   const { error: jobRunErr } = await supabase.from('job_runs').insert({
     job_name: 'copy-and-assets',
-    run_key: dateKey,
+    run_key: runKey,
     status: 'completed',
     completed_at: new Date().toISOString(),
   });

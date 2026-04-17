@@ -148,17 +148,19 @@ async function carouselRender() {
 
   const now = new Date();
   const dateKey = now.toISOString().split('T')[0];
+  const slot = now.getUTCHours() < 12 ? 'am' : 'pm';
+  const runKey = `${dateKey}-${slot}`;
 
   // Idempotency check
   const { data: existingRun } = await supabase
     .from('job_runs')
     .select('id')
     .eq('job_name', 'carousel-render')
-    .eq('run_key', dateKey)
+    .eq('run_key', runKey)
     .single();
 
   if (existingRun) {
-    return { ok: true, rendered: 0, note: 'Already ran today' };
+    return { ok: true, rendered: 0, note: 'Already ran this slot' };
   }
 
   // Find top carousel candidates with copy done (up to 2 per day)
@@ -178,7 +180,7 @@ async function carouselRender() {
     // Record run so we don't spam logs
     await supabase.from('job_runs').insert({
       job_name: 'carousel-render',
-      run_key: dateKey,
+      run_key: runKey,
       status: 'completed',
       result: { rendered: 0, note: 'no_carousel_candidates' },
       completed_at: now.toISOString(),

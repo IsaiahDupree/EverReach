@@ -98,6 +98,26 @@
     {
       "path": "/api/cron/feature-signal-sync",
       "schedule": "30 4 * * *"
+    },
+    {
+      "path": "/api/cron/candidates-generate",
+      "schedule": "45 12 * * *"
+    },
+    {
+      "path": "/api/cron/candidates-score",
+      "schedule": "50 12 * * *"
+    },
+    {
+      "path": "/api/cron/copy-and-assets",
+      "schedule": "55 12 * * *"
+    },
+    {
+      "path": "/api/cron/carousel-render",
+      "schedule": "58 12 * * *"
+    },
+    {
+      "path": "/api/cron/qa-and-queue-fill",
+      "schedule": "5 13 * * *"
     }
   ]
 }

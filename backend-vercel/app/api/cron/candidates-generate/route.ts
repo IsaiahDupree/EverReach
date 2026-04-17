@@ -26,13 +26,15 @@ async function generateCandidates() {
 
   const now = new Date();
   const dateKey = now.toISOString().split('T')[0];
+  const slot = now.getUTCHours() < 12 ? 'am' : 'pm';
+  const runKey = `${dateKey}-${slot}`;
 
-  // Check if already run today
+  // Check if already run this slot
   const { data: existingRun } = await supabase
     .from('job_runs')
     .select('id')
     .eq('job_name', 'candidates-generate')
-    .eq('run_key', dateKey)
+    .eq('run_key', runKey)
     .single();
 
   if (existingRun) {
@@ -131,7 +133,7 @@ Response format: ONLY a JSON array, no markdown or explanation.`;
   // Record job run
   const { error: jobRunErr } = await supabase.from('job_runs').insert({
     job_name: 'candidates-generate',
-    run_key: dateKey,
+    run_key: runKey,
     status: 'completed',
     completed_at: new Date().toISOString(),
   });
@@ -141,6 +143,7 @@ Response format: ONLY a JSON array, no markdown or explanation.`;
     ok: true,
     count: inserted?.length || candidates.length,
     brief_id: todayBrief.id,
+    slot,
   };
 }
 
@@ -150,6 +153,6 @@ export async function GET() {
     return NextResponse.json(result);
   } catch (error) {
     console.error('Candidates generate cron failed:', error);
-    return NextResponse.json({ ok: false, error: String(error) }, { status: 500 });
+    const msg = (error as any)?.message || JSON.stringify(error); return NextResponse.json({ ok: false, error: msg }, { status: 500 });
   }
 }
