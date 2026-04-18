@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   StyleSheet,
   Text,
@@ -7,13 +7,13 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   useWindowDimensions,
+  Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAppSettings } from "@/providers/AppSettingsProvider";
 import { useLocalSearchParams, router } from "expo-router";
 import { ArrowLeft, Calendar, User } from "lucide-react-native";
 import { trpc } from "@/lib/trpc";
-import { Platform } from "react-native";
 
 function formatDate(dateString: string | null): string {
   if (!dateString) return "";
@@ -32,6 +32,52 @@ export default function BlogPostScreen() {
   const { width } = useWindowDimensions();
 
   const postQuery = trpc.blog.getById.useQuery({ id: id! }, { enabled: !!id });
+
+  // Inject SEO meta tags on web for Google indexing
+  useEffect(() => {
+    if (Platform.OS !== 'web' || !postQuery.data) return;
+    const post = postQuery.data;
+    document.title = `${post.title} | EverReach Blog`;
+
+    const setMeta = (name: string, content: string, isProperty?: boolean) => {
+      const attr = isProperty ? 'property' : 'name';
+      let el = document.querySelector(`meta[${attr}="${name}"]`) as HTMLMetaElement | null;
+      if (!el) {
+        el = document.createElement('meta');
+        el.setAttribute(attr, name);
+        document.head.appendChild(el);
+      }
+      el.content = content;
+    };
+
+    const description = post.excerpt || (post.content_html?.replace(/<[^>]*>/g, '').slice(0, 160) + '...');
+    setMeta('description', description);
+    setMeta('og:title', post.title, true);
+    setMeta('og:description', description, true);
+    setMeta('og:type', 'article', true);
+    setMeta('og:url', `https://www.everreach.app/blog/${id}`, true);
+    setMeta('twitter:card', 'summary');
+    setMeta('twitter:title', post.title);
+    setMeta('twitter:description', description);
+
+    // JSON-LD structured data for Google
+    let ldScript = document.querySelector('script[type="application/ld+json"]') as HTMLScriptElement | null;
+    if (!ldScript) {
+      ldScript = document.createElement('script');
+      ldScript.type = 'application/ld+json';
+      document.head.appendChild(ldScript);
+    }
+    ldScript.textContent = JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'BlogPosting',
+      headline: post.title,
+      description,
+      author: post.author ? { '@type': 'Person', name: post.author } : undefined,
+      datePublished: post.published_at,
+      url: `https://www.everreach.app/blog/${id}`,
+      publisher: { '@type': 'Organization', name: 'EverReach' },
+    });
+  }, [postQuery.data, id]);
 
   const styles = createStyles(theme);
 

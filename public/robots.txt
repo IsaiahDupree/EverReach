@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /
+Allow: /blog
+Allow: /blog/*
+Allow: /terms
+Allow: /privacy-policy
+
+Disallow: /auth
+Disallow: /auth/*
+Disallow: /billing
+Disallow: /billing/*
+Disallow: /onboarding
+Disallow: /api/
+
+Sitemap: https://www.everreach.app/sitemap.xml

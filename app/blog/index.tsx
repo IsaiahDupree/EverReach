@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   StyleSheet,
   Text,
@@ -11,8 +11,9 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAppSettings } from "@/providers/AppSettingsProvider";
 import { router } from "expo-router";
-import { BookOpen, Plus, ChevronRight, ArrowLeft } from "lucide-react-native";
+import { BookOpen, ChevronRight, ArrowLeft } from "lucide-react-native";
 import { trpc } from "@/lib/trpc";
+import { Platform } from "react-native";
 
 function formatDate(dateString: string | null): string {
   if (!dateString) return "";
@@ -26,6 +27,22 @@ export default function BlogListScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   const blogQuery = trpc.blog.list.useQuery({ limit: 20, offset: 0 });
+
+  // SEO meta tags for blog listing
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    document.title = 'Blog | EverReach';
+    const setMeta = (name: string, content: string, isProperty?: boolean) => {
+      const attr = isProperty ? 'property' : 'name';
+      let el = document.querySelector(`meta[${attr}="${name}"]`) as HTMLMetaElement | null;
+      if (!el) { el = document.createElement('meta'); el.setAttribute(attr, name); document.head.appendChild(el); }
+      el.content = content;
+    };
+    setMeta('description', 'Expert articles on relationships, personal growth, and staying connected with the people who matter most.');
+    setMeta('og:title', 'Blog | EverReach', true);
+    setMeta('og:description', 'Expert articles on relationships, personal growth, and staying connected.', true);
+    setMeta('og:url', 'https://www.everreach.app/blog', true);
+  }, []);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -42,13 +59,7 @@ export default function BlogListScreen() {
           <ArrowLeft size={24} color={theme.colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Blog</Text>
-        <TouchableOpacity
-          style={styles.requestButton}
-          onPress={() => router.push("/blog/request")}
-        >
-          <Plus size={16} color="#fff" />
-          <Text style={styles.requestButtonText}>Request</Text>
-        </TouchableOpacity>
+        <View style={{ width: 28 }} />
       </View>
 
       <ScrollView
@@ -81,13 +92,6 @@ export default function BlogListScreen() {
             <Text style={styles.emptyText}>
               Request your first article to get expert content delivered to your app.
             </Text>
-            <TouchableOpacity
-              style={[styles.requestButton, { marginTop: 16 }]}
-              onPress={() => router.push("/blog/request")}
-            >
-              <Plus size={16} color="#fff" />
-              <Text style={styles.requestButtonText}>Request Article</Text>
-            </TouchableOpacity>
           </View>
         )}
 

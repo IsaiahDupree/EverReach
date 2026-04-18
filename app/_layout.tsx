@@ -60,6 +60,7 @@ import { initializeMarketingFunnel } from "@/lib/marketingFunnel";
 import { initializePerformanceMonitoring } from "@/lib/performanceMonitor";
 import { initializePostHog, identifyUser } from "@/lib/posthog";
 import { initializeMetaAppEvents, identifyMetaUser, resetMetaUser } from "@/lib/metaAppEvents";
+import { initializeGA4, trackGA4PageView } from "@/lib/ga4";
 import { useScreenTracking } from "@/hooks/useScreenTracking";
 import { initializeRevenueCat } from "@/lib/revenuecat";
 import { useSubscription } from "@/providers/SubscriptionProvider";
@@ -93,6 +94,9 @@ initializePostHog();
 
 // Initialize Meta App Events (Conversions API + native SDK if available)
 initializeMetaAppEvents();
+
+// Initialize GA4 analytics (web only, requires EXPO_PUBLIC_GA4_MEASUREMENT_ID)
+initializeGA4();
 
 // Initialize RevenueCat (IAP subscriptions)
 initializeRevenueCat().then((success) => {
@@ -193,6 +197,13 @@ function RootLayoutNav() {
 
   // Track app lifecycle events globally
   useAppLifecycle();
+
+  // GA4 page view tracking on route changes (web only)
+  useEffect(() => {
+    if (Platform.OS === 'web' && pathname) {
+      trackGA4PageView(pathname);
+    }
+  }, [pathname]);
 
   // Initialize RevenueCat on native once authenticated
   useEffect(() => {
