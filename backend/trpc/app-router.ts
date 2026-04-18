@@ -68,6 +68,12 @@ import {
   testOpenAIProcedure,
   listOpenAIModelsProcedure
 } from "./routes/openai/test/route";
+import {
+  listBlogPostsProcedure,
+  getBlogPostProcedure,
+  requestBlogPostProcedure,
+  listBlogCategoriesProcedure
+} from "./routes/blog/route";
 import { z } from "zod";
 import crypto from "crypto";
 import { 
@@ -566,6 +572,14 @@ export const appRouter = router({
   openai: router({
     test: testOpenAIProcedure,
     listModels: listOpenAIModelsProcedure
+  }),
+
+  // Blog (Authority OS integration)
+  blog: router({
+    list: listBlogPostsProcedure,
+    getById: getBlogPostProcedure,
+    request: requestBlogPostProcedure,
+    categories: listBlogCategoriesProcedure
   })
 });
 
