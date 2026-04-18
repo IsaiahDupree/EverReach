@@ -447,23 +447,20 @@ function RootLayoutNav() {
     );
   }
 
+  // Public routes that bypass both onboarding and auth gates
+  const currentPath = pathname || '/';
+  const isPublicRoute = currentPath.startsWith('/auth') || currentPath.startsWith('/sign-in') || currentPath.startsWith('/billing') || currentPath.startsWith('/blog') || currentPath === '/terms' || currentPath === '/privacy-policy' || currentPath === '/telemetry-debug' || currentPath === '/welcome';
+
   // Show welcome screens for first-time users (before auth)
   // OnboardingV2 handles the welcome screen (S1) and pre-auth questions
-  if (!isAuthenticated && !welcomeSeen) {
+  if (!isAuthenticated && !welcomeSeen && !isPublicRoute) {
     console.log('[Layout v2] → Onboarding V2 (Welcome/Pre-auth)');
     return <OnboardingV2Screen />;
   }
 
   // Show sign-in if not authenticated, except for public routes
-  if (!isAuthenticated) {
-    const path = pathname || '/';
-    const allowUnauthed = path.startsWith('/auth') || path.startsWith('/sign-in') || path.startsWith('/billing') || path.startsWith('/blog') || path === '/terms' || path === '/privacy-policy' || path === '/telemetry-debug' || path === '/welcome';
-    // console.log('[Layout v2] Auth check - path:', path, 'allowUnauthed:', allowUnauthed);
-    if (!allowUnauthed) {
-      // console.log('[Layout v2] → Auth');
-      return <Auth />;
-    }
-    // console.log('[Layout v2] → Allowing public route:', path);
+  if (!isAuthenticated && !isPublicRoute) {
+    return <Auth />;
   }
 
   // Show onboarding for first-time users (only after authentication)
