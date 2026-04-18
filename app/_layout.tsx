@@ -45,8 +45,23 @@ import { trpc, trpcClient } from "@/lib/trpc";
 import { NotesComposerProvider } from "@/providers/NotesComposerProvider";
 import { PaywallProvider } from "@/providers/PaywallProvider";
 import { PaywallGuard } from "@/components/PaywallGuard";
-import { SuperwallProvider, SuperwallLoading, SuperwallLoaded, CustomPurchaseControllerProvider } from 'expo-superwall';
-import Purchases from 'react-native-purchases';
+// Conditionally import native-only modules (crash on web)
+let SuperwallProvider: any = null;
+let SuperwallLoading: any = null;
+let SuperwallLoaded: any = null;
+let CustomPurchaseControllerProvider: any = null;
+let Purchases: any = null;
+
+try {
+  const sw = require('expo-superwall');
+  SuperwallProvider = sw.SuperwallProvider;
+  SuperwallLoading = sw.SuperwallLoading;
+  SuperwallLoaded = sw.SuperwallLoaded;
+  CustomPurchaseControllerProvider = sw.CustomPurchaseControllerProvider;
+  Purchases = require('react-native-purchases').default || require('react-native-purchases');
+} catch (e) {
+  console.warn('[App] Superwall/Purchases not available (expected on web):', (e as any)?.message);
+}
 import Auth from "./auth";
 import OnboardingFlow from "./onboarding";
 import OnboardingV2Screen from "./onboarding-v2";
