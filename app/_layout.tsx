@@ -52,6 +52,7 @@ import OnboardingFlow from "./onboarding";
 import OnboardingV2Screen from "./onboarding-v2";
 import UpgradeOnboarding from "./upgrade-onboarding";
 import WelcomeScreen, { hasSeenWelcome } from "./welcome";
+import LandingPage from "./landing";
 import { View, ActivityIndicator, StyleSheet, Text, Platform } from "react-native";
 import { useAppLifecycle } from "@/hooks/useAppLifecycle";
 import { initializeEnvelope } from "@/lib/eventEnvelope";
@@ -449,17 +450,26 @@ function RootLayoutNav() {
 
   // Public routes that bypass both onboarding and auth gates
   const currentPath = pathname || '/';
-  const isPublicRoute = currentPath.startsWith('/auth') || currentPath.startsWith('/sign-in') || currentPath.startsWith('/billing') || currentPath.startsWith('/blog') || currentPath === '/terms' || currentPath === '/privacy-policy' || currentPath === '/telemetry-debug' || currentPath === '/welcome';
+  const isPublicRoute = currentPath.startsWith('/auth') || currentPath.startsWith('/sign-in') || currentPath.startsWith('/billing') || currentPath.startsWith('/blog') || currentPath === '/terms' || currentPath === '/privacy-policy' || currentPath === '/telemetry-debug' || currentPath === '/welcome' || currentPath === '/landing';
 
-  // Show welcome screens for first-time users (before auth)
-  // OnboardingV2 handles the welcome screen (S1) and pre-auth questions
+  // Show landing page on web for unauthenticated first-time visitors
+  // Show OnboardingV2 on native (iOS/Android)
   if (!isAuthenticated && !welcomeSeen && !isPublicRoute) {
+    if (Platform.OS === 'web') {
+      console.log('[Layout v2] → Landing Page (Web)');
+      return <LandingPage />;
+    }
     console.log('[Layout v2] → Onboarding V2 (Welcome/Pre-auth)');
     return <OnboardingV2Screen />;
   }
 
-  // Show sign-in if not authenticated, except for public routes
+  // Show landing page on web for unauthenticated returning visitors (who saw welcome but aren't signed in)
+  // Show auth screen on native
   if (!isAuthenticated && !isPublicRoute) {
+    if (Platform.OS === 'web') {
+      console.log('[Layout v2] → Landing Page (Web, returning)');
+      return <LandingPage />;
+    }
     return <Auth />;
   }
 
