@@ -1,5 +1,5 @@
 module.exports = {
-  testEnvironment: 'node',
+  testEnvironment: 'jsdom',
   testMatch: ['**/__tests__/**/*.test.[jt]s?(x)'],
   transform: {
     '^.+\\.(js|jsx|ts|tsx)$': 'babel-jest',
@@ -15,6 +15,8 @@ module.exports = {
     '^@/providers/(.*)$': '<rootDir>/providers/$1',
     '^@/app/(.*)$': '<rootDir>/app/$1',
     '^@/(.*)$': '<rootDir>/$1',
+    '^react-native$': '<rootDir>/__mocks__/react-native.js',
+    '^react-native-purchases$': '<rootDir>/__mocks__/react-native-purchases.js',
     '^expo$': '<rootDir>/__mocks__/expo.js',
     '^expo-router$': '<rootDir>/__mocks__/expo-router.js',
     '^expo-constants$': '<rootDir>/__mocks__/expo-constants.js',
@@ -22,8 +24,7 @@ module.exports = {
     '^expo/src/winter/runtime.native$': '<rootDir>/__mocks__/expo.js',
     '^@react-native-async-storage/async-storage$': '<rootDir>/__mocks__/async-storage.js',
     '^react-native-url-polyfill/auto$': '<rootDir>/__mocks__/react-native-url-polyfill.js',
-    '^react-native-url-polyfill$': '<rootDir>/__mocks__/react-native-url-polyfill.js',
-    '^react-native-purchases$': '<rootDir>/__mocks__/react-native-purchases.js'
+    '^react-native-url-polyfill$': '<rootDir>/__mocks__/react-native-url-polyfill.js'
   },
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   globals: {

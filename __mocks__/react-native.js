@@ -3,6 +3,11 @@ const actualReactNative = jest.requireActual('react-native');
 
 module.exports = {
   ...actualReactNative,
+  AppState: {
+    addEventListener: jest.fn(() => ({ remove: jest.fn() })),
+    removeEventListener: jest.fn(),
+    currentState: 'active',
+  },
   Platform: {
     OS: 'ios',
     Version: 1,

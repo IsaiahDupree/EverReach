@@ -7,6 +7,16 @@ process.env.SKIP_ENV_VALIDATION = 'true';
 // Load environment variables from .env file
 require('dotenv').config();
 
+// Initialize React Native bridge mock before any React Native code is loaded
+global.__fbBatchedBridgeConfig = {
+  remoteModuleConfig: [],
+  localModuleConfig: [],
+  getConstants: () => ({}),
+  getModules: () => ({}),
+  call: () => {},
+  callSync: () => {},
+};
+
 // Mock fetch globally
 global.fetch = jest.fn(() =>
   Promise.resolve({
