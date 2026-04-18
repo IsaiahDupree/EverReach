@@ -45,23 +45,8 @@ import { trpc, trpcClient } from "@/lib/trpc";
 import { NotesComposerProvider } from "@/providers/NotesComposerProvider";
 import { PaywallProvider } from "@/providers/PaywallProvider";
 import { PaywallGuard } from "@/components/PaywallGuard";
-// Conditionally import native-only modules (crash on web)
-let SuperwallProvider: any = null;
-let SuperwallLoading: any = null;
-let SuperwallLoaded: any = null;
-let CustomPurchaseControllerProvider: any = null;
-let Purchases: any = null;
-
-try {
-  const sw = require('expo-superwall');
-  SuperwallProvider = sw.SuperwallProvider;
-  SuperwallLoading = sw.SuperwallLoading;
-  SuperwallLoaded = sw.SuperwallLoaded;
-  CustomPurchaseControllerProvider = sw.CustomPurchaseControllerProvider;
-  Purchases = require('react-native-purchases').default || require('react-native-purchases');
-} catch (e) {
-  console.warn('[App] Superwall/Purchases not available (expected on web):', (e as any)?.message);
-}
+// Platform-specific: uses superwallWrapper.web.tsx (no-op) on web, superwallWrapper.tsx (native) on iOS/Android
+import { SuperwallWrapper } from '@/lib/superwallWrapper';
 import Auth from "./auth";
 import OnboardingFlow from "./onboarding";
 import OnboardingV2Screen from "./onboarding-v2";
@@ -161,11 +146,6 @@ const queryClient = new QueryClient({
 
 // Initialize query client for image upload cache invalidation
 setQueryClientForImageUpload(queryClient);
-
-const superwallKeysPresent = !!(
-  process.env.EXPO_PUBLIC_SUPERWALL_IOS_KEY ||
-  process.env.EXPO_PUBLIC_SUPERWALL_ANDROID_KEY
-);
 
 // Global screen tracking helper (expo-router path + duration)
 function ScreenTracker() {
@@ -673,58 +653,9 @@ export default function RootLayout() {
         <ThemeProvider>
           <AppSettingsProvider>
             <AuthProvider>
-              {Platform.OS === 'web' ? (
-                // Skip Superwall on web — native-only SDK
-                appContent
-              ) : (
-                <CustomPurchaseControllerProvider
-                  controller={{
-                    onPurchase: async (params) => {
-                      try {
-                        console.log('[Superwall] Purchase initiated for:', params.productId);
-                        const products = await Purchases.getProducts([params.productId]);
-                        if (!products || products.length === 0) {
-                          console.error('[Superwall] No products found for:', params.productId);
-                          throw new Error('Product not found');
-                        }
-                        console.log('[Superwall] Product found, purchasing:', products[0].identifier);
-                        const { customerInfo } = await Purchases.purchaseStoreProduct(products[0]);
-                        console.log('[Superwall] Purchase completed, active entitlements:', Object.keys(customerInfo?.entitlements?.active || {}));
-                      } catch (error) {
-                        console.error('[Superwall] Purchase failed:', error);
-                        throw error;
-                      }
-                    },
-                    onPurchaseRestore: async () => {
-                      try {
-                        console.log('[Superwall] Restore initiated');
-                        const customerInfo = await Purchases.restorePurchases();
-                        console.log('[Superwall] Purchases restored, active entitlements:', Object.keys(customerInfo?.entitlements?.active || {}));
-                      } catch (error) {
-                        console.error('[Superwall] Restore failed:', error);
-                        throw error;
-                      }
-                    },
-                  }}
-                >
-                  <SuperwallProvider
-                    apiKeys={{
-                      ios: process.env.EXPO_PUBLIC_SUPERWALL_IOS_KEY || '',
-                      android: process.env.EXPO_PUBLIC_SUPERWALL_ANDROID_KEY || ''
-                    }}
-                  >
-                    <SuperwallLoading>
-                      <View style={styles.loadingContainer}>
-                        <ActivityIndicator size="large" color="#007AFF" />
-                        <Text style={styles.loadingText}>Loading Superwall...</Text>
-                      </View>
-                    </SuperwallLoading>
-                    <SuperwallLoaded>
-                      {appContent}
-                    </SuperwallLoaded>
-                  </SuperwallProvider>
-                </CustomPurchaseControllerProvider>
-              )}
+              <SuperwallWrapper>
+                {appContent}
+              </SuperwallWrapper>
             </AuthProvider>
           </AppSettingsProvider>
         </ThemeProvider>
