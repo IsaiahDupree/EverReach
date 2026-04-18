@@ -462,7 +462,7 @@ function RootLayoutNav() {
   // Show sign-in if not authenticated, except for public routes
   if (!isAuthenticated) {
     const path = pathname || '/';
-    const allowUnauthed = path.startsWith('/auth') || path.startsWith('/sign-in') || path.startsWith('/billing') || path === '/terms' || path === '/privacy-policy' || path === '/telemetry-debug' || path === '/welcome';
+    const allowUnauthed = path.startsWith('/auth') || path.startsWith('/sign-in') || path.startsWith('/billing') || path.startsWith('/blog') || path === '/terms' || path === '/privacy-policy' || path === '/telemetry-debug' || path === '/welcome';
     // console.log('[Layout v2] Auth check - path:', path, 'allowUnauthed:', allowUnauthed);
     if (!allowUnauthed) {
       // console.log('[Layout v2] → Auth');
@@ -531,6 +531,10 @@ function RootLayoutNav() {
           {/* Legal pages - Public routes */}
           <Stack.Screen name="terms" options={termsOptions} />
           <Stack.Screen name="privacy-policy" options={privacyOptions} />
+
+          {/* Blog - Public route */}
+          <Stack.Screen name="blog/index" options={noHeaderOptions} />
+          <Stack.Screen name="blog/[id]" options={noHeaderOptions} />
 
           {/* Modal screens - Full screen modals that slide up from bottom */}
           <Stack.Screen

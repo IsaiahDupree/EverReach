@@ -463,6 +463,18 @@ export default function Auth() {
                   Privacy Policy
                 </Text>
               </Text>
+              <Text
+                style={[styles.footerLink, { marginTop: 8 }]}
+                onPress={() => {
+                  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+                    window.open('/blog', '_blank');
+                  } else {
+                    router.push('/blog' as any);
+                  }
+                }}
+              >
+                Blog
+              </Text>
             </View>
           </Animated.View>
         </ScrollView>
