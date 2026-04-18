@@ -17,6 +17,41 @@ global.fetch = jest.fn(() =>
   })
 );
 
+// Ensure timers are available (for async tests)
+if (!global.setTimeout) {
+  global.setTimeout = function(fn, delay) {
+    fn();
+    return 0;
+  };
+}
+
+if (!global.setInterval) {
+  global.setInterval = function(fn, delay) {
+    fn();
+    return 0;
+  };
+}
+
+if (!global.clearTimeout) {
+  global.clearTimeout = function() {};
+}
+
+if (!global.clearInterval) {
+  global.clearInterval = function() {};
+}
+
+if (!global.requestAnimationFrame) {
+  global.requestAnimationFrame = function(fn) {
+    return setTimeout(fn, 0);
+  };
+}
+
+if (!global.cancelAnimationFrame) {
+  global.cancelAnimationFrame = function(id) {
+    clearTimeout(id);
+  };
+}
+
 // Setup test environment
 if (typeof window === 'undefined') {
   global.window = {};
