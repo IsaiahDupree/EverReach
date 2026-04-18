@@ -13,4 +13,19 @@ config.resolver.blockList = [
   /.*\.next\/.*/,
 ];
 
+// On web, redirect native-only modules to stubs
+const nativeOnlyModules = ['expo-superwall', 'react-native-purchases'];
+const webStubPath = path.resolve(__dirname, 'lib', 'native-stubs.web.js');
+
+config.resolver.resolveRequest = (context, moduleName, platform) => {
+  if (platform === 'web' && nativeOnlyModules.includes(moduleName)) {
+    return {
+      filePath: webStubPath,
+      type: 'sourceFile',
+    };
+  }
+  // Fall back to default resolution
+  return context.resolveRequest(context, moduleName, platform);
+};
+
 module.exports = config;
