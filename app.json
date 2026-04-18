@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "AI-Enhanced Personal CRM",
-    "slug": "ai-enhanced-personal-crm",
-    "version": "1.0.0",
+    "name": "EverReach",
+    "slug": "everreach",
+    "version": "1.1.4",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "everreach",

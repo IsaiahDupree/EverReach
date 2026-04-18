@@ -1,0 +1,22 @@
+Version 1.1.4 - Major Updates
+
+New Features:
+- Superwall paywall integration for seamless subscription management
+- RevenueCat integration for reliable billing and subscription handling
+- Enhanced Drifting/Cooling sections on home screen
+- Push notification support for reminders and engagement tracking
+- Improved Authority OS blog integration across all platforms
+
+Improvements:
+- Better performance and stability
+- Enhanced MetaPixel tracking for analytics
+- Improved subscription flow and trial management
+- Better error handling and user feedback
+
+Bug Fixes:
+- Fixed various UI/UX issues
+- Improved reliability of background services
+- Better handling of network errors
+- More robust data syncing
+
+This release focuses on monetization infrastructure and improved user engagement. Free 7-day trial available for all new users.

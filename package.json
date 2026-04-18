@@ -1,7 +1,7 @@
 {
-  "name": "expo-app",
+  "name": "everreach-app",
   "main": "expo-router/entry",
-  "version": "1.0.0",
+  "version": "1.1.4",
   "scripts": {
     "start": "bunx rork start -p bq055tswpn0bh02b6atft --tunnel",
     "start:quiet": "bash scripts/start-quiet.sh",

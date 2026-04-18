@@ -15,7 +15,7 @@ jest.mock('@/components/paywall/RevenueCatPaywallUI', () => ({
   __esModule: true,
   default: jest.fn(() => null),
 }));
-jest.mock('@/components/paywall/SuperwallPaywallUI', () => ({
+jest.mock('@/components/paywall/SuperwallPaywallNew', () => ({
   __esModule: true,
   default: jest.fn(() => null),
 }));
@@ -81,13 +81,13 @@ describe('PaywallRouter', () => {
         error: null,
       });
 
-      const SuperwallPaywallUI = require('@/components/paywall/SuperwallPaywallUI').default;
+      const SuperwallPaywallNew = require('@/components/paywall/SuperwallPaywallNew').default;
       render(<PaywallRouter {...defaultProps} />);
 
       await waitFor(() => {
-        expect(SuperwallPaywallUI).toHaveBeenCalledWith(
+        expect(SuperwallPaywallNew).toHaveBeenCalledWith(
           expect.objectContaining({
-            remoteConfig: { provider: 'superwall', paywall_id: 'campaign_1', platform: 'android' },
+            placementId: 'campaign_1',
           }),
           expect.anything()
         );

@@ -1,0 +1,81 @@
+// Mock for react-native-purchases (RevenueCat SDK)
+const mockRevenueCat = {
+  Purchases: {
+    getInstance: jest.fn(() => ({
+      getOfferings: jest.fn().mockResolvedValue({
+        all: {},
+        current: null,
+      }),
+      getCustomerInfo: jest.fn().mockResolvedValue({
+        entitlements: {
+          all: {},
+          active: [],
+        },
+        purchases: {},
+        activeSubscriptions: [],
+        allPurchaseDatesByProduct: {},
+        allExpirationDatesByProduct: {},
+        isAnonymous: true,
+        firstSeen: new Date().toISOString(),
+        management: {
+          url: null,
+        },
+      }),
+      makePayment: jest.fn().mockResolvedValue({ success: true }),
+      purchasePackage: jest.fn().mockResolvedValue({ success: true }),
+      purchaseProduct: jest.fn().mockResolvedValue({ success: true }),
+      restorePurchases: jest.fn().mockResolvedValue({}),
+      syncPurchases: jest.fn().mockResolvedValue(undefined),
+      setAttributes: jest.fn(),
+      setEmail: jest.fn(),
+      setPhoneNumber: jest.fn(),
+      setDisplayName: jest.fn(),
+      setCleverTapID: jest.fn(),
+      setMparticleID: jest.fn(),
+      setFirebaseAppInstanceID: jest.fn(),
+      setAdjustID: jest.fn(),
+      setAppsflyerID: jest.fn(),
+      setFBAnonymousID: jest.fn(),
+      setMixpanelDistinctID: jest.fn(),
+      setOnesignalID: jest.fn(),
+      setOnesignalUserID: jest.fn(),
+      setAirshipChannelID: jest.fn(),
+      setMediaSourceURI: jest.fn(),
+      setCampaignParameters: jest.fn(),
+      setAdGroup: jest.fn(),
+      setKeyword: jest.fn(),
+      setCreative: jest.fn(),
+      setNetwork: jest.fn(),
+      collectDeviceIdentifiers: jest.fn(),
+      enableAdServicesAttributionTokenCollection: jest.fn(),
+      setup: jest.fn(),
+      logout: jest.fn(),
+      login: jest.fn(),
+    })),
+    isConfigured: true,
+    setup: jest.fn().mockResolvedValue(undefined),
+    setFinishTransactions: jest.fn(),
+    setProxy: jest.fn(),
+    addPurchasesListener: jest.fn(),
+    removePurchasesListener: jest.fn(),
+  },
+  PaymentQueue: {
+    activateTestSession: jest.fn(),
+    deactivateTestSession: jest.fn(),
+  },
+  ErrorCodes: {
+    PurchaseFailedError: 1,
+    StoreProblemError: 2,
+    NetworkError: 3,
+    OperationAlreadyInProgressError: 5,
+    OperationNotSupportedError: 6,
+    ProductAlreadyPurchasedError: 7,
+    UnrecognizedError: -1,
+  },
+  EntitlementInfos: {},
+  PurchasesError: Error,
+};
+
+// Export the mock
+module.exports = mockRevenueCat;
+module.exports.__esModule = true;

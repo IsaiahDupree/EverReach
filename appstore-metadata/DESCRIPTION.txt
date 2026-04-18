@@ -1,0 +1,19 @@
+EverReach is your AI-powered personal CRM that helps you maintain meaningful relationships with everyone in your network.
+
+Key Features:
+- Voice-to-text notes: Record quick voice notes about your contacts and let AI transcribe them
+- Smart reminders: Get AI-powered suggestions on when and what to say to stay connected
+- Warmth tracking: Visual indicators show how well you're nurturing each relationship
+- Contact management: Organize your network with groups and custom fields
+- One-tap outreach: Send messages to contacts directly from the app
+- Relationship insights: AI analysis of your contact interactions and relationship health
+
+Perfect for:
+- Sales professionals managing client relationships
+- Business owners staying connected with their network
+- Community builders maintaining meaningful connections
+- Anyone who wants to be better at relationships
+
+EverReach uses on-device AI processing and secure cloud storage to keep your contact information private and secure.
+
+Start your free 7-day trial today and transform how you manage your most important relationships.
