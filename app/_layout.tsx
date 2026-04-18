@@ -545,9 +545,11 @@ function RootLayoutNav() {
           <Stack.Screen name="terms" options={termsOptions} />
           <Stack.Screen name="privacy-policy" options={privacyOptions} />
 
-          {/* Blog - Public route */}
+          {/* Blog - Public routes */}
           <Stack.Screen name="blog/index" options={noHeaderOptions} />
           <Stack.Screen name="blog/[id]" options={noHeaderOptions} />
+          <Stack.Screen name="blog/search" options={noHeaderOptions} />
+          <Stack.Screen name="blog/category/[slug]" options={noHeaderOptions} />
 
           {/* Modal screens - Full screen modals that slide up from bottom */}
           <Stack.Screen

@@ -1,243 +1,343 @@
-import React, { useCallback, useEffect, useState } from "react";
+/**
+ * Blog Home — Relationship Intelligence Knowledge Hub
+ *
+ * Hero + Search → Featured Articles → Topic Clusters → Latest → Footer
+ * SEO: Organization + WebSite schema, OG tags, meta description
+ */
+import React, { useEffect, useState } from 'react';
 import {
-  StyleSheet,
-  Text,
-  View,
-  ScrollView,
-  TouchableOpacity,
-  RefreshControl,
-  ActivityIndicator,
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useAppSettings } from "@/providers/AppSettingsProvider";
-import { router } from "expo-router";
-import { BookOpen, ChevronRight, ArrowLeft } from "lucide-react-native";
-import { trpc } from "@/lib/trpc";
-import { Platform } from "react-native";
+  View, Text, ScrollView, TouchableOpacity, TextInput,
+  StyleSheet, Platform, useWindowDimensions,
+} from 'react-native';
+import { router } from 'expo-router';
+import { Search, ArrowRight } from 'lucide-react-native';
+import { BlogHeader } from '@/components/blog/BlogHeader';
+import { ArticleCard } from '@/components/blog/ArticleCard';
+import { CategoryCard } from '@/components/blog/CategoryCard';
+import { BlogFooter } from '@/components/blog/BlogFooter';
+import { blogTheme as t } from '@/lib/blog/theme';
+import { setPageMeta, injectOrganizationSchema, injectWebSiteSchema } from '@/lib/blog/schema';
+import { trackBlogSearch, trackAppInstallClick } from '@/lib/blog/analytics';
+import { POSTS, CATEGORIES, getFeaturedPosts, getPostsByCategory } from '@/lib/blog/content';
 
-function formatDate(dateString: string | null): string {
-  if (!dateString) return "";
-  const d = new Date(dateString);
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-}
+export default function BlogHome() {
+  const { width } = useWindowDimensions();
+  const isDesktop = width > 768;
+  const [searchQuery, setSearchQuery] = useState('');
 
-export default function BlogListScreen() {
-  const insets = useSafeAreaInsets();
-  const { theme } = useAppSettings();
-  const [refreshing, setRefreshing] = useState(false);
-
-  const blogQuery = trpc.blog.list.useQuery({ limit: 20, offset: 0 });
-
-  // SEO meta tags for blog listing
+  // SEO + Schema
   useEffect(() => {
-    if (Platform.OS !== 'web') return;
-    document.title = 'Blog | EverReach';
-    const setMeta = (name: string, content: string, isProperty?: boolean) => {
-      const attr = isProperty ? 'property' : 'name';
-      let el = document.querySelector(`meta[${attr}="${name}"]`) as HTMLMetaElement | null;
-      if (!el) { el = document.createElement('meta'); el.setAttribute(attr, name); document.head.appendChild(el); }
-      el.content = content;
-    };
-    setMeta('description', 'Expert articles on relationships, personal growth, and staying connected with the people who matter most.');
-    setMeta('og:title', 'Blog | EverReach', true);
-    setMeta('og:description', 'Expert articles on relationships, personal growth, and staying connected.', true);
-    setMeta('og:url', 'https://www.everreach.app/blog', true);
+    setPageMeta({
+      title: 'EverReach Blog — Relationship Intelligence for Real Life',
+      description: 'Expert articles on personal CRM, friendship maintenance, networking, and staying connected with the people who matter most.',
+      url: 'https://www.everreach.app/blog',
+    });
+    injectOrganizationSchema();
+    injectWebSiteSchema();
   }, []);
 
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await blogQuery.refetch();
-    setRefreshing(false);
-  }, [blogQuery]);
+  const featured = getFeaturedPosts();
+  const latest = [...POSTS].sort((a, b) =>
+    new Date(b.published_at).getTime() - new Date(a.published_at).getTime()
+  );
 
-  const styles = createStyles(theme);
+  const handleSearch = () => {
+    if (searchQuery.trim()) {
+      trackBlogSearch(searchQuery, 0);
+      router.push(`/blog/search?q=${encodeURIComponent(searchQuery)}`);
+    }
+  };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <ArrowLeft size={24} color={theme.colors.text} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Blog</Text>
-        <View style={{ width: 28 }} />
-      </View>
+    <View style={styles.container}>
+      <BlogHeader />
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
 
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-      >
-        {blogQuery.isLoading && (
-          <View style={styles.centerContainer}>
-            <ActivityIndicator size="small" color={theme.colors.primary} />
-            <Text style={styles.loadingText}>Loading articles...</Text>
-          </View>
-        )}
-
-        {blogQuery.error && (
-          <View style={styles.centerContainer}>
-            <Text style={styles.emptyText}>Unable to load articles</Text>
-            <TouchableOpacity onPress={() => blogQuery.refetch()}>
-              <Text style={[styles.emptyText, { color: theme.colors.primary, marginTop: 8 }]}>Tap to retry</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {blogQuery.data?.posts && blogQuery.data.posts.length === 0 && (
-          <View style={styles.centerContainer}>
-            <BookOpen size={48} color={theme.colors.textSecondary} />
-            <Text style={styles.emptyTitle}>No articles yet</Text>
-            <Text style={styles.emptyText}>
-              Request your first article to get expert content delivered to your app.
+        {/* ── Hero Section ─────────────────────────── */}
+        <View style={styles.hero}>
+          <View style={styles.heroInner}>
+            <Text style={styles.heroLabel}>THE EVERREACH BLOG</Text>
+            <Text style={[styles.heroTitle, isDesktop && { fontSize: 44 }]}>
+              Build better relationships{'\n'}with systems that actually stick
             </Text>
-          </View>
-        )}
+            <Text style={styles.heroSub}>
+              Practical guides on personal CRM, friendship maintenance, and authentic networking — designed for humans, optimized for action.
+            </Text>
 
-        {blogQuery.data?.posts?.map((post: any) => (
-          <TouchableOpacity
-            key={post.id}
-            style={styles.blogCard}
-            onPress={() => router.push(`/blog/${post.id}`)}
-          >
-            <View style={styles.blogCardContent}>
-              <Text style={styles.blogTitle} numberOfLines={2}>
-                {post.title}
-              </Text>
-              {post.excerpt && (
-                <Text style={styles.blogExcerpt} numberOfLines={2}>
-                  {post.excerpt}
-                </Text>
-              )}
-              <View style={styles.blogMeta}>
-                {post.tags?.slice(0, 3).map((tag: string) => (
-                  <View key={tag} style={styles.tag}>
-                    <Text style={styles.tagText}>{tag}</Text>
-                  </View>
-                ))}
-                <Text style={styles.blogDate}>{formatDate(post.published_at)}</Text>
-              </View>
+            {/* Search */}
+            <View style={styles.searchWrap}>
+              <Search size={18} color={t.colors.muted} />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search articles (e.g. &quot;follow up templates&quot;)"
+                placeholderTextColor={t.colors.muted}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                onSubmitEditing={handleSearch}
+                returnKeyType="search"
+              />
+              <TouchableOpacity style={styles.searchBtn} onPress={handleSearch}>
+                <Text style={styles.searchBtnText}>Search</Text>
+              </TouchableOpacity>
             </View>
-            <ChevronRight size={18} color={theme.colors.textSecondary} />
+
+            {/* Quick links */}
+            <View style={styles.quickLinks}>
+              <Text style={styles.quickLabel}>Popular:</Text>
+              {['Why friendships fade', 'Personal CRM guide', 'Follow-up templates'].map((q) => (
+                <TouchableOpacity
+                  key={q}
+                  onPress={() => {
+                    const post = POSTS.find((p) => p.title.toLowerCase().includes(q.toLowerCase().split(' ')[0]));
+                    if (post) router.push(`/blog/${post.slug}`);
+                  }}
+                >
+                  <Text style={styles.quickLink}>{q}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        </View>
+
+        {/* ── Featured Articles ────────────────────── */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Featured</Text>
+            <Text style={styles.sectionSub}>Our most impactful guides</Text>
+          </View>
+          <View style={[styles.grid, isDesktop && styles.gridDesktop]}>
+            {featured.slice(0, 3).map((post) => (
+              <View key={post.id} style={[styles.gridItem, isDesktop && styles.gridItemDesktop]}>
+                <ArticleCard post={post} variant="featured" />
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* ── Topic Clusters ──────────────────────── */}
+        <View style={[styles.section, { backgroundColor: t.colors.borderLight }]}>
+          <View style={styles.sectionInner}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Explore by Topic</Text>
+              <Text style={styles.sectionSub}>Deep dives organized by what you need</Text>
+            </View>
+            <View style={[styles.grid, isDesktop && styles.gridDesktop]}>
+              {CATEGORIES.map((cat) => (
+                <View key={cat.slug} style={[styles.gridItem, isDesktop && styles.gridItemHalf]}>
+                  <CategoryCard
+                    category={cat}
+                    articleCount={getPostsByCategory(cat.slug).length}
+                  />
+                </View>
+              ))}
+            </View>
+          </View>
+        </View>
+
+        {/* ── Latest Articles ─────────────────────── */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Latest Articles</Text>
+          </View>
+          <View style={[styles.grid, isDesktop && styles.gridDesktop]}>
+            {latest.map((post) => (
+              <View key={post.id} style={[styles.gridItem, isDesktop && styles.gridItemDesktop]}>
+                <ArticleCard post={post} />
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* ── CTA Section ─────────────────────────── */}
+        <View style={styles.ctaSection}>
+          <Text style={styles.ctaTitle}>Ready to never lose touch again?</Text>
+          <Text style={styles.ctaSub}>
+            EverReach tracks your relationships, suggests when to reach out, and helps you write the perfect message.
+          </Text>
+          <TouchableOpacity
+            style={styles.ctaBtn}
+            onPress={() => {
+              trackAppInstallClick('blog_home_cta');
+              router.push('/auth');
+            }}
+          >
+            <Text style={styles.ctaBtnText}>Get Started Free</Text>
+            <ArrowRight size={16} color="#fff" />
           </TouchableOpacity>
-        ))}
+        </View>
+
+        <BlogFooter />
       </ScrollView>
     </View>
   );
 }
 
-function createStyles(theme: any) {
-  return StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: theme.colors.background,
-    },
-    header: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      borderBottomWidth: 0.5,
-      borderBottomColor: theme.colors.border,
-    },
-    backButton: {
-      padding: 4,
-    },
-    headerTitle: {
-      fontSize: 18,
-      fontWeight: "700",
-      color: theme.colors.text,
-    },
-    requestButton: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 4,
-      backgroundColor: theme.colors.primary,
-      paddingHorizontal: 12,
-      paddingVertical: 6,
-      borderRadius: 8,
-    },
-    requestButtonText: {
-      color: "#fff",
-      fontSize: 13,
-      fontWeight: "600",
-    },
-    scrollView: {
-      flex: 1,
-    },
-    scrollContent: {
-      padding: 16,
-      paddingBottom: 40,
-    },
-    centerContainer: {
-      alignItems: "center",
-      padding: 40,
-      gap: 8,
-    },
-    loadingText: {
-      fontSize: 14,
-      color: theme.colors.textSecondary,
-    },
-    emptyTitle: {
-      fontSize: 18,
-      fontWeight: "600",
-      color: theme.colors.text,
-      marginTop: 12,
-    },
-    emptyText: {
-      fontSize: 14,
-      color: theme.colors.textSecondary,
-      textAlign: "center",
-    },
-    blogCard: {
-      flexDirection: "row",
-      alignItems: "center",
-      backgroundColor: theme.colors.surface,
-      borderRadius: 12,
-      padding: 16,
-      marginBottom: 12,
-      borderWidth: 0.5,
-      borderColor: theme.colors.border,
-    },
-    blogCardContent: {
-      flex: 1,
-      marginRight: 8,
-    },
-    blogTitle: {
-      fontSize: 16,
-      fontWeight: "600",
-      color: theme.colors.text,
-      marginBottom: 4,
-    },
-    blogExcerpt: {
-      fontSize: 14,
-      color: theme.colors.textSecondary,
-      lineHeight: 20,
-      marginBottom: 8,
-    },
-    blogMeta: {
-      flexDirection: "row",
-      alignItems: "center",
-      flexWrap: "wrap",
-      gap: 6,
-    },
-    tag: {
-      backgroundColor: theme.colors.primary + "15",
-      paddingHorizontal: 8,
-      paddingVertical: 2,
-      borderRadius: 4,
-    },
-    tagText: {
-      fontSize: 11,
-      color: theme.colors.primary,
-      fontWeight: "500",
-    },
-    blogDate: {
-      fontSize: 12,
-      color: theme.colors.textSecondary,
-      marginLeft: 4,
-    },
-  });
-}
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: t.colors.pageBg },
+  scroll: { flex: 1 },
+  scrollContent: { flexGrow: 1 },
+
+  // Hero
+  hero: {
+    backgroundColor: t.colors.heroOverlay,
+    paddingVertical: 64,
+    paddingHorizontal: 24,
+  },
+  heroInner: {
+    maxWidth: 720,
+    alignSelf: 'center',
+    width: '100%',
+    alignItems: 'center',
+  },
+  heroLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: t.colors.accent,
+    letterSpacing: 2,
+    marginBottom: 16,
+  },
+  heroTitle: {
+    fontSize: 34,
+    fontWeight: '700',
+    color: '#fff',
+    textAlign: 'center',
+    lineHeight: 42,
+    marginBottom: 16,
+  },
+  heroSub: {
+    fontSize: 17,
+    color: 'rgba(255,255,255,0.7)',
+    textAlign: 'center',
+    lineHeight: 26,
+    marginBottom: 32,
+    maxWidth: 560,
+  },
+  searchWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    paddingLeft: 16,
+    width: '100%',
+    maxWidth: 560,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+    color: t.colors.body,
+    paddingVertical: 14,
+    paddingHorizontal: 10,
+    ...(Platform.OS === 'web' ? { outlineStyle: 'none' as any } : {}),
+  },
+  searchBtn: {
+    backgroundColor: t.colors.primary,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderTopRightRadius: 12,
+    borderBottomRightRadius: 12,
+  },
+  searchBtnText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  quickLinks: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 16,
+  },
+  quickLabel: {
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.5)',
+  },
+  quickLink: {
+    fontSize: 13,
+    color: t.colors.accent,
+    textDecorationLine: 'underline',
+  },
+
+  // Sections
+  section: {
+    paddingVertical: 48,
+    paddingHorizontal: 24,
+  },
+  sectionInner: {
+    maxWidth: 1100,
+    alignSelf: 'center',
+    width: '100%',
+  },
+  sectionHeader: {
+    maxWidth: 1100,
+    alignSelf: 'center',
+    width: '100%',
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 26,
+    fontWeight: '700',
+    color: t.colors.heading,
+    marginBottom: 4,
+  },
+  sectionSub: {
+    fontSize: 15,
+    color: t.colors.secondary,
+  },
+  grid: {
+    maxWidth: 1100,
+    alignSelf: 'center',
+    width: '100%',
+    gap: 16,
+  },
+  gridDesktop: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  gridItem: {
+    width: '100%',
+  },
+  gridItemDesktop: {
+    width: '31.5%',
+  },
+  gridItemHalf: {
+    width: '48%',
+  },
+
+  // CTA
+  ctaSection: {
+    backgroundColor: t.colors.heroOverlay,
+    paddingVertical: 56,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+  },
+  ctaTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#fff',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  ctaSub: {
+    fontSize: 16,
+    color: 'rgba(255,255,255,0.7)',
+    textAlign: 'center',
+    lineHeight: 24,
+    maxWidth: 480,
+    marginBottom: 28,
+  },
+  ctaBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: t.colors.primary,
+    paddingHorizontal: 28,
+    paddingVertical: 14,
+    borderRadius: 10,
+  },
+  ctaBtnText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
+  },
+});
