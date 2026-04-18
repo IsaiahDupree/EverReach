@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { Users, Home, Settings, MessageCircle, BookOpen } from "lucide-react-native";
+import { Users, Home, Settings, MessageCircle } from "lucide-react-native";
 import React from "react";
 import { useAppSettings } from "@/providers/AppSettingsProvider";
 import { ActivityIndicator, View } from "react-native";
@@ -59,14 +59,6 @@ export default function TabLayout() {
               options={{
                 title: "CRM Assistant",
                 tabBarIcon: ({ color }) => <MessageCircle size={24} color={color} />,
-                headerShown: false,
-              }}
-            />
-            <Tabs.Screen
-              name="support"
-              options={{
-                title: "Support",
-                tabBarIcon: ({ color }) => <BookOpen size={24} color={color} />,
                 headerShown: false,
               }}
             />

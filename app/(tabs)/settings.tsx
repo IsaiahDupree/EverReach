@@ -19,6 +19,7 @@ import {
   LogOut,
   Shield,
   HelpCircle,
+  BookOpen,
   Mail,
   Bell,
   User,
@@ -1059,6 +1060,12 @@ export default function SettingsScreen() {
     {
       title: 'Support',
       items: [
+        {
+          icon: BookOpen,
+          label: 'Blog',
+          type: 'link' as const,
+          onPress: () => router.push('/blog'),
+        },
         {
           icon: HelpCircle,
           label: 'Help Center',
