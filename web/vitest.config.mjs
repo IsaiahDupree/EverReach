@@ -9,6 +9,7 @@ export default defineConfig({
     setupFiles: ['./test/setupTests.mjs'],
     css: true,
     globals: true,
+    exclude: ['**/node_modules/**', '**/e2e/**', '**/*.spec.ts'],
   },
   resolve: {
     alias: {
