@@ -18,6 +18,7 @@ import { blogTheme as t } from '@/lib/blog/theme';
 import { setPageMeta } from '@/lib/blog/schema';
 import { trackCategoryView } from '@/lib/blog/analytics';
 import { CATEGORY_MAP, CATEGORIES, getPostsByCategory } from '@/lib/blog/content';
+import { useBlogPosts } from '@/lib/blog/useBlogData';
 
 export default function CategoryPage() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
@@ -25,7 +26,11 @@ export default function CategoryPage() {
   const isDesktop = width > 768;
 
   const category = slug ? CATEGORY_MAP[slug] : undefined;
-  const posts = slug ? getPostsByCategory(slug) : [];
+  const { posts: allCategoryPosts } = useBlogPosts({ category: slug });
+  // Merge with static posts for this category
+  const staticPosts = slug ? getPostsByCategory(slug) : [];
+  const seenSlugs = new Set(allCategoryPosts.map((p) => p.slug));
+  const posts = [...allCategoryPosts, ...staticPosts.filter((p) => !seenSlugs.has(p.slug))];
   const otherCategories = CATEGORIES.filter((c) => c.slug !== slug).slice(0, 4);
 
   useEffect(() => {

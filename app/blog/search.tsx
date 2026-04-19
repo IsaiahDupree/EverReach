@@ -14,7 +14,7 @@ import { ArticleCard } from '@/components/blog/ArticleCard';
 import { blogTheme as t } from '@/lib/blog/theme';
 import { setPageMeta } from '@/lib/blog/schema';
 import { trackBlogSearch } from '@/lib/blog/analytics';
-import { searchPosts } from '@/lib/blog/content';
+import { useBlogSearch } from '@/lib/blog/useBlogData';
 
 export default function BlogSearchPage() {
   const params = useLocalSearchParams<{ q: string }>();
@@ -22,7 +22,7 @@ export default function BlogSearchPage() {
   const isDesktop = width > 768;
   const [query, setQuery] = useState(params.q || '');
 
-  const results = query.trim() ? searchPosts(query) : [];
+  const results = useBlogSearch(query);
 
   useEffect(() => {
     if (query.trim()) {

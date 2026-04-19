@@ -22,7 +22,8 @@ import { CTABlock } from '@/components/blog/CTABlock';
 import { blogTheme as t } from '@/lib/blog/theme';
 import { setPageMeta, injectArticleSchema, injectFaqSchema } from '@/lib/blog/schema';
 import { trackArticleView, trackRelatedArticleClick } from '@/lib/blog/analytics';
-import { POST_MAP, POSTS } from '@/lib/blog/content';
+import { POSTS } from '@/lib/blog/content';
+import { useBlogPost } from '@/lib/blog/useBlogData';
 import type { BlogPost } from '@/lib/blog/types';
 
 function formatDate(dateString: string): string {
@@ -36,8 +37,8 @@ export default function BlogArticlePage() {
   const { width } = useWindowDimensions();
   const isDesktop = width > 900;
 
-  // Look up post from static content
-  const post: BlogPost | undefined = id ? POST_MAP[id] : undefined;
+  // Look up post from API (with static fallback)
+  const { post, isLoading: postLoading } = useBlogPost(id);
 
   // SEO + Schema + Analytics
   useEffect(() => {

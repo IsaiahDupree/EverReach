@@ -18,7 +18,8 @@ import { BlogFooter } from '@/components/blog/BlogFooter';
 import { blogTheme as t } from '@/lib/blog/theme';
 import { setPageMeta, injectOrganizationSchema, injectWebSiteSchema } from '@/lib/blog/schema';
 import { trackBlogSearch, trackAppInstallClick } from '@/lib/blog/analytics';
-import { POSTS, CATEGORIES, getFeaturedPosts, getPostsByCategory } from '@/lib/blog/content';
+import { CATEGORIES, getPostsByCategory } from '@/lib/blog/content';
+import { useBlogPosts } from '@/lib/blog/useBlogData';
 
 export default function BlogHome() {
   const { width } = useWindowDimensions();
@@ -36,8 +37,9 @@ export default function BlogHome() {
     injectWebSiteSchema();
   }, []);
 
-  const featured = getFeaturedPosts();
-  const latest = [...POSTS].sort((a, b) =>
+  const { posts: allPosts } = useBlogPosts();
+  const featured = allPosts.filter((p) => p.featured).slice(0, 3);
+  const latest = [...allPosts].sort((a, b) =>
     new Date(b.published_at).getTime() - new Date(a.published_at).getTime()
   );
 

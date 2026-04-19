@@ -3,6 +3,7 @@ import { router, publicProcedure } from './server';
 import { contactsRouter } from './routers/contacts';
 import { messagesRouter } from './routers/messages';
 import { openaiRouter } from './routers/openai';
+import { blogRouter } from './routers/blog';
 
 // Simple health check procedure
 const healthRouter = router({
@@ -21,6 +22,7 @@ export const appRouter = router({
   contacts: contactsRouter,
   messages: messagesRouter,
   openai: openaiRouter,
+  blog: blogRouter,
 });
 
 export type AppRouter = typeof appRouter;
