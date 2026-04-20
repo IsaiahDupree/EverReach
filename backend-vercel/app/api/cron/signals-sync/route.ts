@@ -154,8 +154,9 @@ export async function GET() {
   try {
     const result = await syncSignals();
     return NextResponse.json(result);
-  } catch (error) {
-    console.error('Signals sync cron failed:', error);
-    return NextResponse.json({ ok: false, error: String(error) }, { status: 500 });
+  } catch (error: any) {
+    const msg = error?.message || JSON.stringify(error);
+    console.error('Signals sync cron failed:', msg);
+    return NextResponse.json({ ok: false, error: msg }, { status: 500 });
   }
 }

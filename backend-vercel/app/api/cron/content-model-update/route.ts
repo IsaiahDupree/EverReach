@@ -180,6 +180,6 @@ export async function GET() {
     return NextResponse.json(result);
   } catch (error) {
     console.error('Content model update cron failed:', error);
-    return NextResponse.json({ ok: false, error: String(error) }, { status: 500 });
+    const msg = (error as any)?.message || JSON.stringify(error); return NextResponse.json({ ok: false, error: msg }, { status: 500 });
   }
 }

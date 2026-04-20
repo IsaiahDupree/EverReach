@@ -154,8 +154,9 @@ export async function GET() {
   try {
     const result = await generateStrategy();
     return NextResponse.json(result);
-  } catch (error) {
-    console.error('Strategy generate cron failed:', error);
-    return NextResponse.json({ ok: false, error: String(error) }, { status: 500 });
+  } catch (error: any) {
+    const msg = error?.message || JSON.stringify(error);
+    console.error('Strategy generate cron failed:', msg);
+    return NextResponse.json({ ok: false, error: msg }, { status: 500 });
   }
 }

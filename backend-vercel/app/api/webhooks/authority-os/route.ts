@@ -59,26 +59,49 @@ async function handler(request: Request) {
   try {
     const payload = JSON.parse(body)
 
-    if (payload.event === 'blog.published') {
-      const post = payload.data
+    // AOS sends 'blog.generated' with blog data under payload.blog
+    if (payload.event === 'blog.generated') {
+      const blog = payload.blog
+      const aosPostId: string = payload.aos_post_id || ''
 
-      // Upsert to avoid duplicates
-      const { error } = await supabaseAdmin
-        .from('er_blog_posts')
-        .upsert(
-          {
-            aos_post_id: post.id,
-            title: post.title,
-            slug: post.slug,
-            content_html: post.content_html,
-            excerpt: post.excerpt,
-            tags: post.tags || [],
-            author: post.author || 'Authority OS',
-            published_at: post.published_at,
-            received_at: new Date().toISOString(),
-          },
-          { onConflict: 'aos_post_id' }
-        )
+      // Map pillar_domain to a readable category
+      const categoryMap: Record<string, string> = {
+        relationship_management: 'relationship-management',
+        networking_connections: 'networking',
+        ai_relationship_tools: 'ai-tools',
+        productivity_professionals: 'productivity',
+        contact_organization: 'contact-management',
+      }
+      const category = categoryMap[blog.pillar_domain] || 'general'
+
+      // Estimate reading time (avg 200 wpm)
+      const readingTimeMinutes = Math.max(1, Math.round((blog.word_count || 1500) / 200))
+
+      const record = {
+        aos_post_id: aosPostId || null,
+        title: blog.title,
+        slug: blog.slug,
+        content_html: blog.content || '',
+        excerpt: blog.meta_description || '',
+        tags: blog.secondary_keywords || [],
+        category,
+        reading_time_minutes: readingTimeMinutes,
+        published_at: new Date().toISOString(),
+        received_at: new Date().toISOString(),
+      }
+
+      // Upsert to avoid duplicates (only conflict on non-null aos_post_id)
+      const { data: saved, error } = aosPostId
+        ? await supabaseAdmin
+            .from('er_blog_posts')
+            .upsert(record, { onConflict: 'aos_post_id' })
+            .select('id')
+            .single()
+        : await supabaseAdmin
+            .from('er_blog_posts')
+            .insert(record)
+            .select('id')
+            .single()
 
       if (error) {
         console.error('[AOS Webhook] Failed to store blog post:', error)
@@ -88,18 +111,9 @@ async function handler(request: Request) {
         )
       }
 
-      // Update any matching blog request
-      if (post.id) {
-        await supabaseAdmin
-          .from('er_blog_requests')
-          .update({ status: 'fulfilled' })
-          .eq('aos_request_id', post.id)
-          .eq('status', 'queued')
-      }
-
-      console.log('[AOS Webhook] Blog post stored:', post.title)
+      console.log('[AOS Webhook] Blog post stored:', blog.title, '→ id:', saved?.id)
       return new Response(
-        JSON.stringify({ ok: true, title: post.title }),
+        JSON.stringify({ ok: true, post_id: saved?.id ?? '', title: blog.title }),
         { status: 200, headers: jsonHeaders }
       )
     }
