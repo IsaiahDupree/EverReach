@@ -9,7 +9,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 const template = fs.readFileSync(
-  path.resolve(__dirname, '../../web/index.html'),
+  path.resolve(__dirname, '../../public/index.html'),
   'utf-8'
 );
 
