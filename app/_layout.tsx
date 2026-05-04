@@ -64,41 +64,13 @@ import { initializeGA4, trackGA4PageView } from "@/lib/ga4";
 import { useScreenTracking } from "@/hooks/useScreenTracking";
 import { initializeRevenueCat } from "@/lib/revenuecat";
 import { useSubscription } from "@/providers/SubscriptionProvider";
-import { apiFetch } from "@/lib/api";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { setQueryClientForImageUpload } from "@/lib/imageUpload";
 import { paywallConfigService } from "@/lib/paywallConfig";
 
 SplashScreen.preventAutoHideAsync().catch(() => { });
 
-// Initialize event envelope (session IDs, UTM params, experiments)
-initializeEnvelope().then(() => {
-  console.log('[App] Event envelope initialized');
-}).catch((error) => {
-  console.error('[App] Failed to initialize envelope:', error);
-});
-
-// Initialize marketing funnel (install tracking, deep links, attribution)
-initializeMarketingFunnel().then(() => {
-  console.log('[App] Marketing funnel initialized');
-}).catch((error) => {
-  console.error('[App] Failed to initialize marketing funnel:', error);
-});
-
-// Initialize performance monitoring (memory, network, app state)
-initializePerformanceMonitoring();
-console.log('[App] Performance monitoring initialized');
-
-// Initialize PostHog analytics (no-op if API key missing)
-initializePostHog();
-
-// Initialize Meta App Events (Conversions API + native SDK if available)
-initializeMetaAppEvents();
-
-// Initialize GA4 analytics (web only, requires EXPO_PUBLIC_GA4_MEASUREMENT_ID)
-initializeGA4();
-
-// Initialize RevenueCat (IAP subscriptions)
+// Critical: RevenueCat must init early for subscription checks
 initializeRevenueCat().then((success) => {
   if (success) {
     console.log('[App] RevenueCat initialized successfully');
@@ -109,20 +81,24 @@ initializeRevenueCat().then((success) => {
   console.error('[App] Failed to initialize RevenueCat:', error);
 });
 
-// Initialize Superwall (Remote Paywalls)
-import('@/lib/superwall').then(({ initializeSuperwall }) => {
-  initializeSuperwall().then((success) => {
-    if (success) {
-      console.log('[App] Superwall initialized successfully');
-    } else {
-      console.log('[App] Superwall initialization skipped (not available or missing keys)');
-    }
-  }).catch((error) => {
-    console.error('[App] Failed to initialize Superwall:', error);
-  });
-}).catch((error) => {
-  console.log('[App] Superwall not available (requires custom dev build):', error?.message || error);
-});
+// Defer non-critical SDK initializations to avoid blocking startup
+const deferInit = (fn: () => void, delayMs = 2000) => setTimeout(fn, delayMs);
+
+deferInit(() => {
+  initializeEnvelope().catch(() => {});
+  initializeMarketingFunnel().catch(() => {});
+  initializePerformanceMonitoring();
+  initializePostHog();
+  initializeMetaAppEvents();
+  initializeGA4();
+  console.log('[App] Deferred SDK initializations complete');
+}, 1500);
+
+deferInit(() => {
+  import('@/lib/superwall').then(({ initializeSuperwall }) => {
+    initializeSuperwall().catch(() => {});
+  }).catch(() => {});
+}, 3000);
 
 // Throttle keys for warmth recompute
 const WARMTH_RECOMPUTE_KEY = 'warmth_recompute_last_run';
@@ -179,20 +155,20 @@ function RootLayoutNav() {
     });
   }, [isAuthenticated]); // Re-check when auth state changes (e.g., after sign out)
 
-  // Listen for welcome completion to update state (for re-renders after welcome)
+  // Re-check welcome status on focus (instead of 1s polling)
   React.useEffect(() => {
-    // Re-check welcome seen status when returning from welcome screen
-    const interval = setInterval(() => {
-      if (welcomeSeen === false) {
-        hasSeenWelcome().then((seen) => {
-          if (seen && !welcomeSeen) {
-            setWelcomeSeen(true);
-            console.log('[Layout] Welcome completed, updating state');
-          }
-        });
-      }
-    }, 1000);
-    return () => clearInterval(interval);
+    if (welcomeSeen !== false) return;
+    const checkWelcome = () => {
+      hasSeenWelcome().then((seen) => {
+        if (seen) {
+          setWelcomeSeen(true);
+          console.log('[Layout] Welcome completed, updating state');
+        }
+      });
+    };
+    // Check once after a short delay (covers navigation back from welcome)
+    const timer = setTimeout(checkWelcome, 500);
+    return () => clearTimeout(timer);
   }, [welcomeSeen]);
 
   // Track app lifecycle events globally
@@ -286,9 +262,10 @@ function RootLayoutNav() {
   const { refreshTop, refreshRecent } = useWarmth();
 
   // Daily background recompute for top contacts by warmth (24h throttle)
+  // Deferred 30s after auth to avoid blocking initial load
   useEffect(() => {
     if (!isAuthenticated) return;
-    (async () => {
+    const timer = setTimeout(async () => {
       try {
         const last = await AsyncStorage.getItem(WARMTH_DAILY_RECOMPUTE_KEY);
         const now = Date.now();
@@ -298,64 +275,26 @@ function RootLayoutNav() {
         }
 
         console.log('[Warmth] Starting daily recompute for top 60 contacts...');
-
-        // Optimistic lock: Set timestamp BEFORE starting to prevent re-entry if component re-renders
         await AsyncStorage.setItem(WARMTH_DAILY_RECOMPUTE_KEY, String(now));
-
         await refreshTop(60, { source: 'daily-background' });
         console.log('[Warmth] Daily recompute complete');
       } catch (e) {
         console.warn('[Warmth] Daily recompute failed:', (e as any)?.message || e);
       }
-    })();
+    }, 30000);
+    return () => clearTimeout(timer);
   }, [isAuthenticated, refreshTop]);
 
-  // Prefetch contact avatars on startup (instant loading)
-  useEffect(() => {
-    if (!isAuthenticated) return;
-
-    (async () => {
-      try {
-        console.log('[Avatars] Prefetching contact avatars (top 100)...');
-
-        const response = await apiFetch('/api/v1/contacts?limit=100', {
-          method: 'GET',
-          requireAuth: true,
-        });
-
-        if (!response.ok) {
-          console.warn('[Avatars] Prefetch failed:', response.status);
-          return;
-        }
-
-        const data = await response.json();
-        const contacts = data.contacts || data.items || [];
-
-        // Cache the full contacts list
-        queryClient.setQueryData(['contacts', 'list'], contacts);
-
-        // Pre-cache individual avatar URLs
-        let cached = 0;
-        contacts.forEach((contact: any) => {
-          if (contact.id && contact.avatar_url) {
-            queryClient.setQueryData(['contact-avatar', contact.id], contact.avatar_url);
-            cached++;
-          }
-        });
-
-        console.log(`✅ [Avatars] Prefetched ${cached} avatars out of ${contacts.length} contacts`);
-      } catch (error) {
-        console.error('[Avatars] Prefetch error:', error);
-      }
-    })();
-  }, [isAuthenticated]);
+  // Avatar prefetch removed — PeopleProvider already fetches contacts.
+  // Avatar URLs are available from PeopleProvider's data.
 
   // Recompute warmth on startup (once per session; 10min throttle via storage)
+  // Deferred 15s after auth to avoid blocking initial load
   useEffect(() => {
     if (!isAuthenticated) return;
     if (warmthRecomputeSessionRan) return;
     warmthRecomputeSessionRan = true;
-    (async () => {
+    const timer = setTimeout(async () => {
       try {
         const last = await AsyncStorage.getItem(WARMTH_RECOMPUTE_KEY);
         const now = Date.now();
@@ -372,20 +311,21 @@ function RootLayoutNav() {
       } catch (e) {
         console.warn('[Warmth] Startup recompute failed:', (e as any)?.message || e);
       }
-    })();
+    }, 15000);
+    return () => clearTimeout(timer);
   }, [isAuthenticated, refreshRecent]);
 
-  // Pre-fetch paywall configuration on app launch
+  // Pre-fetch paywall configuration (deferred — not needed for initial render)
   useEffect(() => {
-    (async () => {
+    const timer = setTimeout(async () => {
       try {
-        console.log('[App] Pre-fetching paywall configuration...');
         await paywallConfigService.fetchConfig('mobile');
         console.log('[App] Paywall configuration loaded');
       } catch (e) {
         console.warn('[App] Failed to pre-fetch paywall config:', (e as any)?.message || e);
       }
-    })();
+    }, 5000);
+    return () => clearTimeout(timer);
   }, []);
 
   const isLoading = loading || onboardingLoading || welcomeSeen === null;
@@ -609,20 +549,7 @@ export default function RootLayout() {
     console.log('  - Bundle ID:', Constants.expoConfig?.ios?.bundleIdentifier || 'unknown');
   }, []);
 
-  useEffect(() => {
-    // Initialize PostHog analytics as early as possible
-    initializePostHog();
-
-    // Initialize backend analytics session
-    import('../lib/backendAnalytics')
-      .then(({ generateSessionId }) => {
-        const sessionId = generateSessionId();
-        console.log('[App] Backend analytics session initialized:', sessionId);
-      })
-      .catch((error) => {
-        console.error('[App] Failed to initialize backend analytics:', error);
-      });
-  }, []);
+  // PostHog and backend analytics now initialized in deferred module-level init
 
   // FIX: Force hide splash screen after timeout (prevents stuck loading)
   useEffect(() => {

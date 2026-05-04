@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { Camera, ImageIcon, X, Check, ArrowLeft, Users, MessageSquare, Home, UserCircle } from 'lucide-react-native';
+import { Camera, ImageIcon, X, Check, ArrowLeft, Users, MessageSquare, Home, UserCircle, Layers } from 'lucide-react-native';
 import { useScreenshotAnalysis } from '@/hooks/useScreenshotAnalysis';
 import { useTheme } from '@/providers/ThemeProvider';
 import { usePeople } from '@/providers/PeopleProvider';
@@ -40,7 +40,17 @@ export default function ScreenshotAnalysisScreen() {
     analyzeScreenshot,
     executeSuggestedAction,
     removeImage,
+    // Bulk analysis
+    bulkItems,
+    bulkAnalyzing,
+    bulkProgress,
+    pickMultipleImages,
+    analyzeBulk,
+    removeBulkItem,
+    clearBulk,
   } = useScreenshotAnalysis();
+
+  const [mode, setMode] = useState<'single' | 'bulk'>('single');
   
   // Contact selection state
   const personId = typeof params.personId === 'string' ? params.personId : undefined;
@@ -286,18 +296,42 @@ export default function ScreenshotAnalysisScreen() {
       </View>
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+        {/* Mode Toggle */}
+        {!image && bulkItems.length === 0 && (
+          <View style={styles.modeToggle}>
+            <TouchableOpacity
+              style={[styles.modeButton, mode === 'single' && styles.modeButtonActive]}
+              onPress={() => setMode('single')}
+            >
+              <ImageIcon size={18} color={mode === 'single' ? '#FFFFFF' : theme.colors.text} />
+              <Text style={[styles.modeButtonText, mode === 'single' && styles.modeButtonTextActive]}>Single</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.modeButton, mode === 'bulk' && styles.modeButtonActive]}
+              onPress={() => setMode('bulk')}
+            >
+              <Layers size={18} color={mode === 'bulk' ? '#FFFFFF' : theme.colors.text} />
+              <Text style={[styles.modeButtonText, mode === 'bulk' && styles.modeButtonTextActive]}>Bulk (up to 10)</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* Instructions */}
-        {!image && (
+        {!image && bulkItems.length === 0 && (
           <View style={styles.instructionsCard}>
-            <Text style={styles.instructionsTitle}>📸 Analyze Screenshots</Text>
+            <Text style={styles.instructionsTitle}>
+              {mode === 'bulk' ? '📸 Bulk Screenshot Analysis' : '📸 Analyze Screenshots'}
+            </Text>
             <Text style={styles.instructionsText}>
-              Upload a screenshot or photo to extract contacts, interactions, and action items automatically.
+              {mode === 'bulk'
+                ? 'Select up to 10 screenshots to analyze them all at once. Great for processing a batch of conversation screenshots for a contact.'
+                : 'Upload a screenshot or photo to extract contacts, interactions, and action items automatically.'}
             </Text>
           </View>
         )}
 
-        {/* Image Picker Buttons */}
-        {!image && (
+        {/* Image Picker Buttons — Single Mode */}
+        {mode === 'single' && !image && bulkItems.length === 0 && (
           <View style={styles.pickerButtons}>
             <TouchableOpacity
               style={[styles.pickerButton, styles.primaryButton]}
@@ -306,6 +340,170 @@ export default function ScreenshotAnalysisScreen() {
               <ImageIcon size={24} color="#FFFFFF" />
               <Text style={styles.pickerButtonText}>Select Image</Text>
             </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Image Picker Buttons — Bulk Mode */}
+        {mode === 'bulk' && bulkItems.length === 0 && (
+          <View style={styles.pickerButtons}>
+            <TouchableOpacity
+              style={[styles.pickerButton, styles.primaryButton]}
+              onPress={pickMultipleImages}
+            >
+              <Layers size={24} color="#FFFFFF" />
+              <Text style={styles.pickerButtonText}>Select Multiple Images</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Bulk Analysis Section */}
+        {bulkItems.length > 0 && (
+          <View style={styles.bulkSection}>
+            <View style={styles.bulkHeader}>
+              <Text style={styles.sectionTitle}>
+                {bulkProgress.total > 0
+                  ? `Analyzing ${bulkProgress.done}/${bulkProgress.total}`
+                  : `${bulkItems.length} images selected`}
+              </Text>
+              {!bulkAnalyzing && (
+                <TouchableOpacity onPress={clearBulk}>
+                  <Text style={{ color: theme.colors.error, fontSize: 14 }}>Clear All</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {/* Progress Bar */}
+            {bulkAnalyzing && (
+              <View style={styles.progressBarContainer}>
+                <View style={[styles.progressBar, { width: `${(bulkProgress.done / bulkProgress.total) * 100}%` }]} />
+              </View>
+            )}
+
+            {/* Contact Picker for bulk */}
+            {!bulkAnalyzing && !bulkItems.some(i => i.status === 'done') && (
+              <View style={[styles.contactSection, { marginHorizontal: 0 }]}>
+                <Text style={styles.sectionTitle}>
+                  <Users size={18} color={theme.colors.text} /> Select Contact
+                </Text>
+                <ContactPicker
+                  multiSelect={false}
+                  selectedId={selectedPersonId}
+                  onSelect={setSelectedPersonId}
+                />
+              </View>
+            )}
+
+            {/* Bulk Item Grid */}
+            <View style={styles.bulkGrid}>
+              {bulkItems.map((item, index) => (
+                <View key={index} style={styles.bulkItem}>
+                  <Image source={{ uri: item.image.uri }} style={styles.bulkThumb} resizeMode="cover" />
+                  <View style={styles.bulkItemOverlay}>
+                    {item.status === 'pending' && <Text style={styles.bulkStatus}>⏳</Text>}
+                    {(item.status === 'uploading' || item.status === 'analyzing') && (
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                    )}
+                    {item.status === 'done' && <Check size={20} color="#22C55E" />}
+                    {item.status === 'error' && <X size={20} color="#EF4444" />}
+                  </View>
+                  {!bulkAnalyzing && item.status === 'pending' && (
+                    <TouchableOpacity style={styles.bulkRemove} onPress={() => removeBulkItem(index)}>
+                      <X size={14} color="#FFFFFF" />
+                    </TouchableOpacity>
+                  )}
+                </View>
+              ))}
+            </View>
+
+            {/* Analyze All Button */}
+            {!bulkAnalyzing && bulkItems.some(i => i.status === 'pending') && (
+              <TouchableOpacity
+                style={[styles.analyzeButton, styles.primaryButton, { marginTop: 16 }]}
+                onPress={() => analyzeBulk('crm')}
+              >
+                <Text style={styles.analyzeButtonText}>
+                  Analyze All ({bulkItems.filter(i => i.status === 'pending').length} images)
+                </Text>
+              </TouchableOpacity>
+            )}
+
+            {/* Bulk Results Summary */}
+            {bulkItems.some(i => i.status === 'done') && (
+              <View style={[styles.resultCard, { marginTop: 16 }]}>
+                <Text style={styles.resultCardTitle}>
+                  Results ({bulkItems.filter(i => i.status === 'done').length}/{bulkItems.length} analyzed)
+                </Text>
+                {bulkItems.filter(i => i.status === 'done' && i.result).map((item, index) => (
+                  <View key={index} style={[styles.entityItem, { marginBottom: 12 }]}>
+                    <Text style={styles.entityName}>Image {index + 1}</Text>
+                    {item.result?.vision_summary ? (
+                      <Text style={styles.resultCardText} numberOfLines={3}>
+                        {item.result.vision_summary}
+                      </Text>
+                    ) : null}
+                    {item.result?.detected_entities?.contacts?.length ? (
+                      <Text style={styles.entityDetail}>
+                        👤 {item.result.detected_entities.contacts.length} contact(s) detected
+                      </Text>
+                    ) : null}
+                    {item.result?.detected_entities?.action_items?.length ? (
+                      <Text style={styles.entityDetail}>
+                        ✅ {item.result.detected_entities.action_items.length} action item(s)
+                      </Text>
+                    ) : null}
+                  </View>
+                ))}
+
+                {/* Save All to Contact */}
+                {selectedPersonId && (
+                  <TouchableOpacity
+                    style={[styles.saveButton, { marginTop: 12 }]}
+                    onPress={async () => {
+                      if (!selectedPersonId) return;
+                      setGeneratingMessage(true);
+                      try {
+                        for (const item of bulkItems.filter(i => i.status === 'done' && i.result)) {
+                          const noteContent = formatAnalysisNote({
+                            visionSummary: item.result!.vision_summary,
+                            ocrText: item.result!.ocr_text,
+                          });
+                          await apiFetch(`/api/v1/contacts/${selectedPersonId}/notes`, {
+                            method: 'POST',
+                            requireAuth: true,
+                            body: JSON.stringify({
+                              content: noteContent,
+                              metadata: {
+                                type: 'screenshot_analysis',
+                                vision_summary: item.result!.vision_summary,
+                                ocr_text: item.result!.ocr_text,
+                                analyzed_at: new Date().toISOString(),
+                              },
+                            }),
+                          });
+                        }
+                        Alert.alert('Success', `Saved ${bulkItems.filter(i => i.status === 'done').length} analyses to contact!`, [
+                          { text: 'OK', onPress: () => router.back() },
+                        ]);
+                      } catch (err) {
+                        Alert.alert('Error', 'Failed to save some analyses. Please try again.');
+                      } finally {
+                        setGeneratingMessage(false);
+                      }
+                    }}
+                    disabled={generatingMessage}
+                  >
+                    {generatingMessage ? (
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                    ) : (
+                      <>
+                        <Check size={20} color="#FFFFFF" />
+                        <Text style={styles.saveButtonText}>Save All to Contact</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                )}
+              </View>
+            )}
           </View>
         )}
 
@@ -1036,5 +1234,98 @@ const createStyles = (theme: any) =>
       fontSize: 15,
       fontWeight: '600',
       color: '#FFFFFF',
+    },
+    // Mode toggle
+    modeToggle: {
+      flexDirection: 'row',
+      gap: 8,
+      marginBottom: 16,
+    },
+    modeButton: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 12,
+      borderRadius: 10,
+      backgroundColor: theme.colors.surface,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      gap: 6,
+    },
+    modeButtonActive: {
+      backgroundColor: theme.colors.primary,
+      borderColor: theme.colors.primary,
+    },
+    modeButtonText: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: theme.colors.text,
+    },
+    modeButtonTextActive: {
+      color: '#FFFFFF',
+    },
+    // Bulk analysis
+    bulkSection: {
+      marginBottom: 20,
+    },
+    bulkHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 12,
+    },
+    progressBarContainer: {
+      height: 4,
+      backgroundColor: theme.colors.border,
+      borderRadius: 2,
+      marginBottom: 16,
+      overflow: 'hidden',
+    },
+    progressBar: {
+      height: 4,
+      backgroundColor: theme.colors.primary,
+      borderRadius: 2,
+    },
+    bulkGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 8,
+    },
+    bulkItem: {
+      width: 100,
+      height: 100,
+      borderRadius: 8,
+      overflow: 'hidden',
+      position: 'relative',
+    },
+    bulkThumb: {
+      width: '100%',
+      height: '100%',
+    },
+    bulkItemOverlay: {
+      position: 'absolute',
+      bottom: 4,
+      right: 4,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      borderRadius: 12,
+      width: 28,
+      height: 28,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    bulkStatus: {
+      fontSize: 14,
+    },
+    bulkRemove: {
+      position: 'absolute',
+      top: 4,
+      right: 4,
+      backgroundColor: 'rgba(0,0,0,0.6)',
+      borderRadius: 10,
+      width: 20,
+      height: 20,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
   });

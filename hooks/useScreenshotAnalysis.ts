@@ -54,11 +54,23 @@ export interface ScreenshotImage {
 // Hook
 // ============================================================================
 
+export interface BulkAnalysisItem {
+  image: ScreenshotImage;
+  status: 'pending' | 'uploading' | 'analyzing' | 'done' | 'error';
+  result: ScreenshotAnalysisResult | null;
+  error: string | null;
+}
+
 export function useScreenshotAnalysis() {
   const [image, setImage] = useState<ScreenshotImage | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<ScreenshotAnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Bulk analysis state
+  const [bulkItems, setBulkItems] = useState<BulkAnalysisItem[]>([]);
+  const [bulkAnalyzing, setBulkAnalyzing] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState({ done: 0, total: 0 });
 
   /**
    * Request camera/photo library permissions
@@ -473,6 +485,166 @@ export function useScreenshotAnalysis() {
   };
 
   /**
+   * Pick multiple images for bulk analysis
+   */
+  const pickMultipleImages = async (): Promise<void> => {
+    try {
+      const hasPermission = await requestPermissions('library');
+      if (!hasPermission) return;
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsMultipleSelection: true,
+        selectionLimit: 10,
+        quality: 0.8,
+        base64: true,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const items: BulkAnalysisItem[] = result.assets.map((asset) => ({
+          image: {
+            uri: asset.uri,
+            base64: asset.base64 || undefined,
+            fileName: asset.uri.split('/').pop() || `screenshot-${Date.now()}.jpg`,
+            mimeType: 'image/jpeg',
+            fileSize: asset.fileSize || 0,
+            width: asset.width,
+            height: asset.height,
+          },
+          status: 'pending' as const,
+          result: null,
+          error: null,
+        }));
+
+        setBulkItems(items);
+        setBulkProgress({ done: 0, total: items.length });
+        setError(null);
+
+        analytics.track('bulk_screenshots_selected', {
+          count: items.length,
+        });
+      }
+    } catch (err) {
+      console.error('[useScreenshotAnalysis] Pick multiple images error:', err);
+      setError('Failed to select images');
+    }
+  };
+
+  /**
+   * Analyze all bulk-selected images sequentially
+   */
+  const analyzeBulk = async (context?: string): Promise<void> => {
+    if (bulkItems.length === 0) return;
+
+    setBulkAnalyzing(true);
+    setBulkProgress({ done: 0, total: bulkItems.length });
+    const startTime = Date.now();
+
+    for (let i = 0; i < bulkItems.length; i++) {
+      const item = bulkItems[i];
+
+      // Update status to uploading
+      setBulkItems(prev => prev.map((it, idx) =>
+        idx === i ? { ...it, status: 'uploading' } : it
+      ));
+
+      try {
+        // Step 1: Upload
+        const formData = new FormData();
+        formData.append('file', {
+          uri: item.image.uri,
+          type: item.image.mimeType,
+          name: item.image.fileName,
+        } as any);
+        if (context) formData.append('context', context);
+
+        const uploadResponse = await apiFetch('/api/v1/screenshots', {
+          method: 'POST',
+          body: formData as any,
+          requireAuth: true,
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error(`Upload failed: ${uploadResponse.status}`);
+        }
+
+        const uploadData = await uploadResponse.json();
+        const screenshotId = uploadData.screenshot_id || uploadData.id;
+
+        // Update status to analyzing
+        setBulkItems(prev => prev.map((it, idx) =>
+          idx === i ? { ...it, status: 'analyzing' } : it
+        ));
+
+        // Step 2: Analyze
+        const analyzeResponse = await apiFetch(
+          `/api/v1/screenshots/${screenshotId}/analyze`,
+          { method: 'POST', requireAuth: true }
+        );
+
+        if (!analyzeResponse.ok) {
+          throw new Error(`Analysis failed: ${analyzeResponse.status}`);
+        }
+
+        const response = await analyzeResponse.json();
+        const analysisData = response.analysis || response;
+        const entities = analysisData.entities || {};
+        const insights = analysisData.insights || {};
+
+        const normalizedResult: ScreenshotAnalysisResult = {
+          id: screenshotId,
+          ocr_text: analysisData.ocr_text || '',
+          vision_summary: insights.summary || '',
+          detected_entities: {
+            contacts: entities.contacts || [],
+            interactions: [],
+            action_items: insights.action_items || [],
+          },
+          suggested_actions: (entities.contacts || []).map((contact: any) => ({
+            type: 'create_contact' as const,
+            data: { ...contact, tags: [contact.company, 'From Screenshot'].filter(Boolean) },
+            confidence: contact.confidence || 0.8,
+          })),
+        };
+
+        setBulkItems(prev => prev.map((it, idx) =>
+          idx === i ? { ...it, status: 'done', result: normalizedResult } : it
+        ));
+      } catch (err: any) {
+        console.error(`[useScreenshotAnalysis] Bulk item ${i} error:`, err);
+        setBulkItems(prev => prev.map((it, idx) =>
+          idx === i ? { ...it, status: 'error', error: err?.message || 'Failed' } : it
+        ));
+      }
+
+      setBulkProgress({ done: i + 1, total: bulkItems.length });
+    }
+
+    const duration = Date.now() - startTime;
+    analytics.track('bulk_screenshots_analyzed', {
+      total: bulkItems.length,
+      duration_ms: duration,
+    });
+
+    setBulkAnalyzing(false);
+  };
+
+  /**
+   * Remove a single item from bulk list
+   */
+  const removeBulkItem = (index: number): void => {
+    setBulkItems(prev => prev.filter((_, i) => i !== index));
+  };
+
+  /**
+   * Clear all bulk items
+   */
+  const clearBulk = (): void => {
+    setBulkItems([]);
+    setBulkProgress({ done: 0, total: 0 });
+  };
+
+  /**
    * Reset everything
    */
   const reset = (): void => {
@@ -480,16 +652,19 @@ export function useScreenshotAnalysis() {
     setAnalyzing(false);
     setAnalysisResult(null);
     setError(null);
+    setBulkItems([]);
+    setBulkAnalyzing(false);
+    setBulkProgress({ done: 0, total: 0 });
   };
 
   return {
-    // State
+    // Single image state
     image,
     analyzing,
     analysisResult,
     error,
-    
-    // Actions
+
+    // Single image actions
     showImagePicker,
     pickImage,
     takePhoto,
@@ -497,5 +672,16 @@ export function useScreenshotAnalysis() {
     executeSuggestedAction,
     removeImage,
     reset,
+
+    // Bulk analysis state
+    bulkItems,
+    bulkAnalyzing,
+    bulkProgress,
+
+    // Bulk analysis actions
+    pickMultipleImages,
+    analyzeBulk,
+    removeBulkItem,
+    clearBulk,
   };
 }
