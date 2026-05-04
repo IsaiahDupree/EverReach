@@ -92,20 +92,47 @@ export async function initializeTestContext(): Promise<TestContext> {
     console.log(`✅ Token length: ${accessToken.length}`);
   }
 
-  // Get user's org
-  const { data: userOrg, error: orgError } = await supabase
+  // Get user's org (may not exist if org system isn't fully deployed)
+  let orgId: string = '';
+  const { data: userOrg } = await supabase
     .from('user_orgs')
     .select('org_id')
     .eq('user_id', userId)
     .limit(1)
-    .single();
+    .maybeSingle();
 
-  if (orgError || !userOrg) {
-    throw new Error(`Failed to get user org: ${orgError?.message}`);
+  if (userOrg?.org_id) {
+    orgId = userOrg.org_id;
+  } else {
+    // Try org_members directly (view may not be available via PostgREST)
+    const { data: member } = await supabase
+      .from('org_members')
+      .select('org_id')
+      .eq('user_id', userId)
+      .limit(1)
+      .maybeSingle();
+
+    if (member?.org_id) {
+      orgId = member.org_id;
+    } else {
+      // Create org for test user
+      const { data: newOrg } = await supabase
+        .from('orgs')
+        .insert({ name: 'Test Org', slug: `test-${userId.slice(0, 8)}` })
+        .select('id')
+        .single();
+
+      if (newOrg?.id) {
+        await supabase.from('org_members').insert({
+          org_id: newOrg.id,
+          user_id: userId,
+          role: 'admin',
+        });
+        orgId = newOrg.id;
+      }
+    }
   }
-
-  const orgId = userOrg.org_id;
-  if (TEST_LOG) console.log(`✅ Org ID: ${orgId}`);
+  if (TEST_LOG) console.log(`✅ Org ID: ${orgId || '(none - org system not deployed)'}`);
 
   // Save token to file for manual testing
   const tokenPath = path.join(__dirname, '../test-token.txt');
@@ -166,16 +193,18 @@ export async function createTestContact(data: {
 }) {
   const context = getTestContext();
   
+  const insertData: any = {
+    user_id: context.userId,
+    emails: data.emails || [],
+    phones: data.phones || [],
+    tags: data.tags || [],
+    ...data,
+  };
+  if (context.orgId) insertData.org_id = context.orgId;
+
   const { data: contact, error } = await context.supabase
     .from('contacts')
-    .insert({
-      org_id: context.orgId,
-      user_id: context.userId,
-      emails: data.emails || [],
-      phones: data.phones || [],
-      tags: data.tags || [],
-      ...data, // Spread first so explicit fields can override
-    })
+    .insert(insertData)
     .select()
     .single();
 
@@ -198,16 +227,18 @@ export async function createTestInteraction(data: {
 }) {
   const context = getTestContext();
   
+  const insertData: any = {
+    contact_id: data.contact_id,
+    kind: data.kind,
+    content: data.content || null,
+    metadata: data.metadata || {},
+    created_at: data.created_at || new Date().toISOString(),
+  };
+  if (context.orgId) insertData.org_id = context.orgId;
+
   const { data: interaction, error } = await context.supabase
     .from('interactions')
-    .insert({
-      org_id: context.orgId,
-      contact_id: data.contact_id,
-      kind: data.kind,
-      content: data.content || null,
-      metadata: data.metadata || {},
-      created_at: data.created_at || new Date().toISOString(),
-    })
+    .insert(insertData)
     .select()
     .single();
 

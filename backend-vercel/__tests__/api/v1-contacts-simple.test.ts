@@ -11,6 +11,7 @@ import {
   cleanupTestData,
   createTestContact,
   makeAuthenticatedRequest,
+  apiUrl,
 } from '../setup-v1-tests';
 
 // ============================================================================

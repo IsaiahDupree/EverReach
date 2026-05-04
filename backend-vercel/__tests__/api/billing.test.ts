@@ -15,6 +15,7 @@ import {
   getTestContext,
   makeAuthenticatedRequest,
   expectStatusOrLog,
+  apiUrl,
 } from '../setup-v1-tests';
 
 // ============================================================================
