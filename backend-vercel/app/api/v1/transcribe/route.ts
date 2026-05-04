@@ -1,19 +1,17 @@
-import { options, ok, badRequest, serverError } from "@/lib/cors";
+import { options, ok, badRequest, serverError, unauthorized } from "@/lib/cors";
+import { getUser } from "@/lib/auth";
 import OpenAI from 'openai';
 
 export const runtime = "nodejs";
 
-export function OPTIONS(req: Request) { 
-  return options(req); 
+export function OPTIONS(req: Request) {
+  return options(req);
 }
 
-/**
- * POST /api/v1/transcribe
- * 
- * Transcribes audio file to text using OpenAI Whisper
- * No authentication required for this endpoint
- */
 export async function POST(req: Request) {
+  const user = await getUser(req);
+  if (!user) return unauthorized("Unauthorized", req);
+
   try {
     if (!process.env.OPENAI_API_KEY) {
       return badRequest('openai_not_configured', req);

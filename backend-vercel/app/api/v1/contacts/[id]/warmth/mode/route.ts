@@ -136,3 +136,6 @@ export async function GET(req: Request, { params }: { params: { id: string } }){
     return serverError(e?.message || 'Internal error', req);
   }
 }
+
+// PUT alias — mobile may send PUT
+export const PUT = PATCH;

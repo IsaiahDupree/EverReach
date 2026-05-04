@@ -6,6 +6,29 @@ export const runtime = "nodejs";
 
 export function OPTIONS(req: Request){ return options(req); }
 
+// GET /v1/me/account — Return basic account info
+export async function GET(req: Request){
+  const user = await getUser(req);
+  if (!user) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { "Content-Type": "application/json" } });
+
+  try {
+    const supabase = getServiceClient();
+    const { data: { user: authUser }, error } = await supabase.auth.admin.getUserById(user.id);
+    if (error || !authUser) return serverError("Failed to fetch account", req);
+
+    return ok({
+      id: authUser.id,
+      email: authUser.email,
+      created_at: authUser.created_at,
+      last_sign_in_at: authUser.last_sign_in_at,
+      app_metadata: authUser.app_metadata,
+      user_metadata: authUser.user_metadata,
+    }, req);
+  } catch (e: any) {
+    return serverError(e?.message || 'Internal error', req);
+  }
+}
+
 // DELETE /v1/me/account — Immediate account deletion
 export async function DELETE(req: Request){
   const user = await getUser(req);

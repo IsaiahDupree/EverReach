@@ -7,6 +7,23 @@ export const runtime = "edge";
 
 export function OPTIONS(req: Request){ return options(req); }
 
+// GET /v1/contacts/:id/tags — return tags for a contact
+export async function GET(req: Request, { params }: { params: { id: string } }){
+  const user = await getUser(req);
+  if (!user) return unauthorized("Unauthorized", req);
+
+  const supabase = getClientOrThrow(req);
+  const { data: row, error } = await supabase
+    .from('contacts')
+    .select('id, tags')
+    .eq('id', params.id)
+    .is('deleted_at', null)
+    .maybeSingle();
+  if (error) return serverError("Internal server error", req);
+  if (!row) return notFound('Contact not found', req);
+  return ok({ tags: Array.isArray(row.tags) ? row.tags : [] }, req);
+}
+
 export async function POST(req: Request, { params }: { params: { id: string } }){
   const user = await getUser(req);
   if (!user) return unauthorized("Unauthorized", req);

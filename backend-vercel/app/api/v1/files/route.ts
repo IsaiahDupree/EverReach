@@ -54,6 +54,9 @@ export async function GET(req: Request){
 
 // POST /v1/files – request presigned upload { path, contentType? }
 export async function POST(req: Request){
+  const user = await getUser(req);
+  if (!user) return unauthorized("Unauthorized", req);
+
   try {
     const body = await req.json();
     const parsed = uploadSignSchema.safeParse(body);

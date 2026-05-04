@@ -60,3 +60,6 @@ export async function PATCH(req: Request){
     return serverError(e?.message || 'Internal error', req);
   }
 }
+
+// PUT alias — mobile sends PUT for updates
+export const PUT = PATCH;
