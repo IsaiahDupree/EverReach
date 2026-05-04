@@ -381,15 +381,25 @@ function RootLayoutNav() {
           },
         }} 
       />
-      <Stack.Screen 
-        name="trpc-test" 
-        options={{ 
+      <Stack.Screen
+        name="trpc-test"
+        options={{
           title: "tRPC Test",
           presentation: "modal",
           headerStyle: {
             backgroundColor: theme.colors.surface,
           },
-        }} 
+        }}
+      />
+      <Stack.Screen
+        name="screenshot-analysis"
+        options={{
+          title: "Screenshot Analysis",
+          presentation: "modal",
+          headerStyle: {
+            backgroundColor: theme.colors.surface,
+          },
+        }}
       />
     </Stack>
   );
