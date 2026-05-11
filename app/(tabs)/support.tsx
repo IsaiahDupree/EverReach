@@ -94,7 +94,7 @@ export default function SupportScreen() {
             <TouchableOpacity
               key={post.id}
               style={styles.blogCard}
-              onPress={() => router.push(`/blog/${post.id}`)}
+              onPress={() => router.push(`/blog/${post.slug}`)}
             >
               <View style={styles.blogCardContent}>
                 <Text style={styles.blogTitle} numberOfLines={2}>

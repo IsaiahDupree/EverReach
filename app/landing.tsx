@@ -351,6 +351,9 @@ export default function LandingPage() {
           <TouchableOpacity onPress={() => router.push('/privacy-policy')}>
             <Text style={styles.footerLink}>Privacy Policy</Text>
           </TouchableOpacity>
+          <TouchableOpacity onPress={() => router.push('/blog')}>
+            <Text style={styles.footerLink}>Blog</Text>
+          </TouchableOpacity>
           <TouchableOpacity onPress={() => Linking.openURL('mailto:support@everreach.app')}>
             <Text style={styles.footerLink}>Contact</Text>
           </TouchableOpacity>

@@ -1,0 +1,237 @@
+import React from "react";
+import {
+  StyleSheet,
+  Text,
+  View,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+  useWindowDimensions,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useAppSettings } from "@/providers/AppSettingsProvider";
+import { useLocalSearchParams, router } from "expo-router";
+import { ArrowLeft, Calendar, User } from "lucide-react-native";
+import { trpc } from "@/lib/trpc";
+import RenderHtml from "react-native-render-html";
+
+function formatDate(dateString: string | null): string {
+  if (!dateString) return "";
+  return new Date(dateString).toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+export default function BlogPostScreen() {
+  const { slug } = useLocalSearchParams<{ slug: string }>();
+  const insets = useSafeAreaInsets();
+  const { theme } = useAppSettings();
+  const { width } = useWindowDimensions();
+
+  const postQuery = trpc.blog.getBySlug.useQuery({ slug: slug! }, { enabled: !!slug });
+
+  const styles = createStyles(theme);
+
+  if (postQuery.isLoading) {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <ArrowLeft size={24} color={theme.colors.text} />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+        </View>
+      </View>
+    );
+  }
+
+  if (postQuery.error || !postQuery.data) {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <ArrowLeft size={24} color={theme.colors.text} />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.errorText}>Article not found</Text>
+        </View>
+      </View>
+    );
+  }
+
+  const post = postQuery.data;
+
+  return (
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <ArrowLeft size={24} color={theme.colors.text} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle} numberOfLines={1}>
+          Article
+        </Text>
+        <View style={{ width: 40 }} />
+      </View>
+
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+        <Text style={styles.title}>{post.title}</Text>
+
+        <View style={styles.metaRow}>
+          {post.author && (
+            <View style={styles.metaItem}>
+              <User size={14} color={theme.colors.textSecondary} />
+              <Text style={styles.metaText}>{post.author}</Text>
+            </View>
+          )}
+          {post.published_at && (
+            <View style={styles.metaItem}>
+              <Calendar size={14} color={theme.colors.textSecondary} />
+              <Text style={styles.metaText}>{formatDate(post.published_at)}</Text>
+            </View>
+          )}
+        </View>
+
+        {post.tags && post.tags.length > 0 && (
+          <View style={styles.tagsRow}>
+            {post.tags.map((tag: string) => (
+              <View key={tag} style={styles.tag}>
+                <Text style={styles.tagText}>{tag}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {post.content_html ? (
+          <RenderHtml
+            contentWidth={width - 40}
+            source={{ html: post.content_html }}
+            baseStyle={{
+              color: theme.colors.text,
+              fontSize: 16,
+              lineHeight: 26,
+            }}
+            tagsStyles={{
+              h1: { fontSize: 24, fontWeight: "700", marginVertical: 12, color: theme.colors.text },
+              h2: { fontSize: 20, fontWeight: "600", marginVertical: 10, color: theme.colors.text },
+              h3: { fontSize: 18, fontWeight: "600", marginVertical: 8, color: theme.colors.text },
+              p: { marginVertical: 6, lineHeight: 26 },
+              a: { color: theme.colors.primary },
+              ul: { paddingLeft: 16 },
+              ol: { paddingLeft: 16 },
+              li: { marginVertical: 2 },
+              blockquote: {
+                borderLeftWidth: 3,
+                borderLeftColor: theme.colors.primary,
+                paddingLeft: 12,
+                marginVertical: 8,
+                opacity: 0.8,
+              },
+              code: {
+                backgroundColor: theme.colors.border,
+                paddingHorizontal: 4,
+                paddingVertical: 2,
+                borderRadius: 4,
+                fontSize: 14,
+              },
+            }}
+          />
+        ) : (
+          <Text style={styles.bodyText}>{post.excerpt || "No content available."}</Text>
+        )}
+      </ScrollView>
+    </View>
+  );
+}
+
+function createStyles(theme: any) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.colors.background,
+    },
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      borderBottomWidth: 0.5,
+      borderBottomColor: theme.colors.border,
+    },
+    backButton: {
+      padding: 8,
+    },
+    headerTitle: {
+      fontSize: 17,
+      fontWeight: "600",
+      color: theme.colors.text,
+      flex: 1,
+      textAlign: "center",
+    },
+    scrollView: {
+      flex: 1,
+    },
+    scrollContent: {
+      padding: 20,
+      paddingBottom: 60,
+    },
+    title: {
+      fontSize: 26,
+      fontWeight: "700",
+      color: theme.colors.text,
+      lineHeight: 34,
+      marginBottom: 12,
+    },
+    metaRow: {
+      flexDirection: "row",
+      gap: 16,
+      marginBottom: 12,
+    },
+    metaItem: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+    },
+    metaText: {
+      fontSize: 13,
+      color: theme.colors.textSecondary,
+    },
+    tagsRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 6,
+      marginBottom: 20,
+    },
+    tag: {
+      backgroundColor: theme.colors.primary + "15",
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 6,
+    },
+    tagText: {
+      fontSize: 12,
+      color: theme.colors.primary,
+      fontWeight: "500",
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    errorText: {
+      fontSize: 16,
+      color: theme.colors.textSecondary,
+    },
+    bodyText: {
+      fontSize: 16,
+      color: theme.colors.text,
+      lineHeight: 26,
+    },
+  });
+}
