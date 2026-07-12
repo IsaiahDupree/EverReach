@@ -46,7 +46,7 @@
     <key>FacebookAdvertiserIDCollectionEnabled</key>
     <true/>
     <key>CFBundleVersion</key>
-    <string>5</string>
+    <string>7</string>
     <key>ITSAppUsesNonExemptEncryption</key>
     <false/>
     <key>LSApplicationQueriesSchemes</key>
