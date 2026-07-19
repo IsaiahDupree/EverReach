@@ -470,7 +470,7 @@ function RootLayoutNav() {
   // (expo-router's pathname updates slower than the actual URL change)
   if (IS_WEB && !isAuthenticated) {
     const path = (typeof window !== 'undefined' ? window.location.pathname : pathname) || '/';
-    const allowUnauthed = path.startsWith('/auth') || path.startsWith('/sign-in') || path.startsWith('/billing') || path === '/terms' || path === '/privacy-policy' || path === '/landing' || path === '/waitlist' || path.startsWith('/thank-you');
+    const allowUnauthed = path.startsWith('/auth') || path.startsWith('/sign-in') || path.startsWith('/billing') || path === '/terms' || path === '/privacy-policy' || path === '/landing' || path === '/waitlist' || path.startsWith('/thank-you') || path.startsWith('/blog');
     if (!allowUnauthed) {
       console.log('[Layout v2] Web → Landing Page');
       const LandingPage = require('./landing').default;
@@ -489,7 +489,7 @@ function RootLayoutNav() {
   if (!isAuthenticated) {
     // Use window.location.pathname on web to avoid flicker (expo-router's pathname updates slower)
     const path = (IS_WEB && typeof window !== 'undefined' ? window.location.pathname : pathname) || '/';
-    const allowUnauthed = path.startsWith('/auth') || path.startsWith('/sign-in') || path.startsWith('/billing') || path === '/terms' || path === '/privacy-policy' || path === '/telemetry-debug' || path === '/welcome' || path === '/landing' || path === '/waitlist' || path.startsWith('/thank-you');
+    const allowUnauthed = path.startsWith('/auth') || path.startsWith('/sign-in') || path.startsWith('/billing') || path === '/terms' || path === '/privacy-policy' || path === '/telemetry-debug' || path === '/welcome' || path === '/landing' || path === '/waitlist' || path.startsWith('/thank-you') || path.startsWith('/blog');
     // console.log('[Layout v2] Auth check - path:', path, 'allowUnauthed:', allowUnauthed);
     if (!allowUnauthed) {
       // console.log('[Layout v2] → Auth');

@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   useWindowDimensions,
+  Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAppSettings } from "@/providers/AppSettingsProvider";
@@ -39,7 +40,13 @@ export default function BlogPostScreen() {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <TouchableOpacity onPress={() => {
+              if (Platform.OS === "web" && typeof window !== "undefined") {
+                window.location.href = "/blog";
+              } else {
+                router.back();
+              }
+            }} style={styles.backButton}>
             <ArrowLeft size={24} color={theme.colors.text} />
           </TouchableOpacity>
         </View>
@@ -54,7 +61,13 @@ export default function BlogPostScreen() {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <TouchableOpacity onPress={() => {
+              if (Platform.OS === "web" && typeof window !== "undefined") {
+                window.location.href = "/blog";
+              } else {
+                router.back();
+              }
+            }} style={styles.backButton}>
             <ArrowLeft size={24} color={theme.colors.text} />
           </TouchableOpacity>
         </View>
@@ -70,7 +83,13 @@ export default function BlogPostScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity onPress={() => {
+              if (Platform.OS === "web" && typeof window !== "undefined") {
+                window.location.href = "/blog";
+              } else {
+                router.back();
+              }
+            }} style={styles.backButton}>
           <ArrowLeft size={24} color={theme.colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle} numberOfLines={1}>
