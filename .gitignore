@@ -35,3 +35,8 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 .vercel
+
+# sweep 2026-07-19: local secret/token artifacts (never commit)
+.env.vercel-check
+backend-vercel/test-token.txt
+test-token.txt
