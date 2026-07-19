@@ -1,0 +1,5 @@
+
+# sweep 2026-07-19: generated artifacts / junk (not source)
+.DS_Store
+generated-screenshots/
+cpp-output/
