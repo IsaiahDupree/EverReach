@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Text, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -8,9 +8,11 @@ import { supabase } from '../../lib/supabase';
 export default function AuthCallback() {
   const router = useRouter();
   const params = useLocalSearchParams<{ code?: string; type?: string; error?: string; error_description?: string }>();
+  const processingRef = useRef(false);
 
   // Shared auth processing function
   const processAuth = async (code: string | null, type: string | null, error: string | null, errorDescription: string | null) => {
+    processingRef.current = true;
     try {
       if (error) {
         console.error('❌ Auth error:', error, errorDescription);
@@ -98,6 +100,18 @@ export default function AuthCallback() {
     });
 
     return () => subscription?.remove();
+  }, [router]);
+
+  // Fallback: if the screen mounts with no code/error params and no deep link
+  // ever arrives, both effects no-op and the spinner runs forever. Bail to root.
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (!processingRef.current) {
+        console.warn('⚠️ Auth callback received no code/error after 5s — returning to root');
+        router.replace('/');
+      }
+    }, 5000);
+    return () => clearTimeout(timeout);
   }, [router]);
 
   return (

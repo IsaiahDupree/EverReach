@@ -67,7 +67,23 @@ export default function OnboardingV2Screen() {
   
   // Dev skip for onboarding
   const SKIP_ONBOARDING = process.env.EXPO_PUBLIC_SKIP_ONBOARDING === 'true';
-  
+
+  // Validate a Supabase question row before trusting it.
+  // A required single_choice row with null/empty/malformed options renders zero
+  // choices while "Next" hard-blocks on required — permanently stranding the user.
+  const isValidQuestionRow = (q: any): boolean => {
+    if (!q?.question_key || !q?.question_text) return false;
+    if (q.question_type === 'text') return true;
+    // Non-text questions need a non-empty array of { value, label } objects
+    return (
+      Array.isArray(q.options) &&
+      q.options.length > 0 &&
+      q.options.every(
+        (opt: any) => opt && typeof opt.value === 'string' && typeof opt.label === 'string'
+      )
+    );
+  };
+
   // Load questions from Supabase on mount
   useEffect(() => {
     const loadQuestions = async () => {
@@ -89,6 +105,15 @@ export default function OnboardingV2Screen() {
         }
         
         if (data && data.length > 0) {
+          // ALL-OR-FALLBACK: if ANY row is malformed, reject the entire remote set.
+          // Do NOT drop individual rows — the flow hardcodes index-based branches
+          // (qIndex 15/16) that row-dropping would misalign.
+          if (!data.every(isValidQuestionRow)) {
+            console.warn('[OnboardingV2] ⚠️ Invalid question row(s) in Supabase data, using hardcoded fallback');
+            setQuestions(ONBOARDING_QUESTIONS);
+            setQuestionsLoading(false);
+            return;
+          }
           console.log(`[OnboardingV2] ✅ Loaded ${data.length} questions from Supabase`);
           // Transform Supabase data to match OnboardingQuestion interface
           const transformedQuestions: OnboardingQuestion[] = data.map((q, index) => ({
@@ -353,7 +378,10 @@ export default function OnboardingV2Screen() {
       console.error(`[OnboardingV2] ❌ Question at index ${qIndex} not found`);
       return;
     }
-    if (q.required && !responses[q.key]) {
+    // Defense-in-depth: only enforce required when the question is answerable.
+    // A non-text question with no options can't be answered — let Next act as Skip.
+    const isAnswerable = q.type === 'text' || (Array.isArray(q.options) && q.options.length > 0);
+    if (q.required && isAnswerable && !responses[q.key]) {
       Alert.alert('Please answer to continue');
       return;
     }
@@ -367,6 +395,14 @@ export default function OnboardingV2Screen() {
 
     // Q17 handling (was Q18 after removing Q12, now Q17 after removing Q15)
     if (qIndex === 16) {
+      // Guard: never jump to an index past the active question set —
+      // that renders the "Question not found" dead screen. Route to COMPLETE instead.
+      const targetIndex = responses.first_person_flag === 'yes' ? 17 : 18;
+      if (targetIndex >= questions.length) {
+        setCurrentScreen('COMPLETE');
+        saveProgress({ currentScreen: 'COMPLETE', qIndex, responses });
+        return;
+      }
       if (responses.first_person_flag === 'yes') {
         // Go to Q18
         setQIndex(17);
@@ -392,6 +428,17 @@ export default function OnboardingV2Screen() {
     setQIndex(nextQIndex);
     setCurrentScreen(nextScreen);
     saveProgress({ currentScreen: nextScreen, qIndex: nextQIndex, responses });
+  };
+
+  const handlePrevQuestion = () => {
+    if (qIndex <= 0) return;
+    // Mirror the forward skip: Q19 (index 18) jumps back to Q17 (index 16)
+    // when Q18 was skipped (first_person_flag !== 'yes')
+    const prevQIndex = qIndex === 18 && responses.first_person_flag !== 'yes' ? 16 : qIndex - 1;
+    const prevScreen = `Q${prevQIndex + 1}` as ScreenID; // Q ids are 1-based
+    setQIndex(prevQIndex);
+    setCurrentScreen(prevScreen);
+    saveProgress({ currentScreen: prevScreen, qIndex: prevQIndex, responses });
   };
 
   const finishOnboarding = async () => {
@@ -633,6 +680,20 @@ export default function OnboardingV2Screen() {
           >
             <Text style={styles.btnText}>Continue</Text>
           </TouchableOpacity>
+          {path === 'free' && (
+            <TouchableOpacity
+              style={[styles.btn, styles.btnBack, { borderColor: theme.border, backgroundColor: theme.surface }]}
+              onPress={() => {
+                // Free path arrived here from Q16 — allow revising answers
+                setQIndex(15);
+                setCurrentScreen('Q16');
+                saveProgress({ currentScreen: 'Q16', qIndex: 15, responses });
+              }}
+            >
+              <ArrowLeft size={20} color={theme.text} />
+              <Text style={[styles.btnText, { color: theme.text }]}>Back</Text>
+            </TouchableOpacity>
+          )}
         </View>
       );
     }
@@ -714,9 +775,18 @@ export default function OnboardingV2Screen() {
       const q = questions[qIndex];
       if (!q) {
         console.error(`[OnboardingV2] ❌ Question at index ${qIndex} not found`);
+        // Escape hatch: never strand the user on a dead screen. COMPLETE's
+        // finishOnboarding guards unauthenticated users and clears saved progress.
         return (
           <View style={styles.screen}>
             <Text style={[styles.title, { color: theme.text }]}>Question not found</Text>
+            <TouchableOpacity
+              style={[styles.btn, { backgroundColor: theme.primary }]}
+              onPress={() => setCurrentScreen('COMPLETE')}
+            >
+              <Text style={styles.btnText}>Continue</Text>
+              <ArrowRight size={20} color="#FFF" />
+            </TouchableOpacity>
           </View>
         );
       }
@@ -761,12 +831,23 @@ export default function OnboardingV2Screen() {
             ))
           )}
           
-          <TouchableOpacity
-            style={[styles.btn, { backgroundColor: theme.primary }]}
-            onPress={handleNextQuestion}
-          >
-            <Text style={styles.btnText}>Next</Text>
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            {qIndex > 0 && (
+              <TouchableOpacity
+                style={[styles.btn, styles.btnBack, { borderColor: theme.border, backgroundColor: theme.surface }]}
+                onPress={handlePrevQuestion}
+              >
+                <ArrowLeft size={20} color={theme.text} />
+                <Text style={[styles.btnText, { color: theme.text }]}>Back</Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity
+              style={[styles.btn, { backgroundColor: theme.primary, flex: 1 }]}
+              onPress={handleNextQuestion}
+            >
+              <Text style={styles.btnText}>Next</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       );
     }
@@ -794,6 +875,7 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: 18, fontWeight: '600' },
   body: { fontSize: 16, lineHeight: 24 },
   btn: { padding: 16, borderRadius: 12, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8 },
+  btnBack: { borderWidth: 1 },
   btnText: { color: '#FFF', fontSize: 16, fontWeight: '600' },
   btnSecondary: { padding: 16, borderRadius: 12, borderWidth: 1, alignItems: 'center' },
   btnSecondaryText: { fontSize: 16, fontWeight: '600' },
