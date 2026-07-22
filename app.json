@@ -101,7 +101,7 @@
       },
       "usesAppleSignIn": true,
       "accessesContactNotes": true,
-      "buildNumber": "7"
+      "buildNumber": "8"
     },
     "android": {
       "jsEngine": "hermes",
