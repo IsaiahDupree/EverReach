@@ -63,12 +63,21 @@ export async function POST(req: NextRequest) {
     console.log(`[Superwall ${requestId}] Auth header valid:`, isAuthHeaderValid);
     console.log(`[Superwall ${requestId}] Secret as bearer valid:`, isSecretAsBearerValid);
 
-    // Allow requests without auth in development for easier testing
-    const isDev = process.env.NODE_ENV === 'development' || process.env.VERCEL_ENV === 'preview';
+    // Allow requests without auth in local development for easier testing.
+    // NOTE: Vercel "preview" deployments are publicly reachable and share the SAME
+    // production Supabase project + service-role key as production in this project,
+    // so VERCEL_ENV === 'preview' must never be treated as trusted/dev here — doing
+    // so allows unauthenticated entitlement forgery via any preview URL. Only true
+    // local dev (`next dev`, not publicly reachable) bypasses auth.
+    const isDev = process.env.NODE_ENV === 'development';
     
-    // Test mode support (similar to warmth time-travel)
+    // Test mode support (similar to warmth time-travel).
+    // Fail-closed: test mode must be explicitly opted into via ALLOW_TEST_MODE=true,
+    // and is hard-disabled in production regardless of that flag, so a missing/misconfigured
+    // env var can never grant free entitlement in prod.
     const testModeHeader = req.headers.get('x-test-mode');
-    const allowTestMode = process.env.ALLOW_TEST_MODE !== 'false'; // Default true for testing
+    const isProduction = process.env.VERCEL_ENV === 'production';
+    const allowTestMode = !isProduction && process.env.ALLOW_TEST_MODE === 'true';
     const isTestMode = testModeHeader === 'true' && allowTestMode;
     
     // Fail-closed: reject in production when no secret is configured

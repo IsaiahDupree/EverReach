@@ -48,7 +48,10 @@ export async function POST(req: Request){
   if (!sig) return badRequest('Missing stripe-signature');
 
   const raw = await req.text();
-  const secret = process.env.STRIPE_WEBHOOK_SECRET;
+  // .trim() guards against stray whitespace/CRLF bytes baked into the stored
+  // env var value (e.g. from a copy-paste into the Vercel dashboard/CLI),
+  // which otherwise breaks HMAC signature verification below.
+  const secret = process.env.STRIPE_WEBHOOK_SECRET?.trim();
   if (!secret) {
     return serverError('Server misconfigured: STRIPE_WEBHOOK_SECRET not set');
   }
@@ -78,15 +81,17 @@ export async function POST(req: Request){
         let currentPeriodEnd: string | null = null;
 
         if (STRIPE_SECRET_KEY && subscriptionId) {
-          try {
-            const sub = await stripe.subscriptions.retrieve(subscriptionId);
-            priceId = sub.items?.data?.[0]?.price?.id ?? null;
-            status = sub.status ?? null;
-            if (sub.current_period_end) {
-              currentPeriodEnd = new Date(sub.current_period_end * 1000).toISOString();
-            }
-          } catch (_) {
-            // ignore
+          // Do NOT swallow retrieve failures: let them propagate to the outer
+          // handler catch below, which logs the error and returns a 500 so
+          // Stripe retries delivery. Silently continuing here would persist
+          // null/incomplete subscription data (and, via insertSubscriptionSnapshot's
+          // defaults, a fabricated "active" snapshot already expired at insert time)
+          // with no trace of why the entitlement never unlocked.
+          const sub = await stripe.subscriptions.retrieve(subscriptionId);
+          priceId = sub.items?.data?.[0]?.price?.id ?? null;
+          status = sub.status ?? null;
+          if (sub.current_period_end) {
+            currentPeriodEnd = new Date(sub.current_period_end * 1000).toISOString();
           }
         }
 
