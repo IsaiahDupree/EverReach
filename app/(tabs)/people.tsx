@@ -85,14 +85,14 @@ export default function PeopleScreen() {
       }, 500); // Debounce search tracking
       return () => clearTimeout(timeoutId);
     }
-  }, [searchQuery]);
+  }, [searchQuery, filteredPeople.length]);
 
   // Track filter changes
   useEffect(() => {
     if (filter !== 'all') {
       screenAnalytics.track('filter_applied', { filter });
     }
-  }, [filter]);
+  }, [filter, screenAnalytics]);
 
   const filteredPeople = people
     .filter(person => {
