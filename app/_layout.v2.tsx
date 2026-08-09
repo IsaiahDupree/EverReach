@@ -28,7 +28,7 @@ import { OnboardingProvider, useOnboarding } from "@/providers/OnboardingProvide
 import { trpc, trpcClient } from "@/lib/trpc";
 import SignIn from "./sign-in";
 import OnboardingFlow from "./onboarding";
-import { View, ActivityIndicator, StyleSheet, Text, Platform } from "react-native";
+import { View, ActivityIndicator, StyleSheet, Text, Platform, Animated } from "react-native";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -72,8 +72,13 @@ function RootLayoutNav() {
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#000" />
-        <Text style={styles.loadingText}>Loading...</Text>
+        <View style={styles.loadingContent}>
+          <View style={styles.loaderWrapper}>
+            <ActivityIndicator size="large" color="#007AFF" />
+          </View>
+          <Text style={styles.loadingText}>Preparing your CRM...</Text>
+          <Text style={styles.loadingSubtext}>This usually takes a few seconds</Text>
+        </View>
       </View>
     );
   }
@@ -174,11 +179,28 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F8F9FA',
+    backgroundColor: '#FFFFFF',
+  },
+  loadingContent: {
+    alignItems: 'center',
+    gap: 16,
+  },
+  loaderWrapper: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#666',
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1A1A1A',
+    letterSpacing: -0.3,
+  },
+  loadingSubtext: {
+    fontSize: 14,
+    color: '#8E8E93',
+    marginTop: 4,
   },
 });

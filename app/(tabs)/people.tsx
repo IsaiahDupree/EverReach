@@ -6,12 +6,13 @@ import {
   FlatList,
   TouchableOpacity,
   TextInput,
+  ScrollView,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { usePeople } from "@/providers/PeopleProvider";
 import { useAppSettings, type Theme } from "@/providers/AppSettingsProvider";
 import { router, useLocalSearchParams } from "expo-router";
-import { Search, Plus, MessageSquare } from "lucide-react-native";
+import { Search, Plus, MessageSquare, Users } from "lucide-react-native";
 
 type FilterType = 'all' | 'hot' | 'warm' | 'cool' | 'cold';
 
@@ -51,6 +52,48 @@ export default function PeopleScreen() {
     }
   };
 
+  const renderEmptyState = () => {
+    if (searchQuery) {
+      return (
+        <ScrollView
+          contentContainerStyle={styles.emptyStateContainer}
+          showsVerticalScrollIndicator={false}
+        >
+          <Users size={48} color={theme.colors.textSecondary} />
+          <Text style={styles.emptyTitle}>No results found</Text>
+          <Text style={styles.emptyMessage}>
+            Try adjusting your search or filters
+          </Text>
+          <TouchableOpacity
+            style={styles.emptyActionButton}
+            onPress={() => setSearchQuery('')}
+          >
+            <Text style={styles.emptyActionText}>Clear search</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      );
+    }
+
+    return (
+      <ScrollView
+        contentContainerStyle={styles.emptyStateContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        <Users size={48} color={theme.colors.textSecondary} />
+        <Text style={styles.emptyTitle}>No contacts yet</Text>
+        <Text style={styles.emptyMessage}>
+          Start building your relationship network by adding your first contact
+        </Text>
+        <TouchableOpacity
+          style={styles.emptyActionButton}
+          onPress={() => router.push('/add-contact')}
+        >
+          <Text style={styles.emptyActionText}>Add your first contact</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    );
+  };
+
   const renderPerson = ({ item }: { item: typeof people[0] }) => {
     const warmthStatus = getWarmthStatus(item.id);
     const warmthColor = getWarmthColor(warmthStatus);
@@ -73,7 +116,7 @@ export default function PeopleScreen() {
             )}
           </View>
           <View style={styles.personActions}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.messageButton}
               onPress={(e) => {
                 e.stopPropagation();
@@ -85,7 +128,7 @@ export default function PeopleScreen() {
             <View style={[styles.warmthIndicator, { backgroundColor: warmthColor }]} />
           </View>
         </View>
-        
+
         {item.tags && item.tags.length > 0 && (
           <View style={styles.tags}>
             {item.tags.slice(0, 3).map((tag, index) => (
@@ -97,7 +140,7 @@ export default function PeopleScreen() {
         )}
         <View style={styles.personFooter}>
           <Text style={styles.lastInteraction}>
-            {item.lastInteraction 
+            {item.lastInteraction
               ? `Last: ${new Date(item.lastInteraction).toLocaleDateString()}`
               : 'No interactions yet'}
           </Text>
@@ -163,14 +206,18 @@ export default function PeopleScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* People List */}
-      <FlatList
-        data={filteredPeople}
-        renderItem={renderPerson}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-      />
+      {/* People List or Empty State */}
+      {filteredPeople.length > 0 ? (
+        <FlatList
+          data={filteredPeople}
+          renderItem={renderPerson}
+          keyExtractor={item => item.id}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+        />
+      ) : (
+        renderEmptyState()
+      )}
 
       {/* Add Button */}
       <TouchableOpacity
@@ -339,5 +386,36 @@ const createStyles = (theme: Theme) => StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
+  },
+  emptyStateContainer: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: theme.colors.text,
+    marginTop: 16,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  emptyMessage: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  emptyActionButton: {
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  emptyActionText: {
+    color: theme.colors.surface,
+    fontWeight: '600',
+    fontSize: 14,
   },
 });
