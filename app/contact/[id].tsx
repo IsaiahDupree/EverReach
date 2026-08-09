@@ -778,7 +778,7 @@ export default function ContactDetailScreen() {
               action: 'ask_ai',
               warmthScore: warmth.score,
             });
-            router.push(`/chat?prompt=${encodeURIComponent(`Tell me more about ${contact.display_name}`)}}`);
+            router.push(`/chat?initialQuery=${encodeURIComponent(`Tell me more about ${contact.display_name}`)}`);
           }}
         >
           <View style={[styles.quickActionIconContainer, { backgroundColor: '#3B82F6' }]}>

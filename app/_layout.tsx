@@ -58,6 +58,8 @@ import { initializeEnvelope } from "@/lib/eventEnvelope";
 import { initializeMarketingFunnel } from "@/lib/marketingFunnel";
 import { initializePerformanceMonitoring } from "@/lib/performanceMonitor";
 import { initializePostHog, identifyUser } from "@/lib/posthog";
+import { initializeSentry } from "@/lib/sentry";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import { initializeMetaAppEvents, identifyMetaUser, resetMetaUser, captureClickId, setTrackingConsent, syncMetaAttributesToRc } from '@/lib/metaAppEvents';
 import { requestTrackingPermissionsAsync } from 'expo-tracking-transparency';
 import { supabase } from "@/lib/supabase";
@@ -72,6 +74,11 @@ import { setQueryClientForImageUpload } from "@/lib/imageUpload";
 import { paywallConfigService } from "@/lib/paywallConfig";
 
 SplashScreen.preventAutoHideAsync().catch(() => { });
+
+// Initialize crash/error reporting FIRST, before any other module init that
+// could throw, so failures below are actually visible to the developer
+// (no-op if EXPO_PUBLIC_SENTRY_DSN isn't configured).
+initializeSentry();
 
 // Initialize event envelope (session IDs, UTM params, experiments)
 initializeEnvelope().then(() => {
@@ -783,10 +790,12 @@ export default function RootLayout() {
   );
 
   return Platform.OS === 'web' ? (
-    <View style={styles.container}>{providers}</View>
+    <View style={styles.container}>
+      <ErrorBoundary>{providers}</ErrorBoundary>
+    </View>
   ) : (
     <GestureHandlerRootView style={styles.container}>
-      {providers}
+      <ErrorBoundary>{providers}</ErrorBoundary>
     </GestureHandlerRootView>
   );
 }

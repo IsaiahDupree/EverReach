@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { AlertCircle, RefreshCw } from 'lucide-react-native';
+import { captureError } from '@/lib/sentry';
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
@@ -23,6 +24,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('ErrorBoundary caught:', error, errorInfo);
+    captureError(error, { componentStack: errorInfo.componentStack });
   }
 
   handleReset = () => {
