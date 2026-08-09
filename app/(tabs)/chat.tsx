@@ -15,15 +15,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
 import {
   MessageCircle,
-  TrendingUp,
-  Calendar,
   Users,
   BarChart3,
   ArrowRight,
   Send,
   Sparkles,
-  TrendingDown,
-  Clock,
   Image as ImageIcon,
 } from 'lucide-react-native';
 import { useAppSettings } from '@/providers/AppSettingsProvider';
@@ -35,20 +31,14 @@ import { usePeople } from '@/providers/PeopleProvider';
 import ChatInterface from '@/components/ChatInterface';
 import { PaywallGate } from '@/components/PaywallGate';
 
-interface TrendingQuery {
+// Suggested queries are a static, curated set of example prompts (optionally
+// personalized from the user's own real contacts/voice notes). They are NOT
+// derived from any real usage telemetry, so no fabricated "uses"/"trend"/
+// popularity numbers are attached to them.
+interface SuggestedQuery {
   id: string;
   query: string;
   category: 'contacts' | 'notes' | 'insights' | 'actions';
-  frequency: number;
-  trend: 'up' | 'down' | 'stable';
-  timeframe: 'today' | 'week' | 'month';
-}
-
-interface QueryStats {
-  totalQueries: number;
-  activeUsers: number;
-  topCategories: { name: string; count: number; color: string }[];
-  dailyTrend: number;
 }
 
 export default function ChatTabScreen() {
@@ -58,8 +48,7 @@ export default function ChatTabScreen() {
   const { people } = usePeople();
   const { voiceNotes } = useVoiceNotes();
   const params = useLocalSearchParams<{ threadId?: string; threadLabel?: string; initialQuery?: string }>();
-  const [selectedTimeframe, setSelectedTimeframe] = useState<'today' | 'week' | 'month'>('today');
-  
+
   // Analytics tracking
   const analytics = useAnalytics('Chat', {
     screenProperties: {
@@ -71,12 +60,6 @@ export default function ChatTabScreen() {
   const [showChatInterface, setShowChatInterface] = useState(false);
   const [autoOpenImagePicker, setAutoOpenImagePicker] = useState(false);
   const inputRef = useRef<TextInput>(null);
-  const [stats, setStats] = useState<QueryStats>({
-    totalQueries: 0,
-    activeUsers: 1,
-    topCategories: [],
-    dailyTrend: 0,
-  });
 
   const containerStyle = useMemo(() => [{ backgroundColor: theme.colors.background }, styles.container], [theme.colors.background]);
 
@@ -100,69 +83,51 @@ export default function ChatTabScreen() {
     }
   }, [params.initialQuery, params.threadId]);
 
-  // Mock trending queries based on user's data
-  const generateTrendingQueries = React.useCallback((): TrendingQuery[] => {
-    const baseQueries: TrendingQuery[] = [
+  // Static example prompts to help users get started. Optionally personalized
+  // using the user's own real data (their contacts / voice notes) — never
+  // backed by fabricated "usage" numbers, since we don't track per-query
+  // popularity.
+  const generateSuggestedQueries = React.useCallback((): SuggestedQuery[] => {
+    const baseQueries: SuggestedQuery[] = [
       {
         id: '1',
         query: 'Who should I follow up with this week?',
         category: 'insights',
-        frequency: 45,
-        trend: 'up',
-        timeframe: selectedTimeframe,
       },
       {
         id: '2',
         query: 'Show me contacts I haven\'t talked to in 30 days',
         category: 'contacts',
-        frequency: 38,
-        trend: 'up',
-        timeframe: selectedTimeframe,
       },
       {
         id: '3',
         query: 'Add a note about my meeting today',
         category: 'actions',
-        frequency: 32,
-        trend: 'stable',
-        timeframe: selectedTimeframe,
       },
       {
         id: '4',
         query: 'Search my notes for "client"',
         category: 'notes',
-        frequency: 28,
-        trend: 'up',
-        timeframe: selectedTimeframe,
       },
       {
         id: '5',
         query: 'Tag potential clients for outreach',
         category: 'actions',
-        frequency: 25,
-        trend: 'down',
-        timeframe: selectedTimeframe,
       },
       {
         id: '6',
         query: 'Update contact interests and goals',
         category: 'actions',
-        frequency: 22,
-        trend: 'stable',
-        timeframe: selectedTimeframe,
       },
     ];
 
-    // Personalize based on user's data
+    // Personalize based on the user's own real data
     if (people.length > 0) {
       const recentContact = people[0];
       baseQueries.unshift({
         id: 'personalized-1',
         query: `Tell me about ${recentContact.fullName}`,
         category: 'contacts',
-        frequency: 15,
-        trend: 'up',
-        timeframe: selectedTimeframe,
       });
     }
 
@@ -171,36 +136,17 @@ export default function ChatTabScreen() {
         id: 'personalized-2',
         query: 'Summarize my recent voice notes',
         category: 'notes',
-        frequency: 18,
-        trend: 'up',
-        timeframe: selectedTimeframe,
       });
     }
 
     return baseQueries.slice(0, 8);
-  }, [people, voiceNotes, selectedTimeframe]);
+  }, [people, voiceNotes]);
 
-  const [trendingQueries, setTrendingQueries] = useState<TrendingQuery[]>([]);
+  const [suggestedQueries, setSuggestedQueries] = useState<SuggestedQuery[]>([]);
 
   useEffect(() => {
-    setTrendingQueries(generateTrendingQueries());
-    
-    // Generate mock stats
-    const totalQueries = Math.floor(Math.random() * 200) + 150;
-    const categories = [
-      { name: 'Contacts', count: Math.floor(totalQueries * 0.35), color: '#007AFF' },
-      { name: 'Notes', count: Math.floor(totalQueries * 0.28), color: '#34C759' },
-      { name: 'Actions', count: Math.floor(totalQueries * 0.25), color: '#FF9500' },
-      { name: 'Insights', count: Math.floor(totalQueries * 0.12), color: '#AF52DE' },
-    ];
-    
-    setStats({
-      totalQueries,
-      activeUsers: Math.floor(Math.random() * 50) + 25,
-      topCategories: categories,
-      dailyTrend: Math.floor(Math.random() * 30) + 5,
-    });
-  }, [generateTrendingQueries, selectedTimeframe, people.length, voiceNotes.length]);
+    setSuggestedQueries(generateSuggestedQueries());
+  }, [generateSuggestedQueries]);
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
@@ -210,11 +156,6 @@ export default function ChatTabScreen() {
       case 'actions': return <Sparkles size={16} color={theme.colors.primary} />;
       default: return <MessageCircle size={16} color={theme.colors.primary} />;
     }
-  };
-
-  const getTrendIcon = (trend: string) => {
-    const color = trend === 'up' ? '#34C759' : trend === 'down' ? '#FF3B30' : '#8E8E93';
-    return <TrendingUp size={14} color={color} />;
   };
 
   const handleQueryPress = (query: string) => {
@@ -257,12 +198,6 @@ export default function ChatTabScreen() {
     setShowChatInterface(false);
     setInputText('');
   };
-
-  const timeframeOptions = [
-    { key: 'today' as const, label: 'Today', icon: <Clock size={16} color={theme.colors.textSecondary} /> },
-    { key: 'week' as const, label: 'This Week', icon: <Calendar size={16} color={theme.colors.textSecondary} /> },
-    { key: 'month' as const, label: 'This Month', icon: <BarChart3 size={16} color={theme.colors.textSecondary} /> },
-  ];
 
   if (showChatInterface) {
     return (
@@ -321,51 +256,13 @@ export default function ChatTabScreen() {
                   </View>
                 </View>
 
-                {/* Timeframe Selector */}
+                {/* Suggested Queries */}
                 <View style={styles.timeframeContainer}>
-                  <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Trending Queries</Text>
-                  <View style={styles.timeframeSelector}>
-                    {timeframeOptions.map((option) => (
-                      <TouchableOpacity
-                        key={option.key}
-                        style={[
-                          styles.timeframeButton,
-                          {
-                            backgroundColor: selectedTimeframe === option.key 
-                              ? theme.colors.primary + '15' 
-                              : theme.colors.surface,
-                            borderColor: selectedTimeframe === option.key 
-                              ? theme.colors.primary 
-                              : theme.colors.border,
-                          }
-                        ]}
-                        onPress={() => {
-                        analytics.track('chat_timeframe_changed', {
-                          timeframe: option.key,
-                          previousTimeframe: selectedTimeframe,
-                        });
-                        setSelectedTimeframe(option.key);
-                      }}
-                      >
-                        {option.icon}
-                        <Text style={[
-                          styles.timeframeText,
-                          {
-                            color: selectedTimeframe === option.key 
-                              ? theme.colors.primary 
-                              : theme.colors.textSecondary
-                          }
-                        ]}>
-                          {option.label}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
+                  <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Suggested Queries</Text>
                 </View>
 
-                {/* Trending Queries */}
                 <View style={styles.queriesContainer}>
-                  {trendingQueries.map((query, index) => (
+                  {suggestedQueries.map((query, index) => (
                     <TouchableOpacity
                       key={query.id}
                       style={[
@@ -386,12 +283,6 @@ export default function ChatTabScreen() {
                             {query.category.charAt(0).toUpperCase() + query.category.slice(1)}
                           </Text>
                         </View>
-                        <View style={styles.queryStats}>
-                          {getTrendIcon(query.trend)}
-                          <Text style={[styles.queryFrequency, { color: theme.colors.textSecondary }]}>
-                            {query.frequency} uses
-                          </Text>
-                        </View>
                       </View>
                       <Text style={[styles.queryText, { color: theme.colors.text }]}>{query.query}</Text>
                       <View style={styles.queryFooter}>
@@ -402,32 +293,14 @@ export default function ChatTabScreen() {
                   ))}
                 </View>
 
-                {/* Category Breakdown */}
-                <View style={[styles.categoryContainer, { backgroundColor: theme.colors.surface }]}>
-                  <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Popular Categories</Text>
-                  <View style={styles.categoryList}>
-                    {stats.topCategories.map((category) => (
-                      <View key={category.name} style={styles.categoryItem}>
-                        <View style={styles.categoryInfo}>
-                          <View style={[styles.categoryDot, { backgroundColor: category.color }]} />
-                          <Text style={[styles.categoryName, { color: theme.colors.text }]}>{category.name}</Text>
-                        </View>
-                        <Text style={[styles.categoryCount, { color: theme.colors.textSecondary }]}>
-                          {category.count} queries
-                        </Text>
-                      </View>
-                    ))}
-                  </View>
-                </View>
-
                 {/* Help Text */}
                 <View style={styles.helpContainer}>
                   <Text style={[styles.helpText, { color: theme.colors.textSecondary }]}>
-                    Tap any trending query above to get started instantly
+                    Tap any suggestion above to get started instantly
                   </Text>
                 </View>
               </ScrollView>
-              
+
               {/* Fixed Input Bar at Bottom */}
               <View style={[styles.fixedInputContainer, { backgroundColor: theme.colors.background, paddingBottom: insets.bottom + 8 }]}>
                 <View style={[styles.inputBar, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
@@ -620,25 +493,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     marginBottom: 24,
   },
-  timeframeSelector: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  timeframeButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    gap: 6,
-  },
-  timeframeText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
   queriesContainer: {
     paddingHorizontal: 20,
     gap: 12,
@@ -680,14 +534,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     textTransform: 'capitalize',
   },
-  queryStats: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  queryFrequency: {
-    fontSize: 12,
-  },
   queryText: {
     fontSize: 16,
     lineHeight: 22,
@@ -702,48 +548,6 @@ const styles = StyleSheet.create({
   tryItText: {
     fontSize: 14,
     fontWeight: '600',
-  },
-  categoryContainer: {
-    marginHorizontal: 20,
-    marginBottom: 32,
-    padding: 20,
-    borderRadius: 16,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 4,
-      },
-    }),
-  },
-  categoryList: {
-    gap: 12,
-  },
-  categoryItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  categoryInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  categoryDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-  },
-  categoryName: {
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  categoryCount: {
-    fontSize: 14,
   },
   helpContainer: {
     paddingHorizontal: 20,
