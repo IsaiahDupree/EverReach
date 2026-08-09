@@ -2,52 +2,47 @@ import { NextRequest } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * Verify authentication from request headers
- * Supports both Authorization header and custom X-User-Id header
+ * Verify authentication from request headers.
+ *
+ * Only a Supabase-issued JWT (Authorization: Bearer <token>) is accepted.
+ * A client-supplied `X-User-Id` header is NEVER trusted as authentication --
+ * it carries no signature or session proof and is fully attacker-controlled,
+ * so it must not be used to establish identity (it previously allowed a
+ * trivial auth bypass / IDOR on every route that calls this function).
  */
 export async function verifyAuth(request: NextRequest): Promise<{
   userId: string;
   email?: string;
   authenticated: boolean;
 }> {
-  // Check for Authorization header (JWT token)
   const authHeader = request.headers.get('authorization');
-  
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    const token = authHeader.substring(7);
-    
-    try {
-      const supabase = createClient(
-        process.env.SUPABASE_URL!,
-        process.env.SUPABASE_ANON_KEY!
-      );
-      
-      const { data: { user }, error } = await supabase.auth.getUser(token);
-      
-      if (error || !user) {
-        throw new Error('Invalid token');
-      }
-      
-      return {
-        userId: user.id,
-        email: user.email,
-        authenticated: true
-      };
-    } catch (error) {
-      throw new Error('Authentication failed');
-    }
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    throw new Error('No authentication provided');
   }
-  
-  // Fallback: Check for X-User-Id header (for testing/internal APIs)
-  const userIdHeader = request.headers.get('x-user-id');
-  if (userIdHeader) {
+
+  const token = authHeader.substring(7);
+
+  try {
+    const supabase = createClient(
+      process.env.SUPABASE_URL!,
+      process.env.SUPABASE_ANON_KEY!
+    );
+
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+
+    if (error || !user) {
+      throw new Error('Invalid token');
+    }
+
     return {
-      userId: userIdHeader,
+      userId: user.id,
+      email: user.email,
       authenticated: true
     };
+  } catch (error) {
+    throw new Error('Authentication failed');
   }
-  
-  throw new Error('No authentication provided');
 }
 
 /**
