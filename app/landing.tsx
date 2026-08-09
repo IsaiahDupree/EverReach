@@ -122,7 +122,7 @@ export default function LandingScreen() {
           <View style={styles.testimonialContainer}>
             {TESTIMONIALS.map((testimonial, index) => (
               <View key={index} style={styles.testimonialCard}>
-                <Text style={styles.testimonialQuote}>"{testimonial.quote}"</Text>
+                <Text style={styles.testimonialQuote}>&quot;{testimonial.quote}&quot;</Text>
                 <View style={styles.testimonialAuthor}>
                   <Text style={styles.testimonialName}>{testimonial.author}</Text>
                   <Text style={styles.testimonialRole}>{testimonial.role}</Text>

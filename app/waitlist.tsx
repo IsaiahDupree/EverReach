@@ -149,7 +149,7 @@ export default function WaitlistScreen() {
 
   const renderPainStep = () => (
     <View style={styles.stepContainer}>
-      <Text style={styles.stepTitle}>What's your biggest challenge with staying in touch?</Text>
+      <Text style={styles.stepTitle}>What&apos;s your biggest challenge with staying in touch?</Text>
       <View style={styles.optionsContainer}>
         {PAIN_OPTIONS.map(option => (
           <TouchableOpacity
@@ -227,7 +227,7 @@ export default function WaitlistScreen() {
 
   const renderEmailStep = () => (
     <View style={styles.stepContainer}>
-      <Text style={styles.stepTitle}>You're almost in! 🎉</Text>
+      <Text style={styles.stepTitle}>You&apos;re almost in! 🎉</Text>
       <Text style={styles.stepSubtitle}>
         Enter your email to join the waitlist and get early access.
       </Text>
@@ -259,7 +259,7 @@ export default function WaitlistScreen() {
       </TouchableOpacity>
 
       <Text style={styles.privacyText}>
-        We'll never spam you. Unsubscribe anytime.
+        We&apos;ll never spam you. Unsubscribe anytime.
       </Text>
     </View>
   );

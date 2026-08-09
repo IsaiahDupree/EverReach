@@ -88,7 +88,7 @@ export default function ConsentModal({ visible, onClose }: ConsentModalProps) {
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           {/* Intro */}
           <Text style={styles.intro}>
-            We respect your privacy. Choose what data you're comfortable sharing to help us improve EverReach.
+            We respect your privacy. Choose what data you&apos;re comfortable sharing to help us improve EverReach.
           </Text>
 
           {/* Privacy Note */}
@@ -183,9 +183,9 @@ export default function ConsentModal({ visible, onClose }: ConsentModalProps) {
           {/* ATT Info (iOS only) */}
           {Platform.OS === 'ios' && (
             <View style={styles.attBox}>
-              <Text style={styles.attTitle}>About "Ask App Not to Track"</Text>
+              <Text style={styles.attTitle}>About &quot;Ask App Not to Track&quot;</Text>
               <Text style={styles.attText}>
-                Apple's tracking prompt is separate from our analytics. We don't use IDFA or track you across other apps, so you can safely choose either option.
+                Apple&apos;s tracking prompt is separate from our analytics. We don&apos;t use IDFA or track you across other apps, so you can safely choose either option.
               </Text>
               <Text style={styles.attText}>
                 Current status: <Text style={styles.attStatus}>{consent?.attStatus || 'not-determined'}</Text>

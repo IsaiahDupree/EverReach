@@ -74,12 +74,12 @@ export default function ThankYouScreen() {
           <Text style={styles.icon}>🎉</Text>
         </View>
 
-        <Text style={styles.title}>You're on the list!</Text>
-        
+        <Text style={styles.title}>You&apos;re on the list!</Text>
+
         <Text style={styles.subtitle}>
           {isHighIntent
-            ? "You're a priority! We'll reach out soon with early access."
-            : "We'll let you know when EverReach is ready for you."}
+            ? "You&apos;re a priority! We&apos;ll reach out soon with early access."
+            : "We&apos;ll let you know when EverReach is ready for you."}
         </Text>
 
         {isHighIntent && (
