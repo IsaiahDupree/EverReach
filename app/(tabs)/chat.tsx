@@ -6,10 +6,10 @@ import {
   TouchableOpacity,
   Text,
   ScrollView,
-  TextInput,
+  
   KeyboardAvoidingView,
-  Keyboard,
-  TouchableWithoutFeedback,
+  
+  
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useNavigation } from 'expo-router';

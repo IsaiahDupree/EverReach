@@ -29,7 +29,7 @@ import { useDashboardData } from "@/hooks/useDashboardData";
 import { useBackgroundPrefetch } from "@/hooks/useBackgroundPrefetch";
 import { SkeletonDashboard, SkeletonHealthCard, SkeletonInteractionCard } from "@/components/SkeletonLoaders";
 import Avatar from "@/components/Avatar";
-import { getWarmthColor } from "@/lib/imageUpload";
+
 import { usePeople } from "@/providers/PeopleProvider";
 import { useWarmth } from "@/providers/WarmthProvider";
 import { useFocusEffect } from "expo-router";

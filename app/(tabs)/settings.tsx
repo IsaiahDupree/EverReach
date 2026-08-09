@@ -46,9 +46,9 @@ import {
   History
 } from 'lucide-react-native';
 import { useAuth } from "@/providers/AuthProviderV2";
-import { useAppSettings, type ThemeMode, type Theme } from "@/providers/AppSettingsProvider";
+import { useAppSettings, type Theme } from "@/providers/AppSettingsProvider";
 import { useSubscription } from "@/providers/SubscriptionProvider";
-import { usePaywall } from "@/providers/PaywallProvider";
+
 import { usePeople } from "@/providers/PeopleProvider";
 import { useWarmth } from "@/providers/WarmthProvider";
 import { useOnboarding } from "@/providers/OnboardingProvider";

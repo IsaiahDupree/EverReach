@@ -5,7 +5,7 @@ import {
   View,
   FlatList,
   TouchableOpacity,
-  TextInput,
+  
   RefreshControl,
   ActivityIndicator,
   ScrollView,
@@ -19,7 +19,7 @@ import { router, useLocalSearchParams, useFocusEffect } from "expo-router";
 import { Search, Plus, MessageSquare } from "lucide-react-native";
 import Avatar from "@/components/Avatar";
 import CrossPlatformTextInput from "@/components/CrossPlatformTextInput";
-import { getWarmthColorFromBand } from "@/lib/imageUpload";
+
 import { useAnalytics } from "@/hooks/useAnalytics";
 import analytics from "@/lib/analytics";
 

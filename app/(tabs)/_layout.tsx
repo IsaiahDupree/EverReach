@@ -2,7 +2,7 @@ import { Tabs } from "expo-router";
 import { Users, Home, Settings, MessageCircle } from "lucide-react-native";
 import React from "react";
 import { useAppSettings } from "@/providers/AppSettingsProvider";
-import { ActivityIndicator, View } from "react-native";
+ from "react-native";
 import AuthGate from "@/components/AuthGate";
 import { PaywallGate } from "@/components/PaywallGate";
 // Trial banner removed - using PaywallGate on individual features instead
