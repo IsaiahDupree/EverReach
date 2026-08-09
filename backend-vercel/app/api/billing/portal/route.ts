@@ -85,6 +85,7 @@ export async function POST(req: Request) {
     if (!session.url) return serverError('Failed to create portal session', req);
     return ok({ url: session.url }, req);
   } catch (e: any) {
+    console.error('[billing/portal] Error creating portal session:', { userId: user.id, error: e?.message || e });
     return serverError(e?.message || 'Stripe error', req);
   }
 }

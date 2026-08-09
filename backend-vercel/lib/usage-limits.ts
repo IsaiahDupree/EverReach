@@ -368,6 +368,11 @@ export async function canUseChatMessages(
 
 /**
  * Check compose generation limits
+ *
+ * @deprecated Read-only check with a TOCTOU gap when paired with a later
+ * incrementComposeUsage() call across an async operation (e.g. an OpenAI
+ * request) -- concurrent callers can all read `allowed: true` before any
+ * of them increments. Use reserveComposeUsage() for enforcement.
  */
 export async function canUseCompose(
   supabase: SupabaseClient,
@@ -424,6 +429,13 @@ export async function canUseCompose(
 
 /**
  * Increment compose usage counter
+ *
+ * @deprecated Do not pair this with a separate canUseCompose() check for
+ * enforcement -- the check-then-act gap around a multi-second OpenAI call
+ * lets concurrent requests near the limit boundary all pass the check
+ * before any of them increments, overrunning the monthly cap. Use
+ * reserveComposeUsage()/releaseComposeUsage() below instead, which
+ * check-and-increment atomically in a single DB statement.
  */
 export async function incrementComposeUsage(
   supabase: SupabaseClient,
@@ -438,6 +450,98 @@ export async function incrementComposeUsage(
     return data as UsageLimits;
   } catch (error: any) {
     console.error('Error incrementing compose usage:', error);
+    return null;
+  }
+}
+
+/**
+ * Atomically check-and-increment the compose usage counter in a single DB
+ * statement (see the `reserve_compose_usage` SQL function). Call this
+ * BEFORE the OpenAI request, then call releaseComposeUsage() if the
+ * request doesn't end up completing successfully.
+ *
+ * This replaces the racy canUseCompose() + incrementComposeUsage() pair:
+ * the increment happens inside the same conditional UPDATE that checks the
+ * limit, so concurrent requests serialize on the DB row instead of racing
+ * on separate read-then-write calls.
+ *
+ * Fails CLOSED on any DB/RPC error: unlike a read-only usage check, this
+ * call gates an actual paid OpenAI request, so if we can't verify+reserve
+ * quota we must not let the request proceed on the user's behalf.
+ */
+export async function reserveComposeUsage(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<UsageCheckResult> {
+  try {
+    const { data, error } = await supabase.rpc('reserve_compose_usage', {
+      p_user_id: userId,
+    });
+
+    if (error) throw error;
+
+    // Table-returning RPCs come back as an array of rows via supabase-js.
+    const row = Array.isArray(data) ? data[0] : data;
+    const period = row?.period;
+    const tier = await getUserTier(supabase, userId);
+
+    const limit = period?.compose_runs_limit ?? TIER_LIMITS.core.compose_generations_per_month;
+    const used = period?.compose_runs_used ?? 0;
+
+    if (!row?.reserved) {
+      return {
+        allowed: false,
+        reason: 'Monthly compose limit reached',
+        current_usage: used,
+        limit: limit === -1 ? Infinity : limit,
+        remaining: 0,
+        resets_at: period?.period_end,
+        tier,
+      };
+    }
+
+    return {
+      allowed: true,
+      current_usage: used,
+      limit: limit === -1 ? Infinity : limit,
+      remaining: limit === -1 ? Infinity : Math.max(0, limit - used),
+      resets_at: period?.period_end,
+      tier,
+    };
+  } catch (error: any) {
+    console.error('Error reserving compose usage:', error);
+    // Fail CLOSED here (unlike the legacy read-only checks below): an
+    // unverifiable quota must block the paid OpenAI call, not silently
+    // allow unmetered spend.
+    return {
+      allowed: false,
+      reason: 'Unable to verify usage limits, please try again shortly',
+    };
+  }
+}
+
+/**
+ * Compensating rollback for reserveComposeUsage(). Call this when the
+ * reserved compose run did not actually complete (e.g. the OpenAI call
+ * threw, or a later validation step rejected the request) so the user
+ * isn't charged quota for a generation they never received.
+ *
+ * Best-effort: failures are logged and swallowed so a rollback error never
+ * masks the original request error.
+ */
+export async function releaseComposeUsage(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<UsageLimits | null> {
+  try {
+    const { data, error } = await supabase.rpc('release_compose_usage', {
+      p_user_id: userId,
+    });
+
+    if (error) throw error;
+    return data as UsageLimits;
+  } catch (error: any) {
+    console.error('Error releasing compose usage:', error);
     return null;
   }
 }

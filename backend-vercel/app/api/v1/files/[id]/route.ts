@@ -9,11 +9,46 @@ import { options, ok, notFound, badRequest, serverError, unauthorized } from "@/
 import { getUser } from "@/lib/auth";
 import { getClientOrThrow } from "@/lib/supabase";
 import { getServiceStorageClient, getDefaultBucketName } from "@/lib/storage";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 export const runtime = "nodejs";
 
 export function OPTIONS(req: Request) {
   return options(req);
+}
+
+type AttachmentParentRefs = {
+  contact_id: string | null;
+  message_id: string | null;
+  persona_note_id: string | null;
+};
+
+/**
+ * The `attachments` table has no row-level security policies of its own
+ * (unlike contacts/messages/persona_notes, which are org- or user-scoped
+ * via RLS), so `.eq('id', ...)` alone does not restrict access to the
+ * caller's own data. Ownership is established here by checking, through the
+ * same RLS-enforcing client used for the rest of the request, whether the
+ * caller can see the parent entity the attachment is linked to.
+ */
+async function canAccessAttachmentParent(
+  supabase: SupabaseClient,
+  refs: AttachmentParentRefs
+): Promise<boolean> {
+  if (refs.contact_id) {
+    const { data } = await supabase.from('contacts').select('id').eq('id', refs.contact_id).maybeSingle();
+    return !!data;
+  }
+  if (refs.message_id) {
+    const { data } = await supabase.from('messages').select('id').eq('id', refs.message_id).maybeSingle();
+    return !!data;
+  }
+  if (refs.persona_note_id) {
+    const { data } = await supabase.from('persona_notes').select('id').eq('id', refs.persona_note_id).maybeSingle();
+    return !!data;
+  }
+  // No parent link to verify ownership against — deny by default.
+  return false;
 }
 
 /**
@@ -26,15 +61,19 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 
   try {
     const supabase = getClientOrThrow(req);
-    
+
     // Get file metadata from attachments table
     const { data: attachment, error } = await supabase
       .from('attachments')
-      .select('id, file_path, mime_type, size_bytes, contact_id, created_at, updated_at')
+      .select('id, file_path, mime_type, size_bytes, contact_id, message_id, persona_note_id, created_at, updated_at')
       .eq('id', params.id)
       .single();
 
     if (error || !attachment) {
+      return notFound("File not found", req);
+    }
+
+    if (!(await canAccessAttachmentParent(supabase, attachment))) {
       return notFound("File not found", req);
     }
 
@@ -49,9 +88,10 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
       console.warn(`[Files] Could not generate download URL for ${attachment.file_path}:`, urlError);
     }
 
+    const { message_id, persona_note_id, ...publicAttachment } = attachment;
     return ok({
       file: {
-        ...attachment,
+        ...publicAttachment,
         download_url: urlData?.signedUrl || null,
       }
     }, req);
@@ -75,11 +115,15 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     // Verify file exists and user has access
     const { data: existing, error: fetchError } = await supabase
       .from('attachments')
-      .select('id')
+      .select('id, contact_id, message_id, persona_note_id')
       .eq('id', params.id)
       .single();
 
     if (fetchError || !existing) {
+      return notFound("File not found", req);
+    }
+
+    if (!(await canAccessAttachmentParent(supabase, existing))) {
       return notFound("File not found", req);
     }
 
@@ -117,11 +161,15 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
     // Get file details before deletion
     const { data: attachment, error: fetchError } = await supabase
       .from('attachments')
-      .select('id, file_path')
+      .select('id, file_path, contact_id, message_id, persona_note_id')
       .eq('id', params.id)
       .single();
 
     if (fetchError || !attachment) {
+      return notFound("File not found", req);
+    }
+
+    if (!(await canAccessAttachmentParent(supabase, attachment))) {
       return notFound("File not found", req);
     }
 

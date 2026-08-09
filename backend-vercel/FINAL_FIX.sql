@@ -1,6 +1,16 @@
 -- ============================================================================
 -- FINAL SCREENSHOT FIX - Run this to fix all remaining errors
 -- ============================================================================
+--
+-- SUPERSEDED (see migrations/fix_screenshot_usage_function_conflicts.sql):
+-- get_or_create_usage_period (step 2) below renames every returned column
+-- (period_id, period_screenshot_count, ...) and hardcodes
+-- screenshot_limit=100, breaking both the compose/voice columns
+-- add_compose_and_voice_usage_limits.sql added and lib/usage-limits.ts's
+-- unrenamed field reads (usage.screenshot_count, usage.compose_runs_used,
+-- ...). Do not (re)apply step 2. Step 1 (sentiment/urgency/
+-- suggested_template_type columns, file_url nullable) is otherwise still
+-- valid/idempotent.
 
 -- 1. Add missing columns and fix constraints
 ALTER TABLE screenshot_analyses 

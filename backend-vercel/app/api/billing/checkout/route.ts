@@ -68,6 +68,7 @@ export async function POST(req: Request) {
     if (!session.url) return serverError('Failed to create checkout session', req);
     return ok({ url: session.url }, req);
   } catch (e: any) {
+    console.error('[billing/checkout] Error creating checkout session:', { userId: user.id, error: e?.message || e });
     return serverError(e?.message || 'Stripe error', req);
   }
 }

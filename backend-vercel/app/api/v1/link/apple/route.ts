@@ -56,6 +56,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Fail-closed: Apple Sandbox receipts (free, self-service test purchases) must
+    // never grant a real entitlement in production. Hard-disabled in production
+    // regardless of any flag, so a missing/misconfigured env var can't open this up.
+    const isProduction = process.env.VERCEL_ENV === 'production';
+    if (isProduction && validation.environment === 'Sandbox') {
+      return NextResponse.json(
+        { error: 'Sandbox receipts cannot be linked in production' },
+        { status: 400 }
+      );
+    }
+
     // Calculate normalized status
     const now = new Date();
     const expiresAt = validation.expiresAt ? new Date(validation.expiresAt) : null;

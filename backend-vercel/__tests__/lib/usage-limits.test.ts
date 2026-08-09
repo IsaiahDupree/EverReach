@@ -19,6 +19,8 @@ import {
   formatUsage,
   getUsagePercentage,
   isUnlimited,
+  reserveComposeUsage,
+  releaseComposeUsage,
   TIER_LIMITS,
 } from '../../lib/usage-limits';
 
@@ -65,7 +67,7 @@ describe('Usage Limits - Compose Enforcement', () => {
   });
 
   afterEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   it('should allow compose when under limit', async () => {
@@ -333,9 +335,9 @@ describe('Usage Limits - Period Management', () => {
   it('should get user tier', async () => {
     const tierData = { subscription_tier: 'pro' };
 
-    const singleMock = vi.fn().mockResolvedValue({ data: tierData, error: null });
-    const eqMock = vi.fn().mockReturnValue({ single: singleMock });
-    const selectMock = vi.fn().mockReturnValue({ eq: eqMock });
+    const singleMock = jest.fn().mockResolvedValue({ data: tierData, error: null });
+    const eqMock = jest.fn().mockReturnValue({ single: singleMock });
+    const selectMock = jest.fn().mockReturnValue({ eq: eqMock });
     mockSupabase.from.mockReturnValue({ select: selectMock });
 
     const tier = await getUserTier(mockSupabase, 'user-123');
@@ -345,12 +347,12 @@ describe('Usage Limits - Period Management', () => {
   });
 
   it('should default to core tier on error', async () => {
-    const singleMock = vi.fn().mockResolvedValue({ 
-      data: null, 
-      error: new Error('Not found') 
+    const singleMock = jest.fn().mockResolvedValue({
+      data: null,
+      error: new Error('Not found')
     });
-    const eqMock = vi.fn().mockReturnValue({ single: singleMock });
-    const selectMock = vi.fn().mockReturnValue({ eq: eqMock });
+    const eqMock = jest.fn().mockReturnValue({ single: singleMock });
+    const selectMock = jest.fn().mockReturnValue({ eq: eqMock });
     mockSupabase.from.mockReturnValue({ select: selectMock });
 
     const tier = await getUserTier(mockSupabase, 'user-123');
@@ -435,5 +437,121 @@ describe('Usage Limits - Integration Scenarios', () => {
     expect(result.allowed).toBe(true);
     expect(result.limit).toBe(200);
     expect(result.remaining).toBe(150);
+  });
+});
+
+describe('Usage Limits - Atomic Reserve/Release (concurrency safety)', () => {
+  let mockSupabase: any;
+
+  beforeEach(() => {
+    mockSupabase = createMockSupabase();
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should allow reservation when the RPC reports a successful reserve', async () => {
+    mockSupabase.rpc.mockResolvedValueOnce({
+      data: [{
+        reserved: true,
+        period: { compose_runs_used: 26, compose_runs_limit: 50, period_end: '2025-12-31T23:59:59Z' },
+      }],
+      error: null,
+    });
+
+    const result = await reserveComposeUsage(mockSupabase, 'user-123');
+
+    expect(mockSupabase.rpc).toHaveBeenCalledWith('reserve_compose_usage', { p_user_id: 'user-123' });
+    expect(result.allowed).toBe(true);
+    expect(result.current_usage).toBe(26);
+    expect(result.limit).toBe(50);
+  });
+
+  it('should deny reservation when the RPC reports the limit is already reached', async () => {
+    mockSupabase.rpc.mockResolvedValueOnce({
+      data: [{
+        reserved: false,
+        period: { compose_runs_used: 50, compose_runs_limit: 50, period_end: '2025-12-31T23:59:59Z' },
+      }],
+      error: null,
+    });
+
+    const result = await reserveComposeUsage(mockSupabase, 'user-123');
+
+    expect(result.allowed).toBe(false);
+    expect(result.reason).toBe('Monthly compose limit reached');
+    expect(result.remaining).toBe(0);
+  });
+
+  it('should fail CLOSED (not open) when the reserve RPC errors, unlike the read-only canUseCompose check', async () => {
+    mockSupabase.rpc.mockResolvedValueOnce({ data: null, error: new Error('connection reset') });
+
+    const result = await reserveComposeUsage(mockSupabase, 'user-123');
+
+    // This is the opposite fail-safe direction from canUseCompose's "fail open"
+    // above -- reserveComposeUsage gates a paid OpenAI call, so an unverifiable
+    // quota must block the request, not silently allow unmetered spend.
+    expect(result.allowed).toBe(false);
+    expect(result.reason).toMatch(/unable to verify/i);
+  });
+
+  it('should forward the release call and return the RPC result', async () => {
+    mockSupabase.rpc.mockResolvedValueOnce({
+      data: { compose_runs_used: 25, compose_runs_limit: 50 },
+      error: null,
+    });
+
+    const result = await releaseComposeUsage(mockSupabase, 'user-123');
+
+    expect(mockSupabase.rpc).toHaveBeenCalledWith('release_compose_usage', { p_user_id: 'user-123' });
+    expect(result?.compose_runs_used).toBe(25);
+  });
+
+  it('should swallow release errors as a best-effort rollback (never throws)', async () => {
+    mockSupabase.rpc.mockResolvedValueOnce({ data: null, error: new Error('rpc down') });
+
+    await expect(releaseComposeUsage(mockSupabase, 'user-123')).resolves.toBeNull();
+  });
+
+  it('concurrent reservations must not exceed the shared capacity (Promise.all race check)', async () => {
+    // Simulate the DB-side atomic "check-and-increment in one statement"
+    // behavior of the real reserve_compose_usage SQL function: each call
+    // reads and mutates a single shared counter with no interleaving,
+    // because a single Postgres statement serializes on the row.
+    const limit = 5;
+    let used = 0;
+    mockSupabase.rpc.mockImplementation((fnName: string) => {
+      if (fnName !== 'reserve_compose_usage') {
+        return Promise.resolve({ data: null, error: null });
+      }
+      if (used < limit) {
+        used += 1;
+        return Promise.resolve({
+          data: [{ reserved: true, period: { compose_runs_used: used, compose_runs_limit: limit, period_end: '2025-12-31T23:59:59Z' } }],
+          error: null,
+        });
+      }
+      return Promise.resolve({
+        data: [{ reserved: false, period: { compose_runs_used: used, compose_runs_limit: limit, period_end: '2025-12-31T23:59:59Z' } }],
+        error: null,
+      });
+    });
+
+    const concurrentCallers = 8;
+    const results = await Promise.all(
+      Array.from({ length: concurrentCallers }, () => reserveComposeUsage(mockSupabase, 'user-123'))
+    );
+
+    const allowedCount = results.filter((r) => r.allowed).length;
+    const deniedCount = results.filter((r) => !r.allowed).length;
+
+    // The wrapper must forward every concurrent caller to the atomic RPC --
+    // it must NOT introduce its own client-side race (e.g. caching a stale
+    // "allowed" read) that would let more than `limit` callers through.
+    expect(mockSupabase.rpc).toHaveBeenCalledTimes(concurrentCallers);
+    expect(allowedCount).toBe(limit);
+    expect(deniedCount).toBe(concurrentCallers - limit);
+    expect(used).toBe(limit);
   });
 });

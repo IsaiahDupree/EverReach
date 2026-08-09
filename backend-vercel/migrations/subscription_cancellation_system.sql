@@ -17,14 +17,28 @@
 -- Add cross-platform tracking fields
 ALTER TABLE user_subscriptions
   ADD COLUMN IF NOT EXISTS provider_subscription_id TEXT,
-  ADD COLUMN IF NOT EXISTS status TEXT CHECK (status IN (
-    'trialing', 'active', 'in_grace', 'paused', 
-    'canceled', 'expired', 'billing_issue'
-  )),
+  ADD COLUMN IF NOT EXISTS status TEXT,
   ADD COLUMN IF NOT EXISTS entitlement_active_until TIMESTAMPTZ,
   ADD COLUMN IF NOT EXISTS is_primary BOOLEAN DEFAULT FALSE,
   ADD COLUMN IF NOT EXISTS origin_platform_user_key TEXT,
   ADD COLUMN IF NOT EXISTS canceled_at TIMESTAMPTZ;
+
+-- NOTE: the CHECK below is intentionally applied as its own statement rather
+-- than inline on `ADD COLUMN IF NOT EXISTS status TEXT CHECK (...)` above.
+-- When `status` already exists (e.g. this runs after
+-- 20251026172100_revenuecat_subscriptions.sql, which created it with a
+-- narrower CHECK), Postgres silently skips the entire ADD COLUMN clause —
+-- CHECK included — as a no-op, leaving the old narrow constraint in place.
+-- DROP+ADD here applies unconditionally regardless of column pre-existence.
+ALTER TABLE user_subscriptions
+  DROP CONSTRAINT IF EXISTS user_subscriptions_status_check;
+
+ALTER TABLE user_subscriptions
+  ADD CONSTRAINT user_subscriptions_status_check
+  CHECK (status IN (
+    'trial', 'trialing', 'active', 'in_grace', 'paused',
+    'canceled', 'expired', 'refunded', 'billing_issue'
+  ));
 
 COMMENT ON COLUMN user_subscriptions.provider_subscription_id IS 'Provider-specific ID: Stripe sub_xxx | Apple originalTransactionId | Google purchaseToken';
 COMMENT ON COLUMN user_subscriptions.status IS 'Normalized status across all providers';

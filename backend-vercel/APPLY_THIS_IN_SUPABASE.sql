@@ -2,6 +2,13 @@
 -- SCREENSHOT ANALYSIS FIX
 -- Copy and paste this entire file into Supabase SQL Editor and click "Run"
 -- ============================================================================
+--
+-- SUPERSEDED (see migrations/fix_screenshot_usage_function_conflicts.sql):
+-- can_use_screenshot_analysis (step 2) hardcodes limit=100 via COUNT(*) and
+-- increment_screenshot_usage (step 3) is a no-op placeholder -- neither
+-- matches the tier-aware usage_periods schema lib/usage-limits.ts relies on.
+-- Do not (re)apply steps 2-3. Steps 1, 4-5 (key_phrases column,
+-- screenshot_analyses view/grants) are otherwise still valid/idempotent.
 
 -- 1. Add key_phrases column if missing
 ALTER TABLE screenshot_analysis 

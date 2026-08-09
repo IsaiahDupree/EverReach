@@ -206,6 +206,7 @@ export interface GoogleValidationResult {
   isCanceled: boolean;
   autoRenewEnabled: boolean;
   orderId: string;
+  purchaseType?: number; // 0 = test (license tester), 1 = promo, 2 = rewarded; undefined = real purchase
   error?: string;
 }
 
@@ -246,6 +247,7 @@ export async function validateGooglePurchase(
       isCanceled,
       autoRenewEnabled: data.autoRenewing,
       orderId: data.orderId,
+      purchaseType: data.purchaseType,
     };
   } catch (error: any) {
     return {

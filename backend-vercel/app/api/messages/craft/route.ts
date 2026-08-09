@@ -1,34 +1,22 @@
 import OpenAI from 'openai';
-import { ok, options, badRequest, serverError } from "@/lib/cors";
+import { ok, options, badRequest, serverError, unauthorized, tooManyRequests } from "@/lib/cors";
 import { craftMessageSchema } from "@/lib/validation";
+import { getUser } from "@/lib/auth";
+import { checkRateLimit } from "@/lib/rateLimit";
+import { getClientOrThrow } from "@/lib/supabase";
+import { reserveComposeUsage, releaseComposeUsage } from "@/lib/usage-limits";
 
 export const runtime = 'nodejs';
-
-// simple in-memory limiter per IP
-const buckets = new Map<string, { count: number; resetAt: number }>();
-const WINDOW_MS = 60_000; // 1 minute
-const LIMIT = 30; // 30 requests per minute per IP
-
-function rateLimit(ip: string): boolean {
-  const now = Date.now();
-  const entry = buckets.get(ip);
-  if (!entry || now > entry.resetAt) {
-    buckets.set(ip, { count: 1, resetAt: now + WINDOW_MS });
-    return true;
-  }
-  if (entry.count < LIMIT) {
-    entry.count++;
-    return true;
-  }
-  return false;
-}
 
 export async function OPTIONS(req: Request){ return options(req); }
 
 export async function POST(req: Request){
   try {
-    const ip = req.headers.get('x-forwarded-for') || 'unknown';
-    if (!rateLimit(ip)) return badRequest('Rate limit exceeded');
+    const user = await getUser(req);
+    if (!user) return unauthorized('Unauthorized', req);
+
+    const rl = checkRateLimit(`u:${user.id}:POST:/api/messages/craft`, 30, 60_000);
+    if (!rl.allowed) return tooManyRequests('Rate limit exceeded', req);
 
     const body = await req.json();
     const parsed = craftMessageSchema.safeParse(body);
@@ -48,27 +36,78 @@ export async function POST(req: Request){
       return ok({ message: msg }, req);
     }
 
-    // Otherwise, call OpenAI
-    const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    
-    // Build prompt with voice context
-    let prompt = `Craft a ${tone} message for the following purpose: ${purpose}.\nContext: ${context}.\nRecipient: ${to?.name || ''} ${to?.email || ''}`;
-    
-    // Add voice & tone instructions if provided
-    if (voiceContext) {
-      prompt += `\n\nVOICE & TONE INSTRUCTIONS: ${voiceContext}`;
-      prompt += `\nIMPORTANT: Match the voice and tone specified above. This is how the user naturally communicates. Use their style, phrasing, and energy level.`;
+    // Real OpenAI call incurs cost: enforce the per-user monthly compose quota.
+    // reserveComposeUsage() atomically checks-and-increments compose_runs_used
+    // in a single DB statement, so concurrent requests near the limit boundary
+    // can't all pass the check before any of them increments (see
+    // reserve_compose_usage SQL function / lib/usage-limits.ts).
+    const supabase = getClientOrThrow(req);
+    const usageCheck = await reserveComposeUsage(supabase, user.id);
+    if (!usageCheck.allowed) {
+      return new Response(
+        JSON.stringify({
+          error: {
+            code: 'usage_limit_exceeded',
+            message: usageCheck.reason || 'Monthly compose generation limit reached',
+            details: {
+              current_usage: usageCheck.current_usage,
+              limit: usageCheck.limit,
+              remaining: usageCheck.remaining,
+              resets_at: usageCheck.resets_at,
+              tier: usageCheck.tier,
+            },
+          },
+        }),
+        {
+          status: 429,
+          headers: {
+            'Content-Type': 'application/json',
+            'X-RateLimit-Limit': String(usageCheck.limit),
+            'X-RateLimit-Remaining': String(usageCheck.remaining || 0),
+            'X-RateLimit-Reset': usageCheck.resets_at || '',
+          },
+        }
+      );
     }
-    
-    const resp = await client.responses.create({
-      model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
-      input: prompt,
-      temperature: 0.7,
-      max_output_tokens: 250,
-    });
-    // @ts-ignore - output_text available in SDK response helper
-    const text: string = (resp as any).output_text ?? '';
-    return ok({ message: text.trim() }, req);
+
+    // From here on, the reservation above must be released unless the
+    // OpenAI call completes successfully, so we don't charge quota for a
+    // generation the user never received.
+    let usageReserved = true;
+    try {
+      // Otherwise, call OpenAI
+      const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+      // Build prompt with voice context
+      let prompt = `Craft a ${tone} message for the following purpose: ${purpose}.\nContext: ${context}.\nRecipient: ${to?.name || ''} ${to?.email || ''}`;
+
+      // Add voice & tone instructions if provided
+      if (voiceContext) {
+        prompt += `\n\nVOICE & TONE INSTRUCTIONS: ${voiceContext}`;
+        prompt += `\nIMPORTANT: Match the voice and tone specified above. This is how the user naturally communicates. Use their style, phrasing, and energy level.`;
+      }
+
+      const resp = await client.responses.create({
+        model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+        input: prompt,
+        temperature: 0.7,
+        max_output_tokens: 250,
+      });
+      // @ts-ignore - output_text available in SDK response helper
+      const text: string = (resp as any).output_text ?? '';
+
+      // Generation succeeded; the usage reservation above stays consumed.
+      usageReserved = false;
+
+      return ok({ message: text.trim() }, req);
+    } finally {
+      if (usageReserved) {
+        // Compensating rollback: the OpenAI call didn't complete
+        // successfully, so don't charge the user's monthly quota for it.
+        // Best-effort -- failures are logged inside releaseComposeUsage.
+        await releaseComposeUsage(supabase, user.id);
+      }
+    }
   } catch (err: any) {
     return serverError(err?.message || 'Internal error', req);
   }

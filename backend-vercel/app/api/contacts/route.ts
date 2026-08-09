@@ -62,6 +62,7 @@ export async function GET(req: Request) {
     const { data, error } = await query;
 
     if (error) {
+      console.error('[contacts] GET query failed:', error);
       return jsonError(500, "db_select_failed", "Failed to load contacts", null, origin);
     }
 
@@ -70,6 +71,7 @@ export async function GET(req: Request) {
 
     return ok({ items, limit, nextCursor }, req);
   } catch (err: any) {
+    console.error('[contacts] GET unexpected error:', err);
     return jsonError(500, "unexpected", "Unexpected server error", null, origin);
   }
 }
@@ -111,11 +113,13 @@ export async function POST(req: Request) {
       .single();
 
     if (error) {
+      console.error('[contacts] POST insert failed:', error);
       return jsonError(500, "db_insert_failed", "Failed to create contact", null, origin);
     }
 
     return created({ contact: data }, req);
   } catch (err: any) {
+    console.error('[contacts] POST unexpected error:', err);
     return jsonError(500, "unexpected", "Unexpected server error", null, origin);
   }
 }

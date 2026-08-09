@@ -2,6 +2,15 @@
 -- ADDITIONAL SCREENSHOT FIXES
 -- Run this after the first migration
 -- ============================================================================
+--
+-- SUPERSEDED (see migrations/fix_screenshot_usage_function_conflicts.sql):
+-- get_or_create_usage_period (step 2) and increment_screenshot_usage
+-- (step 4) below use a hardcoded screenshot_limit=100 and a TABLE(...)
+-- return shape that doesn't carry the compose/voice columns
+-- add_compose_and_voice_usage_limits.sql and lib/usage-limits.ts depend on.
+-- Do not (re)apply steps 2 and 4. The processing_metadata column (step 1),
+-- usage_periods table/RLS creation (step 3), and grants (step 5) are
+-- otherwise still valid/idempotent.
 
 -- 1. Add processing_metadata column to screenshot_analyses
 ALTER TABLE screenshot_analyses 

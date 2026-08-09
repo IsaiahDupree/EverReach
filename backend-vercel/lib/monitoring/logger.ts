@@ -1,7 +1,12 @@
 /**
  * Structured logging utility for production observability
  * Outputs JSON for easy parsing by log aggregators (Datadog, CloudWatch, etc.)
+ * and forwards error/fatal entries to Sentry (see sentry.server.config.ts /
+ * sentry.edge.config.ts) so they trigger alerting instead of only landing in
+ * ephemeral Vercel runtime logs.
  */
+
+import * as Sentry from '@sentry/nextjs';
 
 export enum LogLevel {
   DEBUG = 'debug',
@@ -77,10 +82,45 @@ class Logger {
     return entry;
   }
 
+  private reportToSentry(entry: LogEntry): void {
+    if (entry.level !== LogLevel.ERROR && entry.level !== LogLevel.FATAL) {
+      return;
+    }
+
+    // Telemetry must never be able to take down the request it's observing:
+    // if the Sentry SDK itself throws, fall back to console so we still see
+    // it, but never let it interrupt the normal write() path below.
+    try {
+      Sentry.withScope((scope) => {
+        scope.setLevel(entry.level === LogLevel.FATAL ? 'fatal' : 'error');
+        if (entry.context) {
+          scope.setContext('log_context', entry.context);
+          if (entry.context.requestId) scope.setTag('requestId', entry.context.requestId);
+          if (entry.context.userId) scope.setUser({ id: entry.context.userId });
+          if (entry.context.orgId) scope.setTag('orgId', entry.context.orgId);
+          if (entry.context.path) scope.setTag('path', entry.context.path);
+        }
+
+        if (entry.error) {
+          const reconstructed = new Error(entry.error.message);
+          reconstructed.name = entry.error.name;
+          reconstructed.stack = entry.error.stack;
+          Sentry.captureException(reconstructed);
+        } else {
+          Sentry.captureMessage(entry.message, entry.level === LogLevel.FATAL ? 'fatal' : 'error');
+        }
+      });
+    } catch (sentryError) {
+      console.error('[Logger] Failed to report to Sentry:', sentryError);
+    }
+  }
+
   private write(entry: LogEntry): void {
     if (!this.shouldLog(entry.level)) {
       return;
     }
+
+    this.reportToSentry(entry);
 
     // In production, output structured JSON
     // In development, pretty-print for readability

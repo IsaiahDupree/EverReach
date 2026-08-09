@@ -5,7 +5,7 @@ import { getClientOrThrow } from "@/lib/supabase";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { composeRequestSchema } from "@/lib/validation";
 import { getUserGoalsForAI } from "@/lib/goal-inference";
-import { canUseCompose, incrementComposeUsage } from "@/lib/usage-limits";
+import { reserveComposeUsage, releaseComposeUsage } from "@/lib/usage-limits";
 
 export const runtime = "nodejs";
 
@@ -29,9 +29,16 @@ export async function POST(req: Request){
   try {
     const supabase = getClientOrThrow(req);
 
-    // Check tier-based usage limits for compose
-    const usageCheck = await canUseCompose(supabase, user.id);
-    
+    // Atomically check-and-reserve one compose run against the monthly
+    // quota before doing any paid work. reserveComposeUsage() increments
+    // compose_runs_used in the same DB statement that checks the limit,
+    // so concurrent requests near the boundary can't all pass a stale
+    // check before any of them increments (see reserve_compose_usage SQL
+    // function). If the generation below doesn't complete successfully,
+    // the reservation is released in the finally block so the user isn't
+    // charged quota for a run they never received.
+    const usageCheck = await reserveComposeUsage(supabase, user.id);
+
     if (!usageCheck.allowed) {
       return new Response(
         JSON.stringify({
@@ -47,17 +54,22 @@ export async function POST(req: Request){
             },
           },
         }),
-        { 
-          status: 429, 
-          headers: { 
+        {
+          status: 429,
+          headers: {
             'Content-Type': 'application/json',
             'X-RateLimit-Limit': String(usageCheck.limit),
             'X-RateLimit-Remaining': String(usageCheck.remaining || 0),
             'X-RateLimit-Reset': usageCheck.resets_at || '',
-          } 
+          }
         }
       );
     }
+
+    // From here on, the reservation above must be released in the finally
+    // block below unless generation completes successfully.
+    let usageReserved = true;
+    try {
 
     // Fetch resources in parallel to reduce latency
     const contactSel = supabase
@@ -238,8 +250,9 @@ Consider how this message can advance relevant goals while maintaining authentic
     if (input.channel === 'sms') draft.sms = { body } as any;
     if (input.channel === 'dm') draft.dm = { body } as any;
 
-    // Increment usage counter (after successful generation)
-    await incrementComposeUsage(supabase, user.id);
+    // Generation succeeded and the usage reservation above stays consumed;
+    // nothing left to roll back in the finally block.
+    usageReserved = false;
 
     const sources = {
       persona_note_ids: personaNotes.map(n => n.id),
@@ -292,13 +305,25 @@ Consider how this message can advance relevant goals while maintaining authentic
       alternatives: [], 
       safety: { pii_flags: [], spam_risk: 'unknown' },
       usage: {
-        current: (usageCheck.current_usage || 0) + 1,
+        // reserveComposeUsage() already incremented compose_runs_used
+        // atomically before generation ran, so usageCheck already
+        // reflects this request's own usage -- no manual +1/-1 needed.
+        current: usageCheck.current_usage,
         limit: usageCheck.limit,
-        remaining: Math.max(0, (usageCheck.remaining || 0) - 1),
+        remaining: usageCheck.remaining,
         resets_at: usageCheck.resets_at,
         tier: usageCheck.tier,
       },
     }, req);
+    } finally {
+      if (usageReserved) {
+        // Compensating rollback: the reserved compose run didn't complete
+        // successfully (validation error, OpenAI failure, etc.), so don't
+        // charge the user's monthly quota for it. Best-effort -- failures
+        // are logged inside releaseComposeUsage and never thrown here.
+        await releaseComposeUsage(supabase, user.id);
+      }
+    }
   } catch (e: any) {
     return serverError(e?.message || 'Internal error', req);
   }

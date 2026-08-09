@@ -127,7 +127,10 @@ export async function GET(req: Request){
     if (q.cursor) sel2 = sel2.lt('created_at', q.cursor);
 
     const { data: data2, error: error2 } = await sel2;
-    if (error2) return serverError("Internal server error", req);
+    if (error2) {
+      console.error('[v1/contacts] GET people-fallback query failed:', error2);
+      return serverError("Internal server error", req);
+    }
 
     const mapped = (data2 || []).map((row: any) => ({
       id: row.id,
@@ -145,7 +148,10 @@ export async function GET(req: Request){
     return ok({ contacts: mapped, items: mapped, limit, nextCursor: nextCursor2 }, req);
   }
 
-  if (error) return serverError("Internal server error", req);
+  if (error) {
+    console.error('[v1/contacts] GET contacts query failed:', error);
+    return serverError("Internal server error", req);
+  }
   const items = data ?? [];
   const nextCursor = items.length === limit ? items[items.length - 1]?.created_at : null;
   // Include both 'contacts' and 'items' keys for compatibility with existing clients/tests
@@ -256,6 +262,7 @@ export async function POST(req: Request){
       .single();
 
     if (pErr) {
+      console.error('[v1/contacts] POST people-fallback insert failed:', pErr);
       return serverError("Internal server error", req);
     }
 
@@ -264,6 +271,9 @@ export async function POST(req: Request){
     return created({ contact: mapped }, req);
   }
 
-  if (error) return serverError("Internal server error", req);
+  if (error) {
+    console.error('[v1/contacts] POST contacts insert failed:', error);
+    return serverError("Internal server error", req);
+  }
   return created({ contact: data }, req);
 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServiceClient } from '@/lib/supabase';
+import { google } from 'googleapis';
 
 /**
  * POST /api/webhooks/play
@@ -52,6 +53,58 @@ const NOTIFICATION_TYPES: Record<number, string> = {
   13: 'SUBSCRIPTION_EXPIRED',
 };
 
+// A Pub/Sub push envelope proves nothing by itself — Google's own RTDN docs
+// require treating the notification purely as a "something changed, go
+// check" signal and re-fetching the real state from the Play Developer API
+// before acting on it. purchaseToken/notificationType in the POST body are
+// entirely attacker-controlled (this endpoint has no push-auth check), so we
+// MUST NOT grant/extend entitlement based on them directly. This mirrors the
+// verification already done by the sibling /api/v1/webhooks/play handler.
+interface VerifiedPlaySubscription {
+  isActiveNow: boolean;
+  autoRenewing: boolean;
+  cancelReason: number | null;
+  expiryTimeMillis: number | null;
+}
+
+async function verifyPlaySubscription(
+  subscriptionId: string,
+  purchaseToken: string
+): Promise<VerifiedPlaySubscription> {
+  const packageName = process.env.PLAY_PACKAGE_NAME;
+  const serviceAccountJson = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
+  if (!packageName || !serviceAccountJson) {
+    throw new Error('Server misconfigured: PLAY_PACKAGE_NAME or GOOGLE_SERVICE_ACCOUNT_JSON not set');
+  }
+
+  const credentials = JSON.parse(serviceAccountJson);
+  const auth = new google.auth.GoogleAuth({
+    credentials,
+    scopes: ['https://www.googleapis.com/auth/androidpublisher'],
+  });
+  const publisher = google.androidpublisher({ version: 'v3', auth });
+
+  // Throws (404/400/401) if the token is forged, revoked, or belongs to a
+  // different app/subscription — callers must not act on the notification
+  // unless this resolves.
+  const resp = await publisher.purchases.subscriptions.get({
+    packageName,
+    subscriptionId,
+    token: purchaseToken,
+  });
+
+  const data = resp.data || {};
+  const expiryTimeMillis = data.expiryTimeMillis ? Number(data.expiryTimeMillis) : null;
+  const isActiveNow = expiryTimeMillis != null && expiryTimeMillis > Date.now();
+
+  return {
+    isActiveNow,
+    autoRenewing: Boolean(data.autoRenewing),
+    cancelReason: data.cancelReason ?? null,
+    expiryTimeMillis,
+  };
+}
+
 export async function POST(req: NextRequest) {
   try {
     // Google sends base64-encoded message in Pub/Sub format
@@ -82,6 +135,19 @@ export async function POST(req: NextRequest) {
 
     console.log(`[Play Webhook] Received: ${notificationType}`);
 
+    // Re-fetch the authoritative purchase state from the Play Developer API
+    // using the (subscriptionId, purchaseToken) pair. This is the only thing
+    // standing between "the Pub/Sub envelope claims this happened" and "an
+    // attacker's HTTP client claims this happened" — do not touch the DB
+    // before this resolves.
+    let verified: VerifiedPlaySubscription;
+    try {
+      verified = await verifyPlaySubscription(subNotif.subscriptionId, purchaseToken);
+    } catch (verifyError: any) {
+      console.error('[Play Webhook] Purchase verification failed:', verifyError?.message || verifyError);
+      return NextResponse.json({ error: 'unverified_purchase' }, { status: 401 });
+    }
+
     // Find subscription in database
     const supabase = getSupabaseServiceClient();
     const { data: sub } = await supabase
@@ -105,6 +171,18 @@ export async function POST(req: NextRequest) {
       case 'SUBSCRIPTION_RENEWED':
       case 'SUBSCRIPTION_RECOVERED':
       case 'SUBSCRIPTION_RESTARTED':
+        // Only grant 'active' if Google's own record of this purchase token
+        // confirms it is actually unexpired right now. A notification body
+        // claiming a renewal is not sufficient on its own — it must be
+        // backed by the verified expiry, otherwise this is exactly the
+        // forged-renewal entitlement bypass this check exists to close.
+        if (!verified.isActiveNow) {
+          console.warn(
+            `[Play Webhook] Rejected ${notificationType} for ${purchaseToken}: ` +
+            `Play API reports not active (expiryTimeMillis=${verified.expiryTimeMillis})`
+          );
+          return NextResponse.json({ received: true, warning: 'verification_mismatch' });
+        }
         newStatus = 'active';
         updates = {
           status: 'active',

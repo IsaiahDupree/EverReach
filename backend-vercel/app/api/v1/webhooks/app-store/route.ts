@@ -122,8 +122,28 @@ export async function POST(req: Request) {
 
       // Map product
       const logicalProductId = await getProductIdForStoreSku(supabase, 'app_store', productId);
-      // Rough status mapping from notification subtype/type if available
-      const status: string | null = (notifPayload?.notificationType ? 'active' : null);
+      // Status mapping from Apple's App Store Server Notification V2
+      // notificationType (see https://developer.apple.com/documentation/appstoreservernotifications/notificationtype).
+      // Must NOT assume 'active' for lifecycle-ending types — REFUND/REVOKE
+      // mean the purchase was reversed, EXPIRED/GRACE_PERIOD_EXPIRED/
+      // DID_FAIL_TO_RENEW (outside grace) mean access should lapse.
+      const notificationType: string | undefined = notifPayload?.notificationType;
+      let status: string | null;
+      switch (notificationType) {
+        case 'REFUND':
+        case 'REVOKE':
+          status = 'canceled';
+          break;
+        case 'EXPIRED':
+        case 'GRACE_PERIOD_EXPIRED':
+          status = 'expired';
+          break;
+        case 'DID_FAIL_TO_RENEW':
+          status = notifPayload?.subtype === 'GRACE_PERIOD' ? 'grace' : 'expired';
+          break;
+        default:
+          status = notificationType ? 'active' : null;
+      }
       const expiresISO: string | null = tx?.expiresDate ? new Date(Number(tx.expiresDate)).toISOString() : null;
 
       await insertSubscriptionSnapshot(supabase, {

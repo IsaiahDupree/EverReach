@@ -1,6 +1,15 @@
 -- Subscription Tiers and Usage Limits Migration
 -- Adds tier-based limits for screenshot analysis and other AI features
 -- Run this in Supabase SQL Editor
+--
+-- SUPERSEDED (see migrations/fix_screenshot_usage_function_conflicts.sql):
+-- the get_or_create_usage_period / can_use_screenshot_analysis /
+-- increment_screenshot_usage functions below target the user_usage_limits
+-- table, which no application code reads (lib/usage-limits.ts reads
+-- usage_periods). Do not (re)apply these three CREATE OR REPLACE FUNCTION
+-- statements -- they will clobber the canonical usage_periods-based
+-- versions. The subscription_tier column + user_usage_limits/
+-- tier_limits_reference table creation above is otherwise inert and safe.
 
 -- ============================================================================
 -- STEP 1: Add subscription_tier to profiles table

@@ -1,5 +1,13 @@
 -- Fix Screenshot Analysis Schema
 -- Adds missing functions and columns
+--
+-- SUPERSEDED (see migrations/fix_screenshot_usage_function_conflicts.sql):
+-- can_use_screenshot_analysis below ignores subscription tier (hardcoded
+-- limit=100 via COUNT(*)) and increment_screenshot_usage is a no-op
+-- placeholder that never touches usage_periods -- neither matches the
+-- tier-aware usage_periods schema lib/usage-limits.ts relies on. Do not
+-- (re)apply steps 2-3. The key_phrases column + screenshot_analyses
+-- compatibility view (steps 1, 4-6) are otherwise still valid/idempotent.
 
 -- 1. Add missing key_phrases column to screenshot_analysis table
 DO $$ 

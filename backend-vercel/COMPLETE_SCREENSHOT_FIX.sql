@@ -3,6 +3,15 @@
 -- Copy and paste this ENTIRE file into Supabase SQL Editor and click "Run"
 -- This fixes ALL screenshot-related errors in one go
 -- ============================================================================
+--
+-- SUPERSEDED (see migrations/fix_screenshot_usage_function_conflicts.sql):
+-- can_use_screenshot_analysis, increment_screenshot_usage, and
+-- get_or_create_usage_period in PART 3 below all hardcode
+-- screenshot_limit=100 and ignore/drop the compose_runs_*/voice_minutes_*
+-- columns add_compose_and_voice_usage_limits.sql added, breaking tier-based
+-- limits and compose/voice usage tracking. Do not (re)apply PART 3. PART 1
+-- (columns), PART 2 (usage_periods table/RLS), and PART 4-5 (grants/
+-- verification) are otherwise still valid/idempotent.
 
 -- PART 1: Add missing columns
 -- ============================================================================

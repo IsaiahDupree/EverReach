@@ -64,6 +64,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Fail-closed: Google Play test purchases (purchaseType 0 — free purchases made by
+    // an account on the app's License Testing allowlist) must never grant a real
+    // entitlement in production. Hard-disabled in production regardless of any flag.
+    const isProduction = process.env.VERCEL_ENV === 'production';
+    if (isProduction && validation.purchaseType === 0) {
+      return NextResponse.json(
+        { error: 'Test purchases cannot be linked in production' },
+        { status: 400 }
+      );
+    }
+
     // Calculate normalized status
     const now = new Date();
     const expiresAt = new Date(parseInt(validation.expiresAt));
@@ -152,7 +163,8 @@ async function linkToAuthenticatedUser(
     p_payload: {
       product_id: validation.productId,
       order_id: validation.orderId,
-      is_trialing: validation.isTrialing
+      is_trialing: validation.isTrialing,
+      purchase_type: validation.purchaseType ?? null
     }
   });
 

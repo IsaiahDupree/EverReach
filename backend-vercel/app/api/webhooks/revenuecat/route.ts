@@ -103,14 +103,19 @@ export async function POST(req: NextRequest) {
 
         const isSignatureValid = verifyWebhookSignature(rawBody, signature, webhookSecret);
         const isBearerValid = Boolean(expectedBearer) && authHeader === `Bearer ${expectedBearer}`;
-        const isDev = process.env.NODE_ENV === 'development' || process.env.VERCEL_ENV === 'preview';
+        // NOTE: Vercel "preview" deployments are publicly reachable and share the SAME
+        // production Supabase project + service-role key as production in this project,
+        // so VERCEL_ENV === 'preview' must never be treated as trusted/dev here — doing
+        // so allows unauthenticated entitlement forgery via any preview URL. Only true
+        // local dev (`next dev`, not publicly reachable) bypasses auth.
+        const isDev = process.env.NODE_ENV === 'development';
 
         if (!isSignatureValid && !isBearerValid && !isDev) {
             console.error('[RevenueCat Webhook] Unauthorized: signature and bearer both invalid');
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
         if (isDev && !isSignatureValid && !isBearerValid) {
-            console.warn('[RevenueCat Webhook] Processing without auth (dev/preview mode)');
+            console.warn('[RevenueCat Webhook] Processing without auth (local dev mode)');
         }
 
         // Parse the raw body we already read
