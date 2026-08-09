@@ -1,6 +1,7 @@
 {
   "expo": {
-    "name": "AI-Enhanced Personal CRM",
+    "name": "EverReach CRM",
+    "description": "AI-Enhanced Personal CRM for building and maintaining meaningful relationships",
     "slug": "ai-enhanced-personal-crm",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -8,6 +9,8 @@
     "scheme": "everreach",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "runtimeVersion": "1.0.0",
+    "privacy": "https://everreach.app/privacy",
     "splash": {
       "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
@@ -16,17 +19,20 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "app.rork.ai-enhanced-personal-crm",
+      "buildNumber": "1",
       "infoPlist": {
         "UIBackgroundModes": [
           "audio"
         ],
-        "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to access your microphone",
-        "NSPhotoLibraryUsageDescription": "Allow $(PRODUCT_NAME) to access your photos",
-        "NSCameraUsageDescription": "Allow $(PRODUCT_NAME) to access your camera",
-        "NSContactsUsageDescription": "Allow $(PRODUCT_NAME) to access your contacts to import people into your CRM."
+        "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to access your microphone for voice notes",
+        "NSPhotoLibraryUsageDescription": "Allow $(PRODUCT_NAME) to access your photos to analyze contact information",
+        "NSCameraUsageDescription": "Allow $(PRODUCT_NAME) to access your camera for taking contact photos",
+        "NSContactsUsageDescription": "Allow $(PRODUCT_NAME) to access your contacts to import people into your CRM.",
+        "ITSAppUsesNonExemptEncryption": false
       },
       "usesAppleSignIn": true,
-      "accessesContactNotes": true
+      "accessesContactNotes": true,
+      "minimumDeploymentTarget": "13.4"
     },
     "android": {
       "adaptiveIcon": {
@@ -34,6 +40,9 @@
         "backgroundColor": "#ffffff"
       },
       "package": "app.rork.ai-enhanced-personal-crm",
+      "versionCode": 1,
+      "minSdkVersion": 24,
+      "targetSdkVersion": 34,
       "permissions": [
         "RECORD_AUDIO",
         "READ_EXTERNAL_STORAGE",
@@ -42,7 +51,8 @@
         "CAMERA",
         "READ_CONTACTS",
         "WRITE_CONTACTS",
-        "android.permission.VIBRATE"
+        "android.permission.VIBRATE",
+        "android.permission.POST_NOTIFICATIONS"
       ]
     },
     "web": {
