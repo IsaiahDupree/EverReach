@@ -62,6 +62,7 @@ import Purchases from 'react-native-purchases';
 import { useAppLifecycle } from "@/hooks/useAppLifecycle";
 import { initializeEnvelope } from "@/lib/eventEnvelope";
 import { initializeMarketingFunnel } from "@/lib/marketingFunnel";
+import { persistFirstTouchAttribution } from "@/lib/contentAttribution";
 import { initializePerformanceMonitoring } from "@/lib/performanceMonitor";
 import { initializePostHog, identifyUser } from "@/lib/posthog";
 import { initializeMetaPixel, initializeFbcCapture } from "@/lib/metaPixel";
@@ -80,19 +81,17 @@ const IS_BROWSER = typeof window !== 'undefined';
 
 // Only run these initializations in browser, not during SSR/static rendering
 if (IS_BROWSER) {
-  // Initialize event envelope (session IDs, UTM params, experiments)
-  initializeEnvelope().then(() => {
-    console.log('[App] Event envelope initialized');
-  }).catch((error) => {
-    console.error('[App] Failed to initialize envelope:', error);
-  });
-
-  // Initialize marketing funnel (install tracking, deep links, attribution)
-  initializeMarketingFunnel().then(() => {
-    console.log('[App] Marketing funnel initialized');
-  }).catch((error) => {
-    console.error('[App] Failed to initialize marketing funnel:', error);
-  });
+  // Load the persisted envelope before capturing the current URL so an older
+  // async initialization cannot overwrite the new content lineage.
+  initializeEnvelope()
+    .then(async () => {
+      console.log('[App] Event envelope initialized');
+      await initializeMarketingFunnel();
+      console.log('[App] Marketing funnel initialized');
+    })
+    .catch((error) => {
+      console.error('[App] Failed to initialize marketing analytics:', error);
+    });
 
   // Initialize performance monitoring (memory, network, app state)
   initializePerformanceMonitoring();
@@ -287,6 +286,21 @@ function RootLayoutNav() {
       console.warn('[App] PostHog identify skipped:', (e as any)?.message || e);
     }
   }, [isAuthenticated, user, isPaid]);
+
+  // Email verification and OAuth can create the user before an authenticated
+  // API session exists. Flush the original content touch as soon as the real
+  // Supabase identity is available; the client and backend both deduplicate it.
+  useEffect(() => {
+    if (!isAuthenticated || !user) return;
+    const userId = (user as any)?.id;
+    if (typeof userId !== 'string' || !userId) return;
+    persistFirstTouchAttribution(userId).catch((error) => {
+      console.warn(
+        '[App] First-touch attribution flush failed:',
+        error instanceof Error ? error.message : String(error),
+      );
+    });
+  }, [isAuthenticated, user]);
 
   // ✅ REFACTORED: Get centralized warmth methods
   const { refreshTop, refreshRecent } = useWarmth();

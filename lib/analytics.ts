@@ -23,7 +23,8 @@
 import { Platform } from 'react-native';
 import { AnalyticsRepo } from '@/repos/AnalyticsRepo';
 import * as PostHog from './posthog';
-import { 
+import { attributionAnalyticsProperties } from './contentAttributionCore';
+import {
   wrapEvent, 
   envelopeManager,
   setUTMParams as setUTMParameters,
@@ -246,6 +247,9 @@ export async function track(
       ...(envelope.source.utm_source && { utm_source: envelope.source.utm_source }),
       ...(envelope.source.utm_campaign && { utm_campaign: envelope.source.utm_campaign }),
       ...(envelope.source.utm_medium && { utm_medium: envelope.source.utm_medium }),
+      ...attributionAnalyticsProperties(envelope.source),
+      ...(envelope.source.install_source && { install_source: envelope.source.install_source }),
+      ...(envelope.source.referrer && { referrer: envelope.source.referrer }),
       // Experiments (if any)
       ...(Object.keys(envelope.exp).length > 0 && { experiments: envelope.exp }),
     };

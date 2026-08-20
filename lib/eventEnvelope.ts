@@ -62,6 +62,15 @@ export interface SourceMetadata {
   utm_medium?: string;
   utm_content?: string;
   utm_term?: string;
+  actp_content_id?: string;
+  actp_published_id?: string;
+  actp_campaign_id?: string;
+  actp_narrative_id?: string;
+  actp_offer_id?: string;
+  actp_series_id?: string;
+  actp_episode_id?: string;
+  actp_experiment_id?: string;
+  actp_variant_id?: string;
   install_source?: string;
   referrer?: string;
 }

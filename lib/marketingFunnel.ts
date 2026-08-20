@@ -6,9 +6,12 @@
  */
 
 import analytics from './analytics';
-import { setUTMParams, envelopeManager } from './eventEnvelope';
+import { initializeEnvelope, setUTMParams, envelopeManager } from './eventEnvelope';
+import { captureContentAttribution } from './contentAttribution';
+import { attributionValues } from './contentAttributionCore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Linking from 'expo-linking';
+import { Platform } from 'react-native';
 
 // ============================================================================
 // Types
@@ -243,26 +246,35 @@ export async function trackQualifiedSignup(leadScore: number): Promise<void> {
  */
 export async function handleDeepLink(url?: string): Promise<void> {
   try {
-    const parsedUrl = url ? Linking.parse(url) : await Linking.parseInitialURLAsync();
-    
+    const initialUrl = url || (
+      typeof window !== 'undefined' && window.location?.href
+        ? window.location.href
+        : await Linking.getInitialURL()
+    );
+    if (!initialUrl) return;
+
+    const parsedUrl = Linking.parse(initialUrl);
     if (!parsedUrl || !parsedUrl.queryParams) {
       return;
     }
 
     const params = parsedUrl.queryParams;
+    const capture = await captureContentAttribution(
+      initialUrl,
+      typeof document !== 'undefined' ? document.referrer : undefined,
+    );
+    const currentAttribution = capture.lastTouch
+      ? attributionValues(capture.lastTouch)
+      : {};
 
-    // Extract UTM parameters
-    const utmParams: any = {};
-    if (params.utm_source) utmParams.utm_source = params.utm_source as string;
-    if (params.utm_campaign) utmParams.utm_campaign = params.utm_campaign as string;
-    if (params.utm_medium) utmParams.utm_medium = params.utm_medium as string;
-    if (params.utm_content) utmParams.utm_content = params.utm_content as string;
-    if (params.utm_term) utmParams.utm_term = params.utm_term as string;
-
-    // Set UTM params if any found
-    if (Object.keys(utmParams).length > 0) {
-      await setUTMParams(utmParams);
-      console.log('[MarketingFunnel] UTM params extracted from deep link:', utmParams);
+    // Keep the current touch on every analytics event. Immutable first touch is
+    // stored separately by contentAttribution and persisted after authentication.
+    if (Object.keys(currentAttribution).length > 0) {
+      await setUTMParams(currentAttribution);
+      console.log('[MarketingFunnel] Content attribution captured', {
+        fields: Object.keys(currentAttribution),
+        first_touch_preserved: Boolean(capture.firstTouch),
+      });
     }
 
     // Extract ad network info
@@ -329,6 +341,10 @@ export async function hasActivated(type: ActivationType): Promise<boolean> {
  */
 export async function initializeMarketingFunnel(): Promise<void> {
   try {
+    // Serializing these initializers prevents a returning visitor's persisted
+    // envelope from racing the new URL capture.
+    await initializeEnvelope();
+
     // Handle deep link
     await handleDeepLink();
 
@@ -337,7 +353,11 @@ export async function initializeMarketingFunnel(): Promise<void> {
     if (!installTime) {
       // First install - track it
       await trackInstall({
-        install_source: 'app_store', // Default, should be detected by platform
+        install_source: Platform.OS === 'web'
+          ? 'web'
+          : Platform.OS === 'android'
+            ? 'play_store'
+            : 'app_store',
       });
     }
 

@@ -2,11 +2,19 @@ import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Linking, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import analytics from '@/lib/analytics';
 import { trackPageView, trackEvent } from '@/lib/metaPixel';
+import {
+  buildContentAttributedDestination,
+  captureContentAttribution,
+} from '@/lib/contentAttribution';
+import { attributionValues } from '@/lib/contentAttributionCore';
+import { setUTMParams } from '@/lib/eventEnvelope';
 
 // Logo assets
 const LogoNoBg = require('@/assets/branding/logo-no-bg.png');
 const LogoFinal = require('@/assets/branding/logo-final-1024.png');
+const APP_STORE_URL = 'https://apps.apple.com/us/app/everreach/id6753190951';
 
 // Stripe Payment Links - Replace with your actual Stripe payment links
 const STRIPE_LINKS = {
@@ -38,6 +46,28 @@ export default function LandingPage() {
     }
   };
 
+  const captureCurrentWebAttribution = async () => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const capture = await captureContentAttribution(
+        window.location.href,
+        typeof document !== 'undefined' ? document.referrer : undefined,
+      );
+      if (capture.lastTouch) {
+        await setUTMParams(attributionValues(capture.lastTouch));
+      }
+    }
+  };
+
+  const navigateWithAttribution = async (destination: string) => {
+    await captureCurrentWebAttribution();
+    const attributedDestination = await buildContentAttributedDestination(destination);
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      window.location.href = attributedDestination;
+    } else {
+      router.push(attributedDestination as any);
+    }
+  };
+
   const handleStripeCheckout = async (plan: 'monthly' | 'yearly') => {
     // Track the checkout event
     trackEvent('StartTrial', {
@@ -47,12 +77,17 @@ export default function LandingPage() {
     });
     
     // Redirect to auth page - subscription handled in-app after sign up
-    const authUrl = 'https://www.everreach.app/auth';
-    if (Platform.OS === 'web') {
-      window.location.href = authUrl;
-    } else {
-      await Linking.openURL(authUrl);
-    }
+    await navigateWithAttribution(`/auth?isSignUp=true&plan=${plan}`);
+  };
+
+  const openAppStore = async () => {
+    await captureCurrentWebAttribution();
+    trackEvent('ViewContent', {
+      content_name: 'EverReach App Store',
+      content_category: 'Mobile Download',
+    });
+    await analytics.track('app_store_cta_clicked', { destination: 'app_store' });
+    await Linking.openURL(APP_STORE_URL);
   };
 
   return (
@@ -65,14 +100,7 @@ export default function LandingPage() {
         </View>
         <TouchableOpacity 
           style={styles.signInButton}
-          onPress={() => {
-            // Use window.location for full page navigation to avoid race condition with _layout.tsx
-            if (Platform.OS === 'web' && typeof window !== 'undefined') {
-              window.location.href = '/auth';
-            } else {
-              router.push('/auth');
-            }
-          }}
+          onPress={() => void navigateWithAttribution('/auth')}
         >
           <Text style={styles.signInButtonText}>Sign In</Text>
         </TouchableOpacity>
@@ -93,13 +121,7 @@ export default function LandingPage() {
         <View style={styles.heroButtons}>
           <TouchableOpacity 
             style={styles.primaryButton}
-            onPress={() => {
-              if (Platform.OS === 'web' && typeof window !== 'undefined') {
-                window.location.href = '/auth?isSignUp=true';
-              } else {
-                router.push('/auth?isSignUp=true');
-              }
-            }}
+            onPress={() => void navigateWithAttribution('/auth?isSignUp=true')}
           >
             <Text style={styles.primaryButtonText}>Start Free Trial (Web) →</Text>
           </TouchableOpacity>
@@ -110,12 +132,12 @@ export default function LandingPage() {
             <Text style={styles.secondaryButtonText}>See How It Works</Text>
           </TouchableOpacity>
         </View>
-        <Text style={styles.heroMicrocopy}>No credit card required • Web is live • Mobile rolling out next</Text>
+        <Text style={styles.heroMicrocopy}>No credit card required • Web and iPhone app available now</Text>
         <TouchableOpacity 
           style={styles.waitlistLink}
-          onPress={() => router.push('/waitlist')}
+          onPress={() => void openAppStore()}
         >
-          <Text style={styles.waitlistLinkText}>Prefer mobile? Get priority invite →</Text>
+          <Text style={styles.waitlistLinkText}>Download EverReach for iPhone →</Text>
         </TouchableOpacity>
       </View>
 
@@ -266,13 +288,7 @@ export default function LandingPage() {
             </View>
             <TouchableOpacity 
               style={[styles.pricingButton, styles.pricingButtonFeatured]}
-              onPress={() => {
-                if (Platform.OS === 'web' && typeof window !== 'undefined') {
-                  window.location.href = '/auth?isSignUp=true&plan=monthly';
-                } else {
-                  router.push('/auth?isSignUp=true&plan=monthly');
-                }
-              }}
+              onPress={() => void navigateWithAttribution('/auth?isSignUp=true&plan=monthly')}
             >
               <Text style={[styles.pricingButtonText, styles.pricingButtonTextFeatured]}>Start My Journey</Text>
             </TouchableOpacity>
@@ -297,13 +313,7 @@ export default function LandingPage() {
             </View>
             <TouchableOpacity 
               style={styles.pricingButton}
-              onPress={() => {
-                if (Platform.OS === 'web' && typeof window !== 'undefined') {
-                  window.location.href = '/auth?isSignUp=true&plan=yearly';
-                } else {
-                  router.push('/auth?isSignUp=true&plan=yearly');
-                }
-              }}
+              onPress={() => void navigateWithAttribution('/auth?isSignUp=true&plan=yearly')}
             >
               <Text style={styles.pricingButtonText}>
                 Subscribe Yearly
@@ -323,13 +333,7 @@ export default function LandingPage() {
         </Text>
         <TouchableOpacity 
           style={styles.ctaButton}
-          onPress={() => {
-            if (Platform.OS === 'web' && typeof window !== 'undefined') {
-              window.location.href = '/auth?isSignUp=true';
-            } else {
-              router.push('/auth?isSignUp=true');
-            }
-          }}
+          onPress={() => void navigateWithAttribution('/auth?isSignUp=true')}
         >
           <Text style={styles.ctaButtonText}>Start Free Trial (Web) →</Text>
         </TouchableOpacity>

@@ -12,6 +12,7 @@ import { useAuth } from '@/providers/AuthProviderV2';
 import { useSubscription } from '@/providers/SubscriptionProvider';
 import { FLAGS } from '@/constants/flags';
 import { trackRegistrationEvent, trackTrialStartEvent } from '@/lib/metaServerEvents';
+import { persistFirstTouchAttribution } from '@/lib/contentAttribution';
 
 type AuthMode = 'email' | 'password';
 
@@ -113,7 +114,7 @@ export default function Auth() {
     try {
       if (isSignUp) {
         // Sign up flow
-        const { error: signUpError } = await supabase.auth.signUp({
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email: targetEmail.trim(),
           password: targetPassword,
           options: {
@@ -124,6 +125,21 @@ export default function Auth() {
         });
 
         if (signUpError) throw signUpError;
+
+        // The endpoint authenticates the request and verifies this expected ID
+        // against the Supabase user. If email verification delays the session,
+        // the authenticated layout retries this immutable first-touch write.
+        const signedUpUserId = signUpData.user?.id;
+        if (signedUpUserId) {
+          try {
+            await persistFirstTouchAttribution(signedUpUserId);
+          } catch (attributionError) {
+            console.warn(
+              '[Auth] First-touch attribution pending authenticated retry:',
+              attributionError instanceof Error ? attributionError.message : String(attributionError),
+            );
+          }
+        }
 
         // Track registration with Meta (server-side)
         trackRegistrationEvent(targetEmail.trim(), undefined, 'email');
