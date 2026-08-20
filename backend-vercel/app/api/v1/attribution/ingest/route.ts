@@ -5,12 +5,13 @@
  * Only stores first attribution - subsequent calls are no-ops
  * 
  * Body: {
+ *   expected_user_id,
  *   utm_source, utm_medium, utm_campaign, utm_term, utm_content,
  *   referrer, landing_page
  * }
  */
 
-import { options, ok, unauthorized, serverError } from "@/lib/cors";
+import { badRequest, options, ok, unauthorized, serverError } from "@/lib/cors";
 import { getUser } from "@/lib/auth";
 import { getClientOrThrow } from "@/lib/supabase";
 
@@ -25,6 +26,7 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const {
+      expected_user_id,
       utm_source,
       utm_medium,
       utm_campaign,
@@ -33,6 +35,12 @@ export async function POST(req: Request) {
       referrer,
       landing_page,
     } = body;
+
+    // The bearer token remains authoritative. This client-provided ID only
+    // prevents an auth/session race from crediting a touch to the wrong user.
+    if (expected_user_id && expected_user_id !== user.id) {
+      return badRequest('Attribution subject does not match authenticated user', req);
+    }
 
     const supabase = getClientOrThrow(req);
 
@@ -52,7 +60,7 @@ export async function POST(req: Request) {
       return serverError("Internal server error", req);
     }
 
-    return ok({ ok: true }, req);
+    return ok({ ok: true, attribution_subject_verified: Boolean(expected_user_id) }, req);
 
   } catch (e: any) {
     return serverError(e?.message || 'Internal error', req);
