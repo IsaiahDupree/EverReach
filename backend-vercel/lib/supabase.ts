@@ -50,6 +50,32 @@ export function getServiceClient(): SupabaseClient {
 }
 
 /**
+ * Service-role client for the isolated owned-attribution data plane.
+ *
+ * EverReach's primary Supabase project remains authoritative for auth and app
+ * data. Attribution manifests, exact journeys, outcomes, and retention live in
+ * the shared project, so this client intentionally has no fallback to the
+ * primary-project credentials. A partial configuration must fail closed rather
+ * than writing lineage to the wrong database.
+ */
+export function getOwnedOutcomeServiceClient(): SupabaseClient {
+  const supabaseUrl = process.env.OWNED_OUTCOME_SUPABASE_URL?.trim();
+  const serviceKey = process.env.OWNED_OUTCOME_SUPABASE_SERVICE_ROLE_KEY?.trim();
+  if (!supabaseUrl || !serviceKey) {
+    throw new Error(
+      'Missing OWNED_OUTCOME_SUPABASE_URL or '
+      + 'OWNED_OUTCOME_SUPABASE_SERVICE_ROLE_KEY',
+    );
+  }
+  return createClient(supabaseUrl, serviceKey, {
+    auth: { persistSession: false, detectSessionInUrl: false },
+    db: {
+      schema: 'public'
+    }
+  });
+}
+
+/**
  * Build-safe service client getter. Returns a lazy function that creates
  * the Supabase client only when actually invoked at runtime.
  * This prevents build-time errors during Next.js page collection.

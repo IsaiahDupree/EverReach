@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.everreach.owned-outcome-bridge</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/zsh</string>
+    <string>/ABSOLUTE/PRIVATE/PATH/run-owned-outcome-bridge-job.sh</string>
+    <string>--batch-size</string>
+    <string>100</string>
+  </array>
+
+  <key>WorkingDirectory</key>
+  <string>/ABSOLUTE/PRIVATE/PATH</string>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>OWNED_OUTCOME_ENV_FILE</key>
+    <string>/ABSOLUTE/PRIVATE/PATH/owned-outcome.env</string>
+  </dict>
+
+  <key>RunAtLoad</key>
+  <true/>
+  <key>StartInterval</key>
+  <integer>60</integer>
+  <key>ThrottleInterval</key>
+  <integer>30</integer>
+  <key>ProcessType</key>
+  <string>Background</string>
+
+  <key>StandardOutPath</key>
+  <string>/ABSOLUTE/PRIVATE/PATH/owned-outcome-bridge.stdout.log</string>
+  <key>StandardErrorPath</key>
+  <string>/ABSOLUTE/PRIVATE/PATH/owned-outcome-bridge.stderr.log</string>
+</dict>
+</plist>

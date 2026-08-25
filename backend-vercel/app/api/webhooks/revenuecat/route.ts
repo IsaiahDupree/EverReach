@@ -12,9 +12,17 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServiceClient } from '@/lib/supabase';
+import {
+    getOwnedOutcomeServiceClient,
+    getServiceClient,
+} from '@/lib/supabase';
 import { options } from '@/lib/cors';
 import { verifyWebhookSignature } from '@/lib/revenuecat-webhook';
+import {
+    recordOwnedProviderFact,
+    isAttributableUserId,
+    revenueCatOwnedOutcome,
+} from '@/lib/owned-outcomes';
 
 export const runtime = 'nodejs'; // Need Node for crypto.createHmac in signature verification
 
@@ -39,12 +47,14 @@ type RevenueCatEventType =
 interface RevenueCatWebhookEvent {
     api_version: string;
     event: {
+        id?: string;
         type: RevenueCatEventType;
         app_user_id: string;
         original_app_user_id: string;
         product_id: string;
         period_type: 'NORMAL' | 'TRIAL' | 'INTRO';
         purchased_at_ms: number;
+        event_timestamp_ms?: number;
         expiration_at_ms: number | null;
         environment: 'PRODUCTION' | 'SANDBOX';
         entitlement_ids: string[];
@@ -91,31 +101,40 @@ function deriveStatus(event: RevenueCatWebhookEvent['event']): string {
     }
 }
 
+async function enqueueRevenueCatOutcome(
+    supabase: any,
+    event: RevenueCatWebhookEvent['event'],
+) {
+    const outcome = revenueCatOwnedOutcome(event);
+    if (!outcome) return { status: 'not_applicable' };
+    return recordOwnedProviderFact(supabase, {
+        provider: 'revenuecat',
+        subjectId: event.app_user_id,
+        resolvedUserId: isAttributableUserId(event.app_user_id)
+            ? event.app_user_id : null,
+        ...outcome,
+    });
+}
+
 export async function POST(req: NextRequest) {
     try {
-        // ── Auth: verify signature or bearer token ──
+        // ── Auth: require the RevenueCat HMAC signature ──
         const rawBody = await req.text();
-        const signature = req.headers.get('x-revenuecat-signature');
-        const authHeader = req.headers.get('authorization') || req.headers.get('Authorization');
+        const signature = req.headers.get('x-revenuecat-webhook-signature');
+        const webhookSecret = process.env.REVENUECAT_WEBHOOK_SECRET?.trim();
 
-        const webhookSecret = process.env.REVENUECAT_WEBHOOK_SECRET;
-        const expectedBearer = process.env.REVENUECAT_WEBHOOK_AUTH_TOKEN;
+        if (!webhookSecret) {
+            console.error('[RevenueCat Webhook] Authentication is not configured');
+            return NextResponse.json(
+                { error: 'Webhook authentication unavailable' },
+                { status: 503 },
+            );
+        }
 
         const isSignatureValid = verifyWebhookSignature(rawBody, signature, webhookSecret);
-        const isBearerValid = Boolean(expectedBearer) && authHeader === `Bearer ${expectedBearer}`;
-        // NOTE: Vercel "preview" deployments are publicly reachable and share the SAME
-        // production Supabase project + service-role key as production in this project,
-        // so VERCEL_ENV === 'preview' must never be treated as trusted/dev here — doing
-        // so allows unauthenticated entitlement forgery via any preview URL. Only true
-        // local dev (`next dev`, not publicly reachable) bypasses auth.
-        const isDev = process.env.NODE_ENV === 'development';
-
-        if (!isSignatureValid && !isBearerValid && !isDev) {
-            console.error('[RevenueCat Webhook] Unauthorized: signature and bearer both invalid');
+        if (!isSignatureValid) {
+            console.error('[RevenueCat Webhook] Unauthorized: signature invalid');
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-        if (isDev && !isSignatureValid && !isBearerValid) {
-            console.warn('[RevenueCat Webhook] Processing without auth (local dev mode)');
         }
 
         // Parse the raw body we already read
@@ -139,6 +158,7 @@ export async function POST(req: NextRequest) {
         });
 
         const supabase = getServiceClient();
+        const ownedOutcomeSupabase = getOwnedOutcomeServiceClient();
         const userId = event.app_user_id;
         const plan = derivePlan(event);
         const store = deriveStore(event);
@@ -155,7 +175,19 @@ export async function POST(req: NextRequest) {
         // ── 0. Idempotency: log event first, skip if duplicate ──
         const isDuplicate = await logSubscriptionEvent(supabase, event, payload, plan, status, store);
         if (isDuplicate) {
-            return NextResponse.json({ success: true, duplicate: true, transaction_id: event.transaction_id });
+            // A prior request may have committed the provider audit row and then
+            // failed before the outcome enqueue. Always replay the idempotent
+            // enqueue before acknowledging a duplicate provider delivery.
+            const ownedOutcome = await enqueueRevenueCatOutcome(
+                ownedOutcomeSupabase,
+                event,
+            );
+            return NextResponse.json({
+                success: true,
+                duplicate: true,
+                transaction_id: event.transaction_id,
+                owned_outcome: ownedOutcome,
+            });
         }
 
         // ── 1. Update subscriptions table ──
@@ -231,6 +263,11 @@ export async function POST(req: NextRequest) {
             console.error('[RevenueCat Webhook] entitlements upsert error:', entError);
         }
 
+        const ownedOutcome = await enqueueRevenueCatOutcome(
+            ownedOutcomeSupabase,
+            event,
+        );
+
         // (Event already logged in step 0 for idempotency)
 
         const hasErrors = subError || entError;
@@ -244,6 +281,7 @@ export async function POST(req: NextRequest) {
             type: event.type,
             plan: entPlan,
             status,
+            owned_outcome: ownedOutcome,
         });
     } catch (error: any) {
         console.error('[RevenueCat Webhook] Error:', error);
@@ -276,7 +314,7 @@ async function logSubscriptionEvent(
             period_type: event.period_type,
             plan,
             status,
-            transaction_id: event.transaction_id || null,
+            transaction_id: event.transaction_id || event.id || null,
             original_transaction_id: event.original_transaction_id || null,
             revenue: event.price_in_purchased_currency ?? null,
             currency: event.currency || 'USD',
@@ -294,11 +332,14 @@ async function logSubscriptionEvent(
             return true;
         }
         if (error) {
-            console.warn('[RevenueCat Webhook] subscription_events insert failed:', error.message);
+            throw new Error(
+                `subscription_events audit persistence failed: ${error.code || 'database_error'}`,
+            );
         }
         return false;
     } catch (err: any) {
-        console.warn('[RevenueCat Webhook] subscription_events insert error:', err?.message);
-        return false;
+        throw err instanceof Error
+            ? err
+            : new Error('subscription_events audit persistence failed');
     }
 }

@@ -87,37 +87,63 @@ export interface ProcessedSubscription {
 /**
  * Verify RevenueCat webhook signature
  * @param rawBody - Raw request body as string
- * @param signature - X-RevenueCat-Signature header value
+ * @param signature - X-RevenueCat-Webhook-Signature header value
  * @param secret - REVENUECAT_WEBHOOK_SECRET from env
+ * @param nowMs - Trusted server time, injectable only for deterministic tests
+ * @param toleranceSeconds - Maximum accepted signature age or clock lead
  * @returns true if signature is valid
  */
 export function verifyWebhookSignature(
   rawBody: string,
   signature: string | null | undefined,
-  secret: string | undefined
+  secret: string | undefined,
+  nowMs: number = Date.now(),
+  toleranceSeconds: number = 300,
 ): boolean {
-  // If no secret configured, skip verification (not recommended for production)
+  // Authentication must fail closed in every environment. A missing secret is
+  // a server configuration error, never permission to accept the request.
   if (!secret) {
-    console.warn('[RevenueCat] Webhook secret not configured - skipping signature verification');
-    return true;
+    console.error('[RevenueCat] Webhook secret not configured');
+    return false;
   }
 
   if (!signature) {
-    console.error('[RevenueCat] Missing X-RevenueCat-Signature header');
+    console.error('[RevenueCat] Missing X-RevenueCat-Webhook-Signature header');
     return false;
   }
 
   try {
-    // RevenueCat uses HMAC SHA256
-    const hmac = crypto.createHmac('sha256', secret);
-    hmac.update(rawBody);
-    const expectedSignature = hmac.digest('hex');
+    const components = new Map<string, string>();
+    for (const component of signature.split(',')) {
+      const separator = component.indexOf('=');
+      if (separator <= 0) return false;
+      const name = component.slice(0, separator).trim();
+      const value = component.slice(separator + 1).trim();
+      if (!name || !value || components.has(name)) return false;
+      components.set(name, value);
+    }
+    const timestampText = components.get('t');
+    const suppliedHex = components.get('v1');
+    if (!timestampText || !/^\d{10}$/.test(timestampText)
+      || !suppliedHex || !/^[0-9a-f]{64}$/i.test(suppliedHex)) {
+      return false;
+    }
+    const timestampSeconds = Number(timestampText);
+    if (!Number.isFinite(nowMs) || !Number.isFinite(toleranceSeconds)
+      || toleranceSeconds < 0
+      || Math.abs(Math.floor(nowMs / 1000) - timestampSeconds) > toleranceSeconds) {
+      return false;
+    }
+
+    const expected = crypto
+      .createHmac('sha256', secret)
+      .update(`${timestampText}.${rawBody}`, 'utf8')
+      .digest();
+    const supplied = Buffer.from(suppliedHex, 'hex');
+    if (supplied.length !== expected.length) return false;
 
     // Constant-time comparison to prevent timing attacks
-    return crypto.timingSafeEqual(
-      Buffer.from(signature),
-      Buffer.from(expectedSignature)
-    );
+    return crypto.timingSafeEqual(supplied, expected);
   } catch (error) {
     console.error('[RevenueCat] Signature verification failed:', error);
     return false;

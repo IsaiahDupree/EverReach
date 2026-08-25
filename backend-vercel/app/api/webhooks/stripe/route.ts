@@ -1,7 +1,11 @@
 import { ok, options, badRequest, serverError } from "@/lib/cors";
 import Stripe from "stripe";
-import { getServiceClient } from "@/lib/supabase";
+import {
+  getOwnedOutcomeServiceClient,
+  getServiceClient,
+} from "@/lib/supabase";
 import { getProductIdForStoreSku, insertSubscriptionSnapshot, recomputeEntitlementsForUser } from "@/lib/entitlements";
+import { recordOwnedProviderFact } from '@/lib/owned-outcomes';
 
 export const runtime = 'nodejs';
 
@@ -67,8 +71,10 @@ export async function POST(req: Request){
     return badRequest(`Webhook Error: ${err.message}`);
   }
 
+  const ownedOutcomes: Array<Record<string, unknown>> = [];
   try {
     const serviceSupabase = getServiceClient();
+    const ownedOutcomeSupabase = getOwnedOutcomeServiceClient();
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
@@ -128,6 +134,43 @@ export async function POST(req: Request){
         break;
       }
 
+      case 'invoice.payment_succeeded': {
+        const invoice = event.data.object as Stripe.Invoice;
+        const customerId = typeof invoice.customer === 'string'
+          ? invoice.customer
+          : invoice.customer?.id || '';
+        const resolvedUserId = customerId
+          ? await getUserIdByCustomerId(serviceSupabase, customerId)
+          : null;
+        // A zero-value trial invoice is not a purchase. Positive provider-
+        // accepted payment is the canonical Stripe purchase fact.
+        if (invoice.amount_paid > 0) {
+          const priceId = invoice.lines?.data?.[0]?.price?.id || null;
+          ownedOutcomes.push(await recordOwnedProviderFact(ownedOutcomeSupabase, {
+            provider: 'stripe',
+            subjectId: customerId || invoice.id,
+            resolvedUserId,
+            eventType: 'purchase',
+            providerEventId: event.id,
+            occurredAt: new Date(event.created * 1000).toISOString(),
+            metadata: {
+              producer: 'stripe_webhook',
+              provider_event_type: event.type,
+              stripe_invoice_id: invoice.id,
+              stripe_customer_id: customerId,
+              stripe_subscription_id: typeof invoice.subscription === 'string'
+                ? invoice.subscription
+                : invoice.subscription?.id || null,
+              product_id: priceId,
+              amount: invoice.amount_paid,
+              currency: invoice.currency,
+              billing_reason: invoice.billing_reason,
+            },
+          }));
+        }
+        break;
+      }
+
       case 'customer.subscription.created':
       case 'customer.subscription.updated':
       case 'customer.subscription.deleted': {
@@ -136,6 +179,7 @@ export async function POST(req: Request){
         const subscriptionId = sub.id;
         const priceId = sub.items?.data?.[0]?.price?.id ?? null;
         const status = sub.status ?? null;
+        const logicalStatus = mapStripeStatusToLogical(status);
         const currentPeriodEnd = sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : null;
 
         const patch: Record<string, any> = {
@@ -150,7 +194,6 @@ export async function POST(req: Request){
         const resolvedUserId = customerId ? await getUserIdByCustomerId(serviceSupabase, customerId) : null;
         if (resolvedUserId) {
           const productId = await getProductIdForStoreSku(serviceSupabase as any, 'stripe', priceId);
-          const logicalStatus = mapStripeStatusToLogical(status);
           await insertSubscriptionSnapshot(serviceSupabase as any, {
             userId: resolvedUserId,
             productId,
@@ -160,6 +203,24 @@ export async function POST(req: Request){
             currentPeriodEndISO: currentPeriodEnd,
           });
           await recomputeEntitlementsForUser(serviceSupabase as any, resolvedUserId);
+        }
+        if (event.type === 'customer.subscription.created'
+          && logicalStatus === 'trial') {
+          ownedOutcomes.push(await recordOwnedProviderFact(ownedOutcomeSupabase, {
+            provider: 'stripe',
+            subjectId: customerId || subscriptionId,
+            resolvedUserId,
+            eventType: 'trial',
+            providerEventId: event.id,
+            occurredAt: new Date(event.created * 1000).toISOString(),
+            metadata: {
+              producer: 'stripe_webhook',
+              provider_event_type: event.type,
+              stripe_subscription_id: subscriptionId,
+              stripe_customer_id: customerId || null,
+              product_id: priceId,
+            },
+          }));
         }
         break;
       }
@@ -173,5 +234,5 @@ export async function POST(req: Request){
     return serverError('Webhook processing failed');
   }
 
-  return ok({ received: true });
+  return ok({ received: true, owned_outcomes: ownedOutcomes });
 }
