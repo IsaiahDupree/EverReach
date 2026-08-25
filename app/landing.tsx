@@ -1,15 +1,28 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Linking, Image } from 'react-native';
 import { useRouter } from 'expo-router';
+import * as Clipboard from 'expo-clipboard';
+import analytics from '@/lib/analytics';
 import { trackContentView, trackMetaEvent } from '@/lib/metaAppEvents';
+import {
+  buildContentAttributedDestination,
+  captureContentAttribution,
+} from '@/lib/contentAttribution';
+import { attributionValues } from '@/lib/contentAttributionCore';
+import { setUTMParams } from '@/lib/eventEnvelope';
+import { touchTokenToInstallRecoveryCode } from '@/lib/installAttributionHandoff';
 
 // Logo assets
 const LogoNoBg = require('@/assets/branding/logo-no-bg.png');
 const LogoFinal = require('@/assets/branding/logo-final-1024.png');
+const APP_STORE_URL = 'https://apps.apple.com/us/app/everreach/id6753190951';
 
 export default function LandingPage() {
   const router = useRouter();
   const scrollViewRef = useRef<ScrollView>(null);
+  const [installRecoveryCode, setInstallRecoveryCode] = useState<string | null>(null);
+  const [installHandoffBusy, setInstallHandoffBusy] = useState(false);
+  const [installHandoffError, setInstallHandoffError] = useState<string | null>(null);
 
   // Track landing page view for Meta Pixel
   useEffect(() => {
@@ -30,6 +43,79 @@ export default function LandingPage() {
     }
   };
 
+  const captureCurrentWebAttribution = async () => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const capture = await captureContentAttribution(
+        window.location.href,
+        typeof document !== 'undefined' ? document.referrer : undefined,
+      );
+      if (capture.lastTouch) {
+        await setUTMParams(attributionValues(capture.lastTouch));
+      }
+      return capture;
+    }
+    return null;
+  };
+
+  const navigateWithAttribution = async (destination: string) => {
+    await captureCurrentWebAttribution();
+    const attributedDestination = await buildContentAttributedDestination(destination);
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      window.location.href = attributedDestination;
+    } else {
+      router.push(attributedDestination as any);
+    }
+  };
+
+  const openAppStore = async () => {
+    setInstallHandoffBusy(true);
+    setInstallHandoffError(null);
+    try {
+      const capture = await captureCurrentWebAttribution();
+      trackMetaEvent('ViewContent', {
+        content_name: 'EverReach App Store',
+        content_category: 'Mobile Download',
+      });
+      await analytics.track('app_store_cta_clicked', { destination: 'app_store' });
+      const verifiedToken = capture?.lastTouch?.actp_touch_token
+        ?? capture?.firstTouch?.actp_touch_token;
+      const recoveryCode = verifiedToken
+        ? touchTokenToInstallRecoveryCode(verifiedToken)
+        : null;
+      if (!recoveryCode) {
+        await analytics.track('install_attribution_handoff_unavailable', {
+          reason: 'no_verified_signed_journey',
+        });
+        await Linking.openURL(APP_STORE_URL);
+        return;
+      }
+      setInstallRecoveryCode(recoveryCode);
+    } catch (error) {
+      setInstallHandoffError(
+        'We could not prepare a verified install code. Please try again before downloading.',
+      );
+      await analytics.track('install_attribution_handoff_failed', {
+        reason: error instanceof Error ? error.message.slice(0, 120) : 'unknown',
+      });
+    } finally {
+      setInstallHandoffBusy(false);
+    }
+  };
+
+  const copyCodeAndOpenAppStore = async () => {
+    if (!installRecoveryCode) return;
+    try {
+      await Clipboard.setStringAsync(installRecoveryCode);
+      await analytics.track('install_attribution_handoff_code_copied', {
+        destination: 'app_store',
+      });
+      await Linking.openURL(APP_STORE_URL);
+    } catch {
+      setInstallHandoffError(
+        'Copying failed. Select the code manually, then open the App Store when it is saved.',
+      );
+    }
+  };
   return (
     <ScrollView ref={scrollViewRef} style={styles.container} contentContainerStyle={styles.content}>
       {/* Header */}
@@ -40,13 +126,7 @@ export default function LandingPage() {
         </View>
         <TouchableOpacity
           style={styles.signInButton}
-          onPress={() => {
-            if (Platform.OS === 'web' && typeof window !== 'undefined') {
-              window.location.href = '/auth';
-            } else {
-              router.push('/auth');
-            }
-          }}
+          onPress={() => void navigateWithAttribution('/auth')}
         >
           <Text style={styles.signInButtonText}>Sign In</Text>
         </TouchableOpacity>
@@ -67,13 +147,7 @@ export default function LandingPage() {
         <View style={styles.heroButtons}>
           <TouchableOpacity
             style={styles.primaryButton}
-            onPress={() => {
-              if (Platform.OS === 'web' && typeof window !== 'undefined') {
-                window.location.href = '/auth?isSignUp=true';
-              } else {
-                router.push('/auth?isSignUp=true');
-              }
-            }}
+            onPress={() => void navigateWithAttribution('/auth?isSignUp=true')}
           >
             <Text style={styles.primaryButtonText}>Start Free Trial (Web) →</Text>
           </TouchableOpacity>
@@ -84,7 +158,43 @@ export default function LandingPage() {
             <Text style={styles.secondaryButtonText}>See How It Works</Text>
           </TouchableOpacity>
         </View>
-        <Text style={styles.heroMicrocopy}>No credit card required • Web is live • Mobile rolling out next</Text>
+        <Text style={styles.heroMicrocopy}>No credit card required • Web and iPhone app available now</Text>
+        <TouchableOpacity
+          style={styles.waitlistLink}
+          onPress={() => void openAppStore()}
+          disabled={installHandoffBusy}
+        >
+          <Text style={styles.waitlistLinkText}>
+            {installHandoffBusy ? 'Preparing your download…' : 'Download EverReach for iPhone →'}
+          </Text>
+        </TouchableOpacity>
+        {installHandoffError && (
+          <Text style={styles.installHandoffError}>{installHandoffError}</Text>
+        )}
+        {installRecoveryCode && (
+          <View style={styles.installHandoffCard}>
+            <Text style={styles.installHandoffTitle}>Keep your install connected</Text>
+            <Text style={styles.installHandoffText}>
+              Copy this one-time code. After installing, choose “I have an install code”
+              on the sign-in screen so EverReach can recover this exact content journey.
+            </Text>
+            <Text selectable style={styles.installHandoffCode}>
+              {installRecoveryCode}
+            </Text>
+            <TouchableOpacity
+              style={styles.installHandoffButton}
+              onPress={() => void copyCodeAndOpenAppStore()}
+            >
+              <Text style={styles.installHandoffButtonText}>Copy code & open App Store</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.installHandoffOpenOnlyButton}
+              onPress={() => void Linking.openURL(APP_STORE_URL)}
+            >
+              <Text style={styles.installHandoffOpenOnlyText}>Open App Store only</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
 
       {/* Problem Section */}
@@ -453,6 +563,72 @@ const styles = StyleSheet.create({
     marginTop: 16,
     marginBottom: 12,
     textAlign: 'center',
+  },
+  waitlistLink: {
+    marginBottom: 12,
+  },
+  waitlistLinkText: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 14,
+    textDecorationLine: 'underline',
+  },
+  installHandoffError: {
+    color: '#FCA5A5',
+    fontSize: 14,
+    lineHeight: 20,
+    maxWidth: 480,
+    textAlign: 'center',
+  },
+  installHandoffCard: {
+    width: '100%',
+    maxWidth: 520,
+    marginTop: 12,
+    padding: 20,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(167,139,250,0.6)',
+    backgroundColor: 'rgba(124,58,237,0.18)',
+    alignItems: 'center',
+  },
+  installHandoffTitle: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  installHandoffText: {
+    color: 'rgba(255,255,255,0.78)',
+    fontSize: 14,
+    lineHeight: 21,
+    textAlign: 'center',
+  },
+  installHandoffCode: {
+    color: '#FBBF24',
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 1,
+    marginVertical: 16,
+    textAlign: 'center',
+  },
+  installHandoffButton: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 13,
+  },
+  installHandoffButtonText: {
+    color: '#6D28D9',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  installHandoffOpenOnlyButton: {
+    paddingHorizontal: 16,
+    paddingTop: 14,
+  },
+  installHandoffOpenOnlyText: {
+    color: 'rgba(255,255,255,0.72)',
+    fontSize: 13,
+    textDecorationLine: 'underline',
   },
   // Sections
   section: {

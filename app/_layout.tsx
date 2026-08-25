@@ -57,6 +57,7 @@ import { View, ActivityIndicator, StyleSheet, Text, Platform } from "react-nativ
 import { useAppLifecycle } from "@/hooks/useAppLifecycle";
 import { initializeEnvelope } from "@/lib/eventEnvelope";
 import { initializeMarketingFunnel } from "@/lib/marketingFunnel";
+import { flushOwnedAttribution } from "@/lib/ownedAttributionCoordinator";
 import { initializePerformanceMonitoring } from "@/lib/performanceMonitor";
 import { initializePostHog, identifyUser } from "@/lib/posthog";
 import { initializeMetaAppEvents, identifyMetaUser, resetMetaUser } from "@/lib/metaAppEvents";
@@ -205,6 +206,19 @@ function RootLayoutNav() {
     }
   }, [pathname]);
 
+  // Capture the native first-open install fact before authentication. The
+  // authenticated flush later binds that stored fact to the verified user and
+  // content journey without changing its observed timestamp.
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+    initializeMarketingFunnel().catch((error) => {
+      console.warn(
+        '[App] Native marketing funnel initialization pending retry:',
+        error instanceof Error ? error.message : String(error),
+      );
+    });
+  }, []);
+
   // Initialize RevenueCat on native once authenticated
   useEffect(() => {
     if (!isAuthenticated || !user) return;
@@ -281,6 +295,27 @@ function RootLayoutNav() {
       console.warn('[App] Meta identify skipped:', (e as any)?.message || e);
     });
   }, [isAuthenticated, user, isPaid]);
+
+  // Email verification and OAuth can create the user before an authenticated
+  // API session exists. Flush the original content touch as soon as the real
+  // Supabase identity is available; the client and backend both deduplicate it.
+  useEffect(() => {
+    if (!isAuthenticated || !user) return;
+    const userId = (user as any)?.id;
+    if (typeof userId !== 'string' || !userId) return;
+    flushOwnedAttribution(userId)
+      .then((result) => {
+        if (result.ok) return;
+        console.warn(
+          '[App] Owned attribution flush completed with pending stages:',
+          result.stages,
+        );
+      })
+      .catch((error) => {
+        console.warn('[App] Owned attribution flush could not start:',
+          error instanceof Error ? error.message : String(error));
+      });
+  }, [isAuthenticated, user]);
 
   // ✅ REFACTORED: Get centralized warmth methods
   const { refreshTop, refreshRecent } = useWarmth();
@@ -533,6 +568,7 @@ function RootLayoutNav() {
 
           {/* Auth screens - Public routes */}
           <Stack.Screen name="auth" options={noHeaderOptions} />
+          <Stack.Screen name="auth/install-code" options={noHeaderOptions} />
           <Stack.Screen name="auth/forgot-password" options={noHeaderOptions} />
           <Stack.Screen name="auth/reset-password" options={noHeaderOptions} />
           <Stack.Screen name="auth/callback" options={noHeaderOptions} />

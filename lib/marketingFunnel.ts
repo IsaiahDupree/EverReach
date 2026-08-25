@@ -6,9 +6,13 @@
  */
 
 import analytics from './analytics';
-import { setUTMParams, envelopeManager } from './eventEnvelope';
+import { initializeEnvelope, setUTMParams, envelopeManager } from './eventEnvelope';
+import { captureContentAttribution } from './contentAttribution';
+import { attributionValues } from './contentAttributionCore';
+import { recordOwnedInstallFact } from './ownedInstallOutcome';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Linking from 'expo-linking';
+import { Platform } from 'react-native';
 
 // ============================================================================
 // Types
@@ -139,8 +143,16 @@ export async function trackInstall(data: InstallData): Promise<void> {
     }
 
     // Store install time
-    const installTime = Date.now().toString();
-    await AsyncStorage.setItem(STORAGE_KEYS.FIRST_INSTALL_TIME, installTime);
+    const occurredAt = new Date().toISOString();
+    // A web first visit is not an app install. Keep its funnel telemetry, but
+    // only create an owned install fact for a real native runtime.
+    if (Platform.OS === 'ios' || Platform.OS === 'android') {
+      await recordOwnedInstallFact(data.install_source, Platform.OS, occurredAt);
+    }
+    await AsyncStorage.setItem(
+      STORAGE_KEYS.FIRST_INSTALL_TIME,
+      Date.parse(occurredAt).toString(),
+    );
 
     // Store install attribution
     await AsyncStorage.setItem(STORAGE_KEYS.INSTALL_ATTRIBUTION, JSON.stringify(data));
@@ -243,26 +255,35 @@ export async function trackQualifiedSignup(leadScore: number): Promise<void> {
  */
 export async function handleDeepLink(url?: string): Promise<void> {
   try {
-    const parsedUrl = url ? Linking.parse(url) : await Linking.parseInitialURLAsync();
-    
+    const initialUrl = url || (
+      typeof window !== 'undefined' && window.location?.href
+        ? window.location.href
+        : await Linking.getInitialURL()
+    );
+    if (!initialUrl) return;
+
+    const parsedUrl = Linking.parse(initialUrl);
     if (!parsedUrl || !parsedUrl.queryParams) {
       return;
     }
 
     const params = parsedUrl.queryParams;
+    const capture = await captureContentAttribution(
+      initialUrl,
+      typeof document !== 'undefined' ? document.referrer : undefined,
+    );
+    const currentAttribution = capture.lastTouch
+      ? attributionValues(capture.lastTouch)
+      : {};
 
-    // Extract UTM parameters
-    const utmParams: any = {};
-    if (params.utm_source) utmParams.utm_source = params.utm_source as string;
-    if (params.utm_campaign) utmParams.utm_campaign = params.utm_campaign as string;
-    if (params.utm_medium) utmParams.utm_medium = params.utm_medium as string;
-    if (params.utm_content) utmParams.utm_content = params.utm_content as string;
-    if (params.utm_term) utmParams.utm_term = params.utm_term as string;
-
-    // Set UTM params if any found
-    if (Object.keys(utmParams).length > 0) {
-      await setUTMParams(utmParams);
-      console.log('[MarketingFunnel] UTM params extracted from deep link:', utmParams);
+    // Keep the current touch on every analytics event. Immutable first touch is
+    // stored separately by contentAttribution and persisted after authentication.
+    if (Object.keys(currentAttribution).length > 0) {
+      await setUTMParams(currentAttribution);
+      console.log('[MarketingFunnel] Content attribution captured', {
+        fields: Object.keys(currentAttribution),
+        first_touch_preserved: Boolean(capture.firstTouch),
+      });
     }
 
     // Extract ad network info
@@ -327,8 +348,14 @@ export async function hasActivated(type: ActivationType): Promise<boolean> {
  * Initialize marketing funnel tracking
  * Call this at app startup
  */
-export async function initializeMarketingFunnel(): Promise<void> {
+let marketingFunnelInitialization: Promise<void> | null = null;
+
+async function runMarketingFunnelInitialization(): Promise<void> {
   try {
+    // Serializing these initializers prevents a returning visitor's persisted
+    // envelope from racing the new URL capture.
+    await initializeEnvelope();
+
     // Handle deep link
     await handleDeepLink();
 
@@ -337,7 +364,11 @@ export async function initializeMarketingFunnel(): Promise<void> {
     if (!installTime) {
       // First install - track it
       await trackInstall({
-        install_source: 'app_store', // Default, should be detected by platform
+        install_source: Platform.OS === 'web'
+          ? 'web'
+          : Platform.OS === 'android'
+            ? 'play_store'
+            : 'app_store',
       });
     }
 
@@ -347,7 +378,39 @@ export async function initializeMarketingFunnel(): Promise<void> {
     console.log('[MarketingFunnel] Initialized');
   } catch (error) {
     console.error('[MarketingFunnel] Initialization error:', error);
+    // A signed landing touch is evidence-bearing.  Do not turn an issuance
+    // timeout/5xx into a permanently successful singleton: callers must see
+    // the failure so a later lifecycle/auth pass can retry the same landing.
+    throw error;
   }
+}
+
+async function runMarketingFunnelInitializationWithRetry(): Promise<void> {
+  const retryDelays = [250, 1000];
+  let lastError: unknown;
+  for (let attempt = 0; attempt <= retryDelays.length; attempt += 1) {
+    try {
+      await runMarketingFunnelInitialization();
+      return;
+    } catch (error) {
+      lastError = error;
+      if (attempt === retryDelays.length) break;
+      await new Promise<void>((resolve) => {
+        setTimeout(resolve, retryDelays[attempt]);
+      });
+    }
+  }
+  throw lastError;
+}
+
+export function initializeMarketingFunnel(): Promise<void> {
+  if (!marketingFunnelInitialization) {
+    marketingFunnelInitialization = runMarketingFunnelInitializationWithRetry().catch((error) => {
+      marketingFunnelInitialization = null;
+      throw error;
+    });
+  }
+  return marketingFunnelInitialization;
 }
 
 // ============================================================================
