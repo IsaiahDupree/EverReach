@@ -4,6 +4,13 @@ const path = require('path');
 /** @type {import('expo/metro-config').MetroConfig} */
 const config = getDefaultConfig(__dirname);
 
+// Static/CI exports need a complete filesystem crawl. Watchman can return a
+// partial fresh-instance snapshot after an interrupted FSEvents crawl, which
+// makes newly added modules appear absent even though they exist on disk.
+if (process.env.CI || process.env.VERCEL) {
+  config.resolver.useWatchman = false;
+}
+
 // Exclude backend folder (Next.js project) from Metro bundler
 config.resolver.blockList = [
   // Block the backend folder which contains Next.js files

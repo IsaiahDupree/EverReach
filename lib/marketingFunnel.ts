@@ -9,6 +9,7 @@ import analytics from './analytics';
 import { initializeEnvelope, setUTMParams, envelopeManager } from './eventEnvelope';
 import { captureContentAttribution } from './contentAttribution';
 import { attributionValues } from './contentAttributionCore';
+import { recordOwnedInstallFact } from './ownedInstallOutcome';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Linking from 'expo-linking';
 import { Platform } from 'react-native';
@@ -142,8 +143,16 @@ export async function trackInstall(data: InstallData): Promise<void> {
     }
 
     // Store install time
-    const installTime = Date.now().toString();
-    await AsyncStorage.setItem(STORAGE_KEYS.FIRST_INSTALL_TIME, installTime);
+    const occurredAt = new Date().toISOString();
+    // A web first visit is not an app install. Keep its funnel telemetry, but
+    // only create an owned install fact for a real native runtime.
+    if (Platform.OS === 'ios' || Platform.OS === 'android') {
+      await recordOwnedInstallFact(data.install_source, Platform.OS, occurredAt);
+    }
+    await AsyncStorage.setItem(
+      STORAGE_KEYS.FIRST_INSTALL_TIME,
+      Date.parse(occurredAt).toString(),
+    );
 
     // Store install attribution
     await AsyncStorage.setItem(STORAGE_KEYS.INSTALL_ATTRIBUTION, JSON.stringify(data));
@@ -339,7 +348,9 @@ export async function hasActivated(type: ActivationType): Promise<boolean> {
  * Initialize marketing funnel tracking
  * Call this at app startup
  */
-export async function initializeMarketingFunnel(): Promise<void> {
+let marketingFunnelInitialization: Promise<void> | null = null;
+
+async function runMarketingFunnelInitialization(): Promise<void> {
   try {
     // Serializing these initializers prevents a returning visitor's persisted
     // envelope from racing the new URL capture.
@@ -367,7 +378,39 @@ export async function initializeMarketingFunnel(): Promise<void> {
     console.log('[MarketingFunnel] Initialized');
   } catch (error) {
     console.error('[MarketingFunnel] Initialization error:', error);
+    // A signed landing touch is evidence-bearing.  Do not turn an issuance
+    // timeout/5xx into a permanently successful singleton: callers must see
+    // the failure so a later lifecycle/auth pass can retry the same landing.
+    throw error;
   }
+}
+
+async function runMarketingFunnelInitializationWithRetry(): Promise<void> {
+  const retryDelays = [250, 1000];
+  let lastError: unknown;
+  for (let attempt = 0; attempt <= retryDelays.length; attempt += 1) {
+    try {
+      await runMarketingFunnelInitialization();
+      return;
+    } catch (error) {
+      lastError = error;
+      if (attempt === retryDelays.length) break;
+      await new Promise<void>((resolve) => {
+        setTimeout(resolve, retryDelays[attempt]);
+      });
+    }
+  }
+  throw lastError;
+}
+
+export function initializeMarketingFunnel(): Promise<void> {
+  if (!marketingFunnelInitialization) {
+    marketingFunnelInitialization = runMarketingFunnelInitializationWithRetry().catch((error) => {
+      marketingFunnelInitialization = null;
+      throw error;
+    });
+  }
+  return marketingFunnelInitialization;
 }
 
 // ============================================================================

@@ -12,7 +12,6 @@ import { useAuth } from '@/providers/AuthProviderV2';
 import { useSubscription } from '@/providers/SubscriptionProvider';
 import { FLAGS } from '@/constants/flags';
 import { trackRegistrationEvent, trackTrialStartEvent } from '@/lib/metaServerEvents';
-import { persistFirstTouchAttribution } from '@/lib/contentAttribution';
 
 type AuthMode = 'email' | 'password';
 
@@ -114,7 +113,7 @@ export default function Auth() {
     try {
       if (isSignUp) {
         // Sign up flow
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        const { error: signUpError } = await supabase.auth.signUp({
           email: targetEmail.trim(),
           password: targetPassword,
           options: {
@@ -125,21 +124,6 @@ export default function Auth() {
         });
 
         if (signUpError) throw signUpError;
-
-        // The endpoint authenticates the request and verifies this expected ID
-        // against the Supabase user. If email verification delays the session,
-        // the authenticated layout retries this immutable first-touch write.
-        const signedUpUserId = signUpData.user?.id;
-        if (signedUpUserId) {
-          try {
-            await persistFirstTouchAttribution(signedUpUserId);
-          } catch (attributionError) {
-            console.warn(
-              '[Auth] First-touch attribution pending authenticated retry:',
-              attributionError instanceof Error ? attributionError.message : String(attributionError),
-            );
-          }
-        }
 
         // Track registration with Meta (server-side)
         trackRegistrationEvent(targetEmail.trim(), undefined, 'email');
@@ -470,6 +454,16 @@ export default function Auth() {
                 </Text>
               </TouchableOpacity>
 
+              {Platform.OS !== 'web' && (
+                <TouchableOpacity
+                  style={styles.installCodeButton}
+                  onPress={() => router.push('/auth/install-code' as any)}
+                  testID="install-attribution-code-button"
+                >
+                  <Text style={styles.installCodeButtonText}>I have an install code</Text>
+                </TouchableOpacity>
+              )}
+
             </View>
 
             {/* Footer */}
@@ -636,6 +630,22 @@ const styles = StyleSheet.create({
   secondaryButtonText: {
     fontSize: 15,
     color: '#7C3AED',
+    fontWeight: '600',
+  },
+  installCodeButton: {
+    alignItems: 'center',
+    borderColor: '#DDD6FE',
+    borderRadius: 10,
+    borderWidth: 1,
+    justifyContent: 'center',
+    marginTop: 4,
+    minHeight: 44,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  installCodeButtonText: {
+    color: '#6D28D9',
+    fontSize: 14,
     fontWeight: '600',
   },
   socialAuthContainer: {

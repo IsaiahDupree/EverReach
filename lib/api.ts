@@ -170,6 +170,7 @@ export async function apiFetch(path: string, init: ApiInit = {}, isRetry = false
   const url = base ? `${base}${path}` : path;
   const needsAuth = init.requireAuth === true;
   const method = (init.method || 'GET').toUpperCase();
+  const redactAttributionPayloads = path.startsWith('/api/v1/attribution/');
   
   // Always get a fresh session (auto-refreshes if expired)
   const auth = needsAuth ? await authHeader() : {};
@@ -216,13 +217,17 @@ export async function apiFetch(path: string, init: ApiInit = {}, isRetry = false
   }
   console.log('📋 Headers:', JSON.stringify(headersForLog, null, 2));
   if (init.body) {
-    console.log('📦 Body:', init.body);
-    // Try to parse and pretty-print if JSON
-    try {
-      const parsed = JSON.parse(init.body as string);
-      console.log('📦 Body (parsed):', JSON.stringify(parsed, null, 2));
-    } catch {
-      // Not JSON or already a string
+    if (redactAttributionPayloads) {
+      console.log('📦 Body: [REDACTED ATTRIBUTION PAYLOAD]');
+    } else {
+      console.log('📦 Body:', init.body);
+      // Try to parse and pretty-print if JSON
+      try {
+        const parsed = JSON.parse(init.body as string);
+        console.log('📦 Body (parsed):', JSON.stringify(parsed, null, 2));
+      } catch {
+        // Not JSON or already a string
+      }
     }
   }
   console.log('=================================\n');
@@ -282,12 +287,16 @@ export async function apiFetch(path: string, init: ApiInit = {}, isRetry = false
     try {
       responseText = await responseClone.text();
       if (responseText) {
-        console.log('📥 Response Body:', responseText.substring(0, 500));
-        try {
-          const responseJson = JSON.parse(responseText);
-          console.log('📥 Response (parsed):', JSON.stringify(responseJson, null, 2).substring(0, 500));
-        } catch {
-          // Not JSON
+        if (redactAttributionPayloads) {
+          console.log('📥 Response Body: [REDACTED ATTRIBUTION PAYLOAD]');
+        } else {
+          console.log('📥 Response Body:', responseText.substring(0, 500));
+          try {
+            const responseJson = JSON.parse(responseText);
+            console.log('📥 Response (parsed):', JSON.stringify(responseJson, null, 2).substring(0, 500));
+          } catch {
+            // Not JSON
+          }
         }
       }
     } catch (e) {

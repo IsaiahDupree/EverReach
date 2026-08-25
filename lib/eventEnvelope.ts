@@ -67,10 +67,13 @@ export interface SourceMetadata {
   actp_campaign_id?: string;
   actp_narrative_id?: string;
   actp_offer_id?: string;
+  actp_source_platform?: string;
   actp_series_id?: string;
   actp_episode_id?: string;
   actp_experiment_id?: string;
   actp_variant_id?: string;
+  actp_touch_token?: string;
+  actp_publication_claim?: string;
   install_source?: string;
   referrer?: string;
 }
