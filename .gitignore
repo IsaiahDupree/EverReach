@@ -83,7 +83,8 @@ ios/.xcode.env.local
 # Prevent bun from being used (force npm)
 bun.lock
 bun.lockb
-/.claude/worktrees/suntrace-improvement/  # nested git repo, tracked separately (2026-09-07)
+# nested git repo, tracked separately (2026-09-07)
+/.claude/worktrees/suntrace-improvement/
 
 # --- baseline (added by sync 2026-09-07) ---
 !.env.sample
