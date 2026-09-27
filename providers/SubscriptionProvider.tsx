@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Platform, AppState, AppStateStatus } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import createContextHook from '@nkzw/create-context-hook';
-import { useUser } from 'expo-superwall';
 import { SubscriptionRepo, Entitlements } from '@/repos/SubscriptionRepo';
 import {
   useSubscription as useBillingSubscription,
@@ -101,9 +100,6 @@ const storage = {
 };
 
 export const [SubscriptionProvider, useSubscription] = createContextHook<SubscriptionState>(() => {
-  // Superwall user sync
-  const superwallUser = useUser();
-
   // Mobile subscription state
   const [tier, setTier] = useState<SubscriptionTier>('free_trial');
   const [trialStartDate, setTrialStartDate] = useState<string | null>(null);
@@ -360,37 +356,6 @@ export const [SubscriptionProvider, useSubscription] = createContextHook<Subscri
     const subscription = AppState.addEventListener('change', handleAppStateChange);
     return () => subscription.remove();
   }, [loadSubscriptionState]);
-
-  // Sync subscription status with Superwall to prevent paywall for paid users
-  // Only sync once when subscription loads, not on every change
-  const hasSyncedRef = useRef(false);
-
-  useEffect(() => {
-    if (!superwallUser || hasSyncedRef.current) return;
-
-    // Only sync if we actually have subscription data loaded
-    if (tier === 'free_trial' && trialDaysRemaining === FREE_TRIAL_DAYS) {
-      // Still loading initial data, wait
-      return;
-    }
-
-    console.log('[SubscriptionProvider] Syncing with Superwall once - isPaid:', isPaid, 'tier:', tier);
-
-    // Update user attributes to tell Superwall about subscription status
-    superwallUser.update({
-      isPaid: isPaid,
-      subscriptionTier: tier,
-      subscriptionStatus: subscriptionStatus,
-      hasActiveSubscription: isPaid,
-      trialDaysRemaining: trialDaysRemaining,
-      paymentPlatform: paymentPlatform || 'none',
-    }).then(() => {
-      hasSyncedRef.current = true;
-      console.log('[SubscriptionProvider] ✅ Superwall synced successfully');
-    }).catch((error) => {
-      console.warn('[SubscriptionProvider] ⚠️ Failed to sync Superwall:', error);
-    });
-  }, [superwallUser, isPaid, tier, subscriptionStatus, trialDaysRemaining, paymentPlatform]);
 
   // Track screen-time usage for screen_time strategy
   useEffect(() => {
