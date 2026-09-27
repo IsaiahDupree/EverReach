@@ -19,11 +19,6 @@
       "bundleIdentifier": "com.suntrace.app",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "SunTrace uses your location to provide accurate UV readings for your area",
-        "NSHealthShareUsageDescription": "SunTrace reads your outdoor activity to correlate with sun exposure",
-        "NSHealthUpdateUsageDescription": "SunTrace writes outdoor minutes to Apple Health",
-        "NSMicrophoneUsageDescription": "SunTrace uses your microphone to record voice notes about your sun exposure sessions.",
-        "NSPhotoLibraryUsageDescription": "SunTrace needs photo access to let you add photos to your sun sessions.",
-        "NSCameraUsageDescription": "SunTrace needs camera access to capture photos during your outdoor sessions.",
         "ITSAppUsesNonExemptEncryption": false,
         "LSApplicationQueriesSchemes": [
           "mailto",
@@ -68,19 +63,7 @@
           "origin": "https://suntrace.app/"
         }
       ],
-      [
-        "expo-av",
-        {
-          "microphonePermission": "SunTrace uses your microphone to record voice notes about your sun exposure sessions."
-        }
-      ],
       "expo-apple-authentication",
-      [
-        "expo-image-picker",
-        {
-          "photosPermission": "SunTrace accesses your photos to let you add images to your sun sessions."
-        }
-      ],
       "expo-localization",
       [
         "expo-notifications",

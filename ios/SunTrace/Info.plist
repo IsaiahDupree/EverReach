@@ -58,20 +58,8 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
-	<key>NSCameraUsageDescription</key>
-	<string>SunTrace needs camera access to capture photos during your outdoor sessions.</string>
-	<key>NSContactsUsageDescription</key>
-	<string>Allow $(PRODUCT_NAME) to access your contacts</string>
-	<key>NSHealthShareUsageDescription</key>
-	<string>SunTrace reads your outdoor activity to correlate with sun exposure</string>
-	<key>NSHealthUpdateUsageDescription</key>
-	<string>SunTrace writes outdoor minutes to Apple Health</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>SunTrace uses your location to provide accurate UV readings for your area</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>SunTrace uses your microphone to record voice notes about your sun exposure sessions.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>SunTrace accesses your photos to let you add images to your sun sessions.</string>
 	<key>NSUserActivityTypes</key>
 	<array>
 		<string>$(PRODUCT_BUNDLE_IDENTIFIER).expo.index_route</string>
