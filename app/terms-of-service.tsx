@@ -113,7 +113,7 @@ export default function TermsOfServiceScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>9. Confidentiality</Text>
             <Text style={styles.paragraph}>
-              Each party will protect the other's confidential information with reasonable care and use it only
+              Each party will protect the other’s confidential information with reasonable care and use it only
               as permitted.
             </Text>
           </View>

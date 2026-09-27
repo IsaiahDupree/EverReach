@@ -92,7 +92,7 @@ export default function TermsScreen() {
 
         <Text style={styles.sectionTitle}>9. Disclaimer</Text>
         <Text style={styles.paragraph}>
-          Your use of the service is at your sole risk. The service is provided on an "AS IS" and "AS AVAILABLE" basis without warranties of any kind, either express or implied.
+          Your use of the service is at your sole risk. The service is provided on an “AS IS” and “AS AVAILABLE” basis without warranties of any kind, either express or implied.
         </Text>
 
         <Text style={styles.sectionTitle}>10. Governing Law</Text>
@@ -102,7 +102,7 @@ export default function TermsScreen() {
 
         <Text style={styles.sectionTitle}>11. Changes to Terms</Text>
         <Text style={styles.paragraph}>
-          We reserve the right, at our sole discretion, to modify or replace these Terms at any time. We will provide notice of any changes by updating the "Last updated" date of these Terms.
+          We reserve the right, at our sole discretion, to modify or replace these Terms at any time. We will provide notice of any changes by updating the “Last updated” date of these Terms.
         </Text>
 
         <Text style={styles.sectionTitle}>12. Contact Us</Text>

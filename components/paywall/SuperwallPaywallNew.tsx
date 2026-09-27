@@ -305,7 +305,7 @@ export default function SuperwallPaywallNew({
           Required fixes:
           {'\n'}• Configure paywall in Superwall dashboard
           {'\n'}• Publish the paywall (not draft)
-          {'\n'}• Verify placement: "{placementId}"
+          {'\n'}• Verify placement: “{placementId}”
           {'\n'}• Check API key matches environment
         </Text>
         <View style={styles.buttonContainer}>
@@ -342,7 +342,7 @@ export default function SuperwallPaywallNew({
         </View>
         <Text style={styles.helpText}>
           Possible causes:
-          {'\n'}• No paywall configured for placement "{placementId}"
+          {'\n'}• No paywall configured for placement “{placementId}”
           {'\n'}• Paywall is in draft mode (not published)
           {'\n'}• Network connectivity issues
           {'\n'}• Superwall SDK not initialized properly

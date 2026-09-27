@@ -520,7 +520,7 @@ export default function ImportThirdPartyScreen() {
           {/* Coming Soon Note */}
           <View style={styles.comingSoonNote}>
             <Text style={[styles.comingSoonNoteText, { color: theme.colors.textSecondary }]}>
-              💡 We're actively working on these integrations. Check back soon or use{' '}
+              💡 We’re actively working on these integrations. Check back soon or use{' '}
               <Text style={{ fontWeight: '600', color: theme.colors.primary }}>
                 Import from Phone Contacts
               </Text>

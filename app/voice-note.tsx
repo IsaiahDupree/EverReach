@@ -742,7 +742,7 @@ export default function VoiceNoteScreen() {
               </Text>
               
               <Text style={styles.modalMessage}>
-                EverReach uses your microphone to record voice notes. For example, you can record a quick note like "Remind me to follow up with Sarah about the project meeting" and it will be transcribed and saved to your contacts. Your audio is processed securely and only used for transcription.
+                EverReach uses your microphone to record voice notes. For example, you can record a quick note like “Remind me to follow up with Sarah about the project meeting” and it will be transcribed and saved to your contacts. Your audio is processed securely and only used for transcription.
               </Text>
               
               <View style={styles.modalActions}>

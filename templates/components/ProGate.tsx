@@ -79,13 +79,8 @@ function DefaultPaywallNudge({ feature }: { feature?: string }) {
 
 // ── ProGate ───────────────────────────────────────────────────────────────────
 
-export function ProGate({ feature, children, tier: tierOverride, paywallNudge }: ProGateProps) {
-  const { isPro } = useSubscription();
-
-  // Allow a prop override (e.g. for preview screens or tests)
-  const hasProAccess = tierOverride
-    ? tierOverride === 'pro' || tierOverride === 'family'
-    : isPro;
+function ProGateContent({ feature, children, tier, paywallNudge }: ProGateProps & { tier: SubscriptionTier }) {
+  const hasProAccess = tier === 'pro' || tier === 'family';
 
   if (hasProAccess) {
     return <>{children}</>;
@@ -96,6 +91,19 @@ export function ProGate({ feature, children, tier: tierOverride, paywallNudge }:
   ) : (
     <DefaultPaywallNudge feature={feature} />
   );
+}
+
+function SubscriptionBackedProGate(props: ProGateProps) {
+  const { isPro } = useSubscription();
+  return <ProGateContent {...props} tier={isPro ? 'pro' : 'free'} />;
+}
+
+export function ProGate(props: ProGateProps) {
+  if (props.tier) {
+    return <ProGateContent {...props} tier={props.tier} />;
+  }
+
+  return <SubscriptionBackedProGate {...props} />;
 }
 
 export default ProGate;

@@ -405,7 +405,7 @@ export default function BillingSettingsScreen() {
           <View style={styles.freePlanInfo}>
             <Text style={styles.freePlanTitle}>Free Plan</Text>
             <Text style={styles.freePlanDescription}>
-              You're currently on the free plan. Upgrade to unlock premium features and unlimited access.
+              You’re currently on the free plan. Upgrade to unlock premium features and unlimited access.
             </Text>
           </View>
         )}

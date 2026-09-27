@@ -57,14 +57,6 @@ export default function Auth() {
     }
   }, [session, authLoading, params.returnTo]);
 
-  if (authLoading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#7C3AED" />
-      </View>
-    );
-  }
-
   const handleEmailSubmit = () => {
     if (!email.trim() || !email.includes('@')) {
       setError('Please enter a valid email address');
@@ -167,6 +159,14 @@ export default function Auth() {
       }, 1000);
     }
   }, [params]);
+
+  if (authLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#7C3AED" />
+      </View>
+    );
+  }
 
   const handleMagicLink = async () => {
     if (FLAGS.LOCAL_ONLY) {

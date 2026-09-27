@@ -242,10 +242,10 @@ export default function ContactSaveTestScreen() {
           <View style={styles.infoCard}>
             <Text style={styles.infoText}>
               <Text style={styles.bold}>LOCAL_ONLY Mode:</Text>{'\n'}
-              Contacts are stored locally using AsyncStorage. They won't sync across devices.
+              Contacts are stored locally using AsyncStorage. They won’t sync across devices.
               {'\n\n'}
               <Text style={styles.bold}>CLOUD Mode:</Text>{'\n'}
-              Contacts are saved to Supabase and tied to your account. They sync across all devices where you're signed in.
+              Contacts are saved to Supabase and tied to your account. They sync across all devices where you’re signed in.
               {'\n\n'}
               <Text style={styles.bold}>Backend API:</Text>{'\n'}
               POST /api/v1/contacts{'\n'}

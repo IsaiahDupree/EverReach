@@ -597,7 +597,7 @@ export default function OnboardingV2Screen() {
           <Text style={[styles.body, { color: theme.textSecondary }]}>
             • See who to reach out to today{'\n'}
             • Get gentle nudges over time{'\n'}
-            • Save notes about what's going on in their life
+            • Save notes about what’s going on in their life
           </Text>
           <TouchableOpacity
             style={[styles.btn, { backgroundColor: theme.primary }]}
@@ -614,7 +614,7 @@ export default function OnboardingV2Screen() {
       return (
         <View style={styles.screen}>
           <Text style={[styles.title, { color: theme.text }]}>
-            What's your email address?
+            What’s your email address?
           </Text>
           <TextInput
             style={[styles.input, { backgroundColor: theme.surface, color: theme.text }]}
@@ -652,7 +652,7 @@ export default function OnboardingV2Screen() {
           </View>
           
           <Text style={[styles.title, { color: theme.text, textAlign: 'center', marginBottom: 12 }]}>
-            You're all set, {userName}! 🎉
+            You’re all set, {userName}! 🎉
           </Text>
           
           <Text style={[styles.body, { color: theme.textSecondary, textAlign: 'center', marginBottom: 32 }]}>
@@ -691,7 +691,7 @@ export default function OnboardingV2Screen() {
             style={[styles.btn, { backgroundColor: theme.primary, width: '100%' }]}
             onPress={finishOnboarding}
           >
-            <Text style={styles.btnText}>Let's Go!</Text>
+            <Text style={styles.btnText}>Let’s Go!</Text>
             <ArrowRight size={20} color="#FFF" />
           </TouchableOpacity>
         </View>

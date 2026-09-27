@@ -72,11 +72,11 @@ export default function ForgotPassword() {
           <Text style={styles.successTitle}>Check your email</Text>
           
           <Text style={styles.successMessage}>
-            If an account exists for <Text style={styles.emailText}>{email}</Text>, you'll receive password reset instructions.
+            If an account exists for <Text style={styles.emailText}>{email}</Text>, you’ll receive password reset instructions.
           </Text>
 
           <Text style={styles.successHint}>
-            The email may take a few minutes to arrive. Check your spam folder if you don't see it.
+            The email may take a few minutes to arrive. Check your spam folder if you don’t see it.
           </Text>
 
           <TouchableOpacity
@@ -125,7 +125,7 @@ export default function ForgotPassword() {
             </View>
             <Text style={styles.title}>Reset your password</Text>
             <Text style={styles.subtitle}>
-              Enter your email address and we'll send you a link to reset your password.
+              Enter your email address and we’ll send you a link to reset your password.
             </Text>
           </View>
 

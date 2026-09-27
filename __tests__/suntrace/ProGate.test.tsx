@@ -77,7 +77,7 @@ describe('ProGate — free tier', () => {
         <></>
       </ProGate>,
     );
-    expect(screen.getByText('Unlock Sun Spot Map')).toBeTruthy();
+    expect(screen.getByText('Unlock Sun Spot Map with Pro')).toBeTruthy();
   });
 
   it('renders custom paywallNudge override when provided', () => {

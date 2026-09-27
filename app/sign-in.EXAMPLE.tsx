@@ -261,7 +261,7 @@ export default function SignIn() {
               
               <TouchableOpacity style={common.textButton} onPress={() => {}}>
                 <Text style={[common.caption, { textAlign: 'center' }]}>
-                  Don't have an account? Contact us to get started
+                  Don’t have an account? Contact us to get started
                 </Text>
               </TouchableOpacity>
             </View>
@@ -306,7 +306,7 @@ export default function SignIn() {
               </TouchableOpacity>
             </View>
             <Text style={common.modalTitle}>Reset Password</Text>
-            <Text style={common.modalMessage}>Enter your email address and we'll send you a link to reset your password.</Text>
+            <Text style={common.modalMessage}>Enter your email address and we’ll send you a link to reset your password.</Text>
             
             <View style={[common.inputWrapper, { marginVertical: theme.spacing.md }]}>
               <Mail size={20} color={iconColor} style={common.inputIcon} />

@@ -160,7 +160,7 @@ export default function MessageTemplatesScreen() {
         <View style={styles.voiceContextSection}>
           <Text style={styles.sectionTitle}>Voice & Tone</Text>
           <Text style={styles.sectionDescription}>
-            Describe how you'd like your messages to sound. This helps AI stay close to your natural style.
+            Describe how you’d like your messages to sound. This helps AI stay close to your natural style.
           </Text>
           <CrossPlatformTextInput
             style={[styles.input, styles.voiceContextInput]}

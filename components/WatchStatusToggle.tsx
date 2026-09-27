@@ -151,7 +151,7 @@ export function WatchStatusToggle({
       {status !== 'none' && (
         <View style={[styles.info, { backgroundColor: theme.colors.surface }]}>
           <Text style={[styles.infoText, { color: theme.colors.textSecondary }]}>
-            💡 You'll get a push notification when this contact's warmth drops below the threshold.
+            💡 You’ll get a push notification when this contact’s warmth drops below the threshold.
           </Text>
         </View>
       )}

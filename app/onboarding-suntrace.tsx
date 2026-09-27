@@ -216,7 +216,7 @@ function SkinTypeStep({
 }) {
   return (
     <View style={styles.stepContainer}>
-      <Text style={styles.stepTitle}>What's your skin type?</Text>
+      <Text style={styles.stepTitle}>What’s your skin type?</Text>
       <Text style={styles.stepSubtitle}>
         The Fitzpatrick scale helps us calculate your personal vitamin D target
         and burn risk.
@@ -337,7 +337,7 @@ function NotificationsStep({
       </View>
       <Text style={styles.stepTitle}>Daily Sun Reminders</Text>
       <Text style={styles.stepSubtitle}>
-        Get notified when UV is at the ideal level for vitamin D. We'll alert
+        Get notified when UV is at the ideal level for vitamin D. We’ll alert
         you when your best window opens each day.
       </Text>
       {granted ? (

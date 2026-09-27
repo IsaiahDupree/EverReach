@@ -45,7 +45,7 @@ export default function SunPaywallScreen() {
     return (
       <View style={[styles.container, styles.center]}>
         <Text style={styles.alreadyProIcon}>✅</Text>
-        <Text style={styles.alreadyProTitle}>You're already Pro!</Text>
+        <Text style={styles.alreadyProTitle}>You’re already Pro!</Text>
         <Text style={styles.alreadyProSub}>Enjoy all SunTrace features.</Text>
         <TouchableOpacity style={styles.closeBtn} onPress={() => router.back()}>
           <Text style={styles.closeBtnText}>Go Back</Text>

@@ -145,7 +145,7 @@ export default function UpgradeOnboarding() {
       case 'hero':
         return (
           <View style={styles.pageContent}>
-            <Text style={styles.heroTitle}>Don't Lose Your Connections</Text>
+            <Text style={styles.heroTitle}>Don’t Lose Your Connections</Text>
             <Text style={styles.heroSubtitle}>
               Your trial is ending soon. Upgrade now to keep all your relationship data, AI insights, and premium features.
             </Text>
@@ -154,7 +154,7 @@ export default function UpgradeOnboarding() {
       case 'features':
         return (
           <ScrollView style={styles.pageContent} showsVerticalScrollIndicator={false}>
-            <Text style={styles.sectionTitle}>What You'll Miss Without Pro</Text>
+            <Text style={styles.sectionTitle}>What You’ll Miss Without Pro</Text>
             <View style={styles.comparisonCard}>
               <View style={styles.comparisonHeader}>
                 <Text style={styles.comparisonLabel}>Feature</Text>
@@ -223,7 +223,7 @@ export default function UpgradeOnboarding() {
                 <View style={styles.stars}>
                   {[...Array(5)].map((_, i) => <Star key={i} size={14} color="#F59E0B" fill="#F59E0B" />)}
                 </View>
-                <Text style={styles.quote}>"{testimonial.quote}"</Text>
+                <Text style={styles.quote}>“{testimonial.quote}”</Text>
                 <Text style={styles.author}>{testimonial.name} · {testimonial.role}</Text>
               </View>
             ))}
@@ -342,16 +342,26 @@ function PaywallTriggerButton({ trialMeta }: { trialMeta: any }) {
   const superwall = React.useMemo(() => {
     try { return require('expo-superwall'); } catch { return null; }
   }, []);
-  const usePlacement = superwall?.usePlacement as undefined | ((args: any) => any);
-  if (!usePlacement) {
+  const usePlacementHook = superwall?.usePlacement as undefined | ((args: any) => any);
+  if (!usePlacementHook) {
     return null; // Not available in this runtime (e.g., Expo Go)
   }
-  
+
+  return <AvailablePaywallTriggerButton trialMeta={trialMeta} usePlacementHook={usePlacementHook} />;
+}
+
+function AvailablePaywallTriggerButton({
+  trialMeta,
+  usePlacementHook,
+}: {
+  trialMeta: any;
+  usePlacementHook: (args: any) => any;
+}) {
   // Import event logger dynamically (safe in all environments)
   const { logSuperwallEvent } = require('@/lib/paymentEventLogger');
   const screenAnalytics = useAnalytics('UpgradeOnboarding');
-  
-  const { registerPlacement } = usePlacement({
+
+  const { registerPlacement } = usePlacementHook({
     onPresent: (info: any) => {
       console.log('[Superwall] Paywall presented', info);
       logSuperwallEvent('paywall_present', info, { placement: 'main_pay_wall' });

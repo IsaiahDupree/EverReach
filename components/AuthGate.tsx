@@ -24,6 +24,19 @@ export default function AuthGate({
   requireAuth = true,
 }: AuthGateProps) {
   const auth = useAuth?.();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!auth) return;
+    if (!auth.loading && requireAuth && !auth.isAuthenticated) {
+      try {
+        router.replace(redirectTo as any);
+      } catch (e) {
+        console.error('[AuthGate] Navigation error:', e);
+      }
+    }
+  }, [auth, requireAuth, router, redirectTo]);
+
   // Graceful fallback if provider hasn't mounted yet or crashed previously
   if (!auth) {
     return (
@@ -35,17 +48,6 @@ export default function AuthGate({
     );
   }
   const { loading, isAuthenticated } = auth;
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!loading && requireAuth && !isAuthenticated) {
-      try {
-        router.replace(redirectTo as any);
-      } catch (e) {
-        console.error('[AuthGate] Navigation error:', e);
-      }
-    }
-  }, [loading, requireAuth, isAuthenticated, router, redirectTo]);
 
   if (loading) {
     return (

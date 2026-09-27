@@ -342,7 +342,7 @@ export default function SunProfileScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Default Modifiers</Text>
         <Text style={styles.sectionDescription}>
-          Default values for new sessions when you don't manually adjust them.
+          Default values for new sessions when you don’t manually adjust them.
         </Text>
 
         {/* Default Shade */}
@@ -374,7 +374,7 @@ export default function SunProfileScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Morning Light Window</Text>
         <Text style={styles.sectionDescription}>
-          How many hours after sunrise counts as "morning light"?
+          How many hours after sunrise counts as “morning light”?
         </Text>
         <View style={styles.sliderContainer}>
           <TouchableOpacity

@@ -37,20 +37,6 @@ export default function RevenueCatPaywallUI({
   onSelectPlan,
   onRestore,
 }: RevenueCatPaywallUIProps) {
-  // Early return for web BEFORE any hooks
-  if (Platform.OS === 'web') {
-    return (
-      <View style={{ padding: 20, alignItems: 'center' }}>
-        <Text style={{ fontSize: 16, color: '#DC2626', marginBottom: 8 }}>
-          RevenueCat Paywalls Not Supported on Web
-        </Text>
-        <Text style={{ fontSize: 14, color: '#6B7280', textAlign: 'center' }}>
-          Please use the mobile app to access premium features.
-        </Text>
-      </View>
-    );
-  }
-
   const [Purchases, setPurchases] = useState<any>(null);
   const [plans, setPlans] = useState<PaywallPlan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -58,6 +44,10 @@ export default function RevenueCatPaywallUI({
 
   // Load RevenueCat SDK
   useEffect(() => {
+    if (Platform.OS === 'web') {
+      setIsLoading(false);
+      return;
+    }
 
     // Dynamically import RevenueCat core SDK (native only)
     import('react-native-purchases')
@@ -74,6 +64,7 @@ export default function RevenueCatPaywallUI({
 
   // Fetch offerings when SDK is ready
   useEffect(() => {
+    if (Platform.OS === 'web') return;
     if (!Purchases) return;
 
     const fetchOfferings = async () => {
@@ -151,6 +142,19 @@ export default function RevenueCatPaywallUI({
 
     fetchOfferings();
   }, [Purchases, remoteConfig.paywall_id]);
+
+  if (Platform.OS === 'web') {
+    return (
+      <View style={{ padding: 20, alignItems: 'center' }}>
+        <Text style={{ fontSize: 16, color: '#DC2626', marginBottom: 8 }}>
+          RevenueCat Paywalls Not Supported on Web
+        </Text>
+        <Text style={{ fontSize: 14, color: '#6B7280', textAlign: 'center' }}>
+          Please use the mobile app to access premium features.
+        </Text>
+      </View>
+    );
+  }
 
   // Handle plan selection (purchase)
   const handleSelectPlan = async (planId: string) => {

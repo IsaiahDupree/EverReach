@@ -157,6 +157,7 @@ export default function ContactContextScreen() {
 
   const person = people.find(p => p.id === id);
   const notesComposer = useNotesComposer();
+  usePaywallGate({ autoShow: Boolean(person) });
 
   useEffect(() => {
     const index = tabs.findIndex(t => t.key === activeTab);
@@ -1262,7 +1263,7 @@ export default function ContactContextScreen() {
               <View style={styles.emptyState}>
                 <Search size={48} color="#CCCCCC" />
                 <Text style={styles.emptyStateText}>
-                  No notes found for "{searchQuery}"
+                  No notes found for “{searchQuery}”
                 </Text>
                 <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearSearchButton}>
                   <Text style={styles.clearSearchButtonText}>Clear Search</Text>
@@ -1833,9 +1834,6 @@ export default function ContactContextScreen() {
       </AuthGate>
     );
   }
-
-  // Auto-show paywall if user is not paid
-  usePaywallGate();
 
   return (
     <AuthGate requireAuth>

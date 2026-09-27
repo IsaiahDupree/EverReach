@@ -338,7 +338,7 @@ export default function ImportContactsScreen() {
           
           <Text style={styles.title}>Import Contacts</Text>
           <Text style={styles.description}>
-            Import contacts from your phone{Platform.OS !== 'web' ? ' address book' : ''}. We'll skip duplicates and only add new contacts.
+            Import contacts from your phone{Platform.OS !== 'web' ? ' address book' : ''}. We’ll skip duplicates and only add new contacts.
           </Text>
 
           {/* Permission Status Banner */}

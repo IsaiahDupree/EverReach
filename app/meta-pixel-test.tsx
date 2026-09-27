@@ -249,8 +249,8 @@ export default function MetaPixelTestScreen() {
         <Text style={styles.infoTitle}>How to Verify in Meta</Text>
         <Text style={styles.infoText}>
           1. Go to Meta Events Manager{'\n'}
-          2. Select "Dupree Ops Meta Pixel" (ID: {PIXEL_ID}){'\n'}
-          3. Click "Test Events" tab{'\n'}
+          2. Select “Dupree Ops Meta Pixel” (ID: {PIXEL_ID}){'\n'}
+          3. Click “Test Events” tab{'\n'}
           4. Enter test code: {TEST_EVENT_CODE}{'\n'}
           5. Events should appear within 30 seconds
         </Text>
