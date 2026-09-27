@@ -7,22 +7,16 @@ import {
   TouchableOpacity,
   FlatList,
   RefreshControl,
-  Alert,
-  Dimensions,
 } from 'react-native';
 import * as Location from 'expo-location';
-import { MapPin, Navigation, Plus } from 'lucide-react-native';
-import { getAllSpots, getNearbySpots, submitSpot } from '@/services/suntraceApi';
+import { Navigation } from 'lucide-react-native';
+import { getAllSpots, getNearbySpots } from '@/services/suntraceApi';
 import { fetchUVForecast } from '@/services/openMeteo';
 import { getUVCategory } from '@/services/uvCalculations';
 import { SUNTRACE_COLORS } from '@/constants/suntrace';
 import { SunSpot } from '@/types/suntrace';
-import { useSubscription } from '@/hooks/useSubscription';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function SunMapScreen() {
-  const { isPro } = useSubscription();
   const [spots, setSpots] = useState<SunSpot[]>([]);
   const [nearbySpots, setNearbySpots] = useState<SunSpot[]>([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -110,28 +104,6 @@ export default function SunMapScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Sun Spots</Text>
-        {isPro && (
-          <TouchableOpacity style={styles.addBtn} onPress={() => Alert.alert('Add Spot', 'Submit a new sun spot coming soon.')}>
-            <Plus size={20} color="#fff" />
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {/* Map placeholder — Mapbox integration requires native module setup */}
-      <View style={styles.mapPlaceholder}>
-        <MapPin size={40} color={SUNTRACE_COLORS.primary} />
-        <Text style={styles.mapPlaceholderTitle}>Interactive Map</Text>
-        <Text style={styles.mapPlaceholderText}>
-          {spots.length} sun spots across the US
-        </Text>
-        {userLocation && (
-          <View style={styles.locationRow}>
-            <Navigation size={14} color={SUNTRACE_COLORS.accent} />
-            <Text style={styles.locationText}>
-              {userLocation.lat.toFixed(3)}, {userLocation.lon.toFixed(3)}
-            </Text>
-          </View>
-        )}
       </View>
 
       {/* Nearby spots */}
@@ -139,8 +111,14 @@ export default function SunMapScreen() {
         <Text style={styles.sectionTitle}>
           {nearbySpots.length > 0
             ? `${nearbySpots.length} Nearby Spots`
-            : 'All Sun Spots'}
+            : `${spots.length} Sun Spots`}
         </Text>
+        {userLocation && (
+          <View style={styles.locationRow}>
+            <Navigation size={14} color={SUNTRACE_COLORS.accent} />
+            <Text style={styles.locationText}>Sorted from your current area</Text>
+          </View>
+        )}
       </View>
 
       <FlatList
@@ -172,26 +150,6 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
   title: { fontSize: 28, fontWeight: '800', color: SUNTRACE_COLORS.textPrimary },
-  addBtn: {
-    width: 36, height: 36, borderRadius: 18,
-    backgroundColor: SUNTRACE_COLORS.primary,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  mapPlaceholder: {
-    height: 180,
-    backgroundColor: SUNTRACE_COLORS.bgCard,
-    marginHorizontal: 20,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: SUNTRACE_COLORS.primary + '33',
-    borderStyle: 'dashed',
-  },
-  mapPlaceholderTitle: { fontSize: 16, fontWeight: '700', color: SUNTRACE_COLORS.textPrimary },
-  mapPlaceholderText: { fontSize: 13, color: SUNTRACE_COLORS.textSecondary },
   locationRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   locationText: { fontSize: 12, color: SUNTRACE_COLORS.accent },
   section: { paddingHorizontal: 20, marginBottom: 8 },

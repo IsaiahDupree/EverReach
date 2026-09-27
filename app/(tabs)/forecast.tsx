@@ -15,7 +15,6 @@ import { fetchUVForecast } from '@/services/openMeteo';
 import { getUVCategory } from '@/services/uvCalculations';
 import { SUNTRACE_COLORS } from '@/constants/suntrace';
 import { UVForecast, UVForecastDay, UVForecastHour } from '@/types/suntrace';
-import { useSubscription } from '@/hooks/useSubscription';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const BAR_MAX_HEIGHT = 80;
@@ -25,7 +24,6 @@ export default function ForecastScreen() {
   const [forecast, setForecast] = useState<UVForecast | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedDay, setSelectedDay] = useState(0);
-  const { isPro } = useSubscription();
 
   const loadForecast = useCallback(async () => {
     let lat = 40.7128, lon = -74.006;
@@ -70,15 +68,10 @@ export default function ForecastScreen() {
         </View>
       )}
 
-      {/* 7-day summary (Pro gated) */}
+      {/* 7-day summary */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>7-Day Forecast</Text>
-          {!isPro && (
-            <View style={styles.proBadge}>
-              <Text style={styles.proText}>PRO</Text>
-            </View>
-          )}
         </View>
         {forecast?.days.map((day, i) => (
           <DayRow
@@ -87,13 +80,13 @@ export default function ForecastScreen() {
             index={i}
             selected={selectedDay === i}
             onPress={() => setSelectedDay(i)}
-            locked={!isPro && i > 0}
+            locked={false}
           />
         ))}
       </View>
 
       {/* Selected day detail */}
-      {selectedDayData && (isPro || selectedDay === 0) && (
+      {selectedDayData && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
             {formatDate(selectedDayData.date)} — Detail
@@ -198,8 +191,6 @@ const styles = StyleSheet.create({
   section: { marginBottom: 28 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
   sectionTitle: { fontSize: 18, fontWeight: '700', color: SUNTRACE_COLORS.textPrimary, marginBottom: 12 },
-  proBadge: { backgroundColor: SUNTRACE_COLORS.primary, borderRadius: 6, paddingVertical: 2, paddingHorizontal: 8 },
-  proText: { color: '#fff', fontSize: 10, fontWeight: '800', letterSpacing: 1 },
   hourlyChart: { flexDirection: 'row', alignItems: 'flex-end', gap: 6, paddingVertical: 8, paddingHorizontal: 4, height: BAR_MAX_HEIGHT + 40 },
   hourlyBarCol: { alignItems: 'center', justifyContent: 'flex-end', gap: 4 },
   hourlyBar: { width: 24, borderRadius: 4 },

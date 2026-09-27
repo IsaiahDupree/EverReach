@@ -9,7 +9,6 @@ import * as AppleAuthentication from 'expo-apple-authentication';
 import { supabase } from '@/lib/supabase';
 import CrossPlatformTextInput from '@/components/CrossPlatformTextInput';
 import { useAuth } from '@/providers/AuthProviderV2';
-import { useSubscription } from '@/providers/SubscriptionProvider';
 import { FLAGS } from '@/constants/flags';
 
 type AuthMode = 'email' | 'password';
@@ -17,7 +16,6 @@ type AuthMode = 'email' | 'password';
 export default function Auth() {
   const router = useRouter();
   const { session, loading: authLoading, signInWithApple } = useAuth();
-  const { refreshEntitlements } = useSubscription();
 
   const [mode, setMode] = useState<AuthMode>('password');
   const [email, setEmail] = useState('');
@@ -52,7 +50,7 @@ export default function Auth() {
       if (returnTo) {
         router.replace(returnTo as any);
       } else {
-        router.replace('/(tabs)/home');
+        router.replace('/(tabs)/sun-home');
       }
     }
   }, [session, authLoading, params.returnTo]);
@@ -112,15 +110,6 @@ export default function Auth() {
           throw signInError;
         }
 
-        // Auto-refresh entitlements after successful sign in
-        console.log('[Auth] Sign in successful, refreshing entitlements...');
-        try {
-          await refreshEntitlements();
-          console.log('[Auth] ✅ Entitlements refreshed automatically');
-        } catch (refreshError) {
-          console.warn('[Auth] Failed to auto-refresh entitlements:', refreshError);
-          // Don't block login if entitlements refresh fails
-        }
       }
     } catch (err: any) {
       console.error('[Auth] Error:', err);

@@ -53,7 +53,7 @@ export default function SunTraceTabLayout() {
         <Tabs.Screen
           name="sun-map"
           options={{
-            title: "Map",
+            title: "Spots",
             tabBarIcon: ({ color }) => <MapPin size={22} color={color} />,
           }}
         />

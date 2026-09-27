@@ -21,10 +21,6 @@ import { FLAGS } from '@/constants/flags';
 import { getOrCreateLocalUser, LocalUser } from '@/auth/LocalAuth';
 import createContextHook from '@nkzw/create-context-hook';
 import type { Session, User } from '@supabase/supabase-js';
-import { identifyUser, resetPostHog } from '@/lib/posthog';
-import { getLocales } from 'expo-localization';
-import { SubscriptionRepo } from '@/repos/SubscriptionRepo';
-import { logIn as revenueCatLogIn, logOut as revenueCatLogOut } from '@/lib/revenuecat';
 
 // Complete auth session for WebBrowser (native only)
 if (Platform.OS !== 'web') {
@@ -99,12 +95,6 @@ export const [AuthProvider, useAuth] = createContextHook<AuthContextValue>(() =>
             setSession(currentSession);
             setUser(currentSession.user);
             setOrgId('default-org-id');
-            
-            // Refresh entitlements on app startup with existing session
-            console.log('[Auth] 🔄 Refreshing entitlements on startup...');
-            SubscriptionRepo.getEntitlements()
-              .then(() => console.log('[Auth] ✅ Entitlements refreshed'))
-              .catch(err => console.error('[Auth] ❌ Failed to refresh entitlements:', err));
           } else {
             console.log('[Auth] No existing session');
           }
@@ -132,65 +122,15 @@ export const [AuthProvider, useAuth] = createContextHook<AuthContextValue>(() =>
               setUser(newSession.user);
               setOrgId('default-org-id');
               setIsPasswordRecovery(false);
-              
-              identifyUser(newSession.user.id, {
-                locale: getLocales()[0]?.languageTag || 'en',
-                platform: Platform.OS,
-              }).catch(err => console.error('[Auth] Failed to identify user:', err));
-              
-              // CRITICAL: Identify RevenueCat with the authenticated user ID
-              // This ensures subscriptions are tied to THIS user account, not the device/Apple ID
-              console.log('[Auth] 🔐 Identifying RevenueCat with user ID:', newSession.user.id);
-              revenueCatLogIn(newSession.user.id)
-                .then((result) => {
-                  if (result) {
-                    console.log('[Auth] ✅ RevenueCat identified with user:', newSession.user.id, 'created:', result.created);
-                  } else {
-                    console.warn('[Auth] ⚠️ RevenueCat logIn returned null (may not be available)');
-                  }
-                })
-                .catch((err) => {
-                  console.error('[Auth] ❌ Failed to identify RevenueCat:', err);
-                  // Don't block sign-in if RevenueCat fails
-                });
-              
-              // Automatically refresh all subscription data after sign-in
-              // This will fetch entitlements for THIS user only (validated by backend)
-              console.log('[Auth] 🔄 Refreshing subscription data after sign-in...');
-              Promise.all([
-                SubscriptionRepo.getEntitlements(),
-                SubscriptionRepo.restorePurchases(), // Syncs with RevenueCat/App Store for THIS user
-              ])
-                .then(() => console.log('[Auth] ✅ Subscription data refreshed and synced'))
-                .catch(err => console.error('[Auth] ❌ Failed to refresh subscription data:', err?.message || 'Unknown error'));
             }
             break;
 
           case 'SIGNED_OUT':
             console.log('[Auth] 👋 User signed out');
-            
-            // CRITICAL: Log out RevenueCat to prevent subscription leakage
-            // This ensures the next user who signs in doesn't get access to previous user's subscription
-            console.log('[Auth] 🔐 Logging out RevenueCat...');
-            revenueCatLogOut()
-              .then((success) => {
-                if (success) {
-                  console.log('[Auth] ✅ RevenueCat logged out successfully');
-                } else {
-                  console.warn('[Auth] ⚠️ RevenueCat logOut returned false (may not be available)');
-                }
-              })
-              .catch((err) => {
-                console.error('[Auth] ❌ Failed to log out RevenueCat:', err);
-                // Don't block sign-out if RevenueCat fails
-              });
-            
             setSession(null);
             setUser(null);
             setOrgId(null);
             setIsPasswordRecovery(false);
-            
-            resetPostHog().catch(err => console.error('[Auth] Failed to reset PostHog:', err));
             break;
 
           case 'TOKEN_REFRESHED':
@@ -521,21 +461,6 @@ export const [AuthProvider, useAuth] = createContextHook<AuthContextValue>(() =>
     try {
       console.log('\n[Auth] 👋 Signing out...');
 
-      // CRITICAL: Log out RevenueCat FIRST to prevent subscription leakage
-      // This ensures the next user who signs in doesn't get access to previous user's subscription
-      console.log('[Auth] 🔐 Logging out RevenueCat...');
-      try {
-        const success = await revenueCatLogOut();
-        if (success) {
-          console.log('[Auth] ✅ RevenueCat logged out successfully');
-        } else {
-          console.warn('[Auth] ⚠️ RevenueCat logOut returned false (may not be available)');
-        }
-      } catch (rcError: any) {
-        console.error('[Auth] ❌ Failed to log out RevenueCat:', rcError?.message || rcError);
-        // Don't block sign-out if RevenueCat fails
-      }
-
       // Clear API cache
       clearSessionCache();
 
@@ -547,9 +472,6 @@ export const [AuthProvider, useAuth] = createContextHook<AuthContextValue>(() =>
         setSession(null);
         setUser(null);
         setOrgId(null);
-        
-        // Reset PostHog tracking
-        resetPostHog();
       }
 
       // For local mode, reset to local user
@@ -567,7 +489,6 @@ export const [AuthProvider, useAuth] = createContextHook<AuthContextValue>(() =>
       setSession(null);
       setUser(null);
       setOrgId(null);
-      resetPostHog();
     }
   }, []);
 
