@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { Sun, Cloud, BookOpen, MapPin, MessageCircle, User } from "lucide-react-native";
+import { Sun, Cloud, BookOpen, MapPin, User } from "lucide-react-native";
 import React from "react";
 import AuthGate from "@/components/AuthGate";
 
@@ -60,8 +60,7 @@ export default function SunTraceTabLayout() {
         <Tabs.Screen
           name="coach"
           options={{
-            title: "Coach",
-            tabBarIcon: ({ color }) => <MessageCircle size={22} color={color} />,
+            href: null,
           }}
         />
         <Tabs.Screen

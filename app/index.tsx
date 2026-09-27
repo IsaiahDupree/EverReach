@@ -50,9 +50,9 @@ export default function Index() {
         return;
       }
 
-      // Default: redirect to home
-      console.log('[Index] No params, redirecting to /home');
-      router.replace('/home' as any);
+      // Default: open the SunTrace dashboard.
+      console.log('[Index] No params, redirecting to SunTrace home');
+      router.replace('/(tabs)/sun-home' as any);
     }, 100); // Small delay to ensure navigation is ready
 
     return () => clearTimeout(timeout);

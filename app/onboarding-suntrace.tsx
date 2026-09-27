@@ -33,7 +33,11 @@ const STEPS = [
 
 type Step = typeof STEPS[number];
 
-export default function SunTraceOnboarding() {
+type SunTraceOnboardingProps = {
+  onComplete?: () => void;
+};
+
+export default function SunTraceOnboarding({ onComplete }: SunTraceOnboardingProps) {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(0);
   const [skinType, setSkinType] = useState<FitzpatrickType>(3);
@@ -103,6 +107,7 @@ export default function SunTraceOnboarding() {
         .update({ updated_at: new Date().toISOString() })
         .eq('user_id', (await supabase.auth.getUser()).data.user?.id ?? '');
 
+      onComplete?.();
       router.replace('/(tabs)/sun-home');
     } catch (err: any) {
       Alert.alert('Error', err.message || 'Failed to save profile');
@@ -196,7 +201,7 @@ function WelcomeStep() {
           '☀️  Real-time UV tracking',
           '💊  Vitamin D goal calculator',
           '🔥  Daily streaks & badges',
-          '🤖  AI sun health coach',
+          '📈  Personalized sunlight trends',
         ].map((f, i) => (
           <Text key={i} style={styles.featureItem}>
             {f}

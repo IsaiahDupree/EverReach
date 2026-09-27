@@ -52,6 +52,7 @@ import OnboardingFlow from "./onboarding";
 import OnboardingV2Screen from "./onboarding-v2";
 import UpgradeOnboarding from "./upgrade-onboarding";
 import WelcomeScreen, { hasSeenWelcome } from "./welcome";
+import SunTraceOnboarding from "./onboarding-suntrace";
 import { View, ActivityIndicator, StyleSheet, Text, Platform } from "react-native";
 import { useAppLifecycle } from "@/hooks/useAppLifecycle";
 import { initializeEnvelope } from "@/lib/eventEnvelope";
@@ -173,9 +174,39 @@ function ScreenTracker() {
  */
 function RootLayoutNav() {
   const { loading, isAuthenticated, user } = useAuth();
-  const { isCompleted: onboardingCompleted, loading: onboardingLoading } = useOnboarding();
+  const { loading: onboardingLoading } = useOnboarding();
   const { isPaid, isTrialExpired } = useSubscription();
   const pathname = usePathname();
+  const [sunProfileState, setSunProfileState] = React.useState<'idle' | 'loading' | 'missing' | 'ready'>('idle');
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!isAuthenticated || !user) {
+      setSunProfileState('idle');
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    setSunProfileState('loading');
+    supabase
+      .from('sun_profiles')
+      .select('user_id')
+      .eq('user_id', (user as any).id)
+      .maybeSingle()
+      .then(({ data, error }: { data: { user_id: string } | null; error: any }) => {
+        if (cancelled) return;
+        if (error) {
+          console.warn('[SunTrace] Could not read onboarding profile:', error.message);
+        }
+        setSunProfileState(data ? 'ready' : 'missing');
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, user]);
   
   // Track if user has seen welcome screens (for pre-auth onboarding)
   const [welcomeSeen, setWelcomeSeen] = React.useState<boolean | null>(null);
@@ -493,14 +524,6 @@ function RootLayoutNav() {
     );
   }
 
-  // Show welcome screens for first-time users (before auth)
-  // OnboardingV2 handles the welcome screen (S1) and pre-auth questions
-  const isOnboardingDisabledPreAuth = process.env.EXPO_PUBLIC_DISABLE_ONBOARDING === 'true';
-  if (!isAuthenticated && !welcomeSeen && !isOnboardingDisabledPreAuth) {
-    console.log('[Layout v2] → Onboarding V2 (Welcome/Pre-auth)');
-    return <OnboardingV2Screen />;
-  }
-
   // Show sign-in if not authenticated, except for public routes
   const isAuthDisabled = process.env.EXPO_PUBLIC_DISABLE_ONBOARDING === 'true';
   if (!isAuthenticated && !isAuthDisabled) {
@@ -511,12 +534,17 @@ function RootLayoutNav() {
     }
   }
 
-  // Show onboarding for first-time users (only after authentication)
-  // OnboardingV2 handles the post-auth questions
-  const isOnboardingDisabled = process.env.EXPO_PUBLIC_DISABLE_ONBOARDING === 'true';
-  if (isAuthenticated && !onboardingCompleted && !isOnboardingDisabled) {
-    // console.log('[Layout v2] → Onboarding V2 (Post-auth)');
-    return <OnboardingV2Screen />;
+  // SunTrace needs a profile before it can calculate safe exposure targets.
+  if (isAuthenticated && sunProfileState === 'loading') {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#F59E0B" />
+        <Text style={styles.loadingText}>Loading SunTrace…</Text>
+      </View>
+    );
+  }
+  if (isAuthenticated && sunProfileState === 'missing') {
+    return <SunTraceOnboarding onComplete={() => setSunProfileState('ready')} />;
   }
 
   // Global gating: Simplified navigation control

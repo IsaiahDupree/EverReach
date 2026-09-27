@@ -25,10 +25,18 @@ CREATE TABLE IF NOT EXISTS sun_profiles (
 ALTER TABLE sun_profiles ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Users read own profile" ON sun_profiles
-  FOR SELECT USING (auth.uid() = user_id);
+  FOR SELECT TO authenticated USING ((SELECT auth.uid()) = user_id);
 
-CREATE POLICY "Users write own profile" ON sun_profiles
-  FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "Users insert own profile" ON sun_profiles
+  FOR INSERT TO authenticated WITH CHECK ((SELECT auth.uid()) = user_id);
+
+CREATE POLICY "Users update own profile" ON sun_profiles
+  FOR UPDATE TO authenticated
+  USING ((SELECT auth.uid()) = user_id)
+  WITH CHECK ((SELECT auth.uid()) = user_id);
+
+CREATE POLICY "Users delete own profile" ON sun_profiles
+  FOR DELETE TO authenticated USING ((SELECT auth.uid()) = user_id);
 
 -- ============================================
 -- Table: sun_sessions
@@ -52,10 +60,18 @@ CREATE TABLE IF NOT EXISTS sun_sessions (
 ALTER TABLE sun_sessions ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Users read own sessions" ON sun_sessions
-  FOR SELECT USING (auth.uid() = user_id);
+  FOR SELECT TO authenticated USING ((SELECT auth.uid()) = user_id);
 
-CREATE POLICY "Users write own sessions" ON sun_sessions
-  FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "Users insert own sessions" ON sun_sessions
+  FOR INSERT TO authenticated WITH CHECK ((SELECT auth.uid()) = user_id);
+
+CREATE POLICY "Users update own sessions" ON sun_sessions
+  FOR UPDATE TO authenticated
+  USING ((SELECT auth.uid()) = user_id)
+  WITH CHECK ((SELECT auth.uid()) = user_id);
+
+CREATE POLICY "Users delete own sessions" ON sun_sessions
+  FOR DELETE TO authenticated USING ((SELECT auth.uid()) = user_id);
 
 CREATE INDEX IF NOT EXISTS idx_sun_sessions_user_started
   ON sun_sessions(user_id, started_at DESC);
@@ -80,10 +96,18 @@ CREATE TABLE IF NOT EXISTS sun_daily_stats (
 ALTER TABLE sun_daily_stats ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Users read own daily stats" ON sun_daily_stats
-  FOR SELECT USING (auth.uid() = user_id);
+  FOR SELECT TO authenticated USING ((SELECT auth.uid()) = user_id);
 
-CREATE POLICY "Users write own daily stats" ON sun_daily_stats
-  FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "Users insert own daily stats" ON sun_daily_stats
+  FOR INSERT TO authenticated WITH CHECK ((SELECT auth.uid()) = user_id);
+
+CREATE POLICY "Users update own daily stats" ON sun_daily_stats
+  FOR UPDATE TO authenticated
+  USING ((SELECT auth.uid()) = user_id)
+  WITH CHECK ((SELECT auth.uid()) = user_id);
+
+CREATE POLICY "Users delete own daily stats" ON sun_daily_stats
+  FOR DELETE TO authenticated USING ((SELECT auth.uid()) = user_id);
 
 CREATE INDEX IF NOT EXISTS idx_sun_daily_stats_user_date
   ON sun_daily_stats(user_id, date DESC);
@@ -112,10 +136,12 @@ CREATE POLICY "All authenticated users read spots" ON sun_spots
   FOR SELECT TO authenticated USING (true);
 
 CREATE POLICY "Users write own spots" ON sun_spots
-  FOR INSERT WITH CHECK (auth.uid() = submitted_by);
+  FOR INSERT TO authenticated WITH CHECK ((SELECT auth.uid()) = submitted_by);
 
 CREATE POLICY "Users update own spots" ON sun_spots
-  FOR UPDATE USING (auth.uid() = submitted_by);
+  FOR UPDATE TO authenticated
+  USING ((SELECT auth.uid()) = submitted_by)
+  WITH CHECK ((SELECT auth.uid()) = submitted_by);
 
 -- ============================================
 -- Table: sun_badges
@@ -151,10 +177,10 @@ CREATE TABLE IF NOT EXISTS sun_user_badges (
 ALTER TABLE sun_user_badges ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Users read own user_badges" ON sun_user_badges
-  FOR SELECT USING (auth.uid() = user_id);
+  FOR SELECT TO authenticated USING ((SELECT auth.uid()) = user_id);
 
 CREATE POLICY "System insert user_badges" ON sun_user_badges
-  FOR INSERT WITH CHECK (auth.uid() = user_id);
+  FOR INSERT TO authenticated WITH CHECK ((SELECT auth.uid()) = user_id);
 
 -- ============================================
 -- Table: sun_tips
@@ -163,7 +189,7 @@ CREATE TABLE IF NOT EXISTS sun_tips (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   title TEXT NOT NULL,
   body TEXT NOT NULL,
-  category TEXT NOT NULL CHECK (category IN ('timing','safety','nutrition','skin_care','seasonal')),
+  category TEXT NOT NULL CHECK (category IN ('timing','safety','nutrition','skin_care','seasonal','health')),
   skin_types SMALLINT[],
   is_pro BOOLEAN NOT NULL DEFAULT false,
   created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
@@ -190,10 +216,18 @@ CREATE TABLE IF NOT EXISTS sun_supplement_logs (
 ALTER TABLE sun_supplement_logs ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Users read own supplement_logs" ON sun_supplement_logs
-  FOR SELECT USING (auth.uid() = user_id);
+  FOR SELECT TO authenticated USING ((SELECT auth.uid()) = user_id);
 
-CREATE POLICY "Users write own supplement_logs" ON sun_supplement_logs
-  FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "Users insert own supplement_logs" ON sun_supplement_logs
+  FOR INSERT TO authenticated WITH CHECK ((SELECT auth.uid()) = user_id);
+
+CREATE POLICY "Users update own supplement_logs" ON sun_supplement_logs
+  FOR UPDATE TO authenticated
+  USING ((SELECT auth.uid()) = user_id)
+  WITH CHECK ((SELECT auth.uid()) = user_id);
+
+CREATE POLICY "Users delete own supplement_logs" ON sun_supplement_logs
+  FOR DELETE TO authenticated USING ((SELECT auth.uid()) = user_id);
 
 -- ============================================
 -- Table: sun_coach_messages
@@ -209,13 +243,39 @@ CREATE TABLE IF NOT EXISTS sun_coach_messages (
 ALTER TABLE sun_coach_messages ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Users read own coach_messages" ON sun_coach_messages
-  FOR SELECT USING (auth.uid() = user_id);
+  FOR SELECT TO authenticated USING ((SELECT auth.uid()) = user_id);
 
 CREATE POLICY "Users write own coach_messages" ON sun_coach_messages
-  FOR INSERT WITH CHECK (auth.uid() = user_id);
+  FOR INSERT TO authenticated WITH CHECK ((SELECT auth.uid()) = user_id);
 
 CREATE INDEX IF NOT EXISTS idx_sun_coach_messages_user_created
   ON sun_coach_messages(user_id, created_at DESC);
+
+-- Explicit Data API grants. RLS policies above still determine which rows an
+-- authenticated user may access; anonymous clients receive no table grants.
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE
+  sun_profiles,
+  sun_sessions,
+  sun_daily_stats,
+  sun_spots,
+  sun_user_badges,
+  sun_supplement_logs,
+  sun_coach_messages
+TO authenticated;
+
+GRANT SELECT ON TABLE sun_badges, sun_tips TO authenticated;
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE
+  sun_profiles,
+  sun_sessions,
+  sun_daily_stats,
+  sun_spots,
+  sun_badges,
+  sun_user_badges,
+  sun_tips,
+  sun_supplement_logs,
+  sun_coach_messages
+TO service_role;
 
 -- ============================================
 -- SEED DATA: sun_badges (30 badges)
