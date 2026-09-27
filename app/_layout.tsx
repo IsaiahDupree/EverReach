@@ -45,7 +45,7 @@ import { trpc, trpcClient } from "@/lib/trpc";
 import { NotesComposerProvider } from "@/providers/NotesComposerProvider";
 import { PaywallProvider } from "@/providers/PaywallProvider";
 import { PaywallGuard } from "@/components/PaywallGuard";
-import { SuperwallProvider, SuperwallLoading, SuperwallLoaded, CustomPurchaseControllerProvider } from 'expo-superwall';
+import { SuperwallProvider, CustomPurchaseControllerProvider } from 'expo-superwall';
 import Purchases from 'react-native-purchases';
 import Auth from "./auth";
 import OnboardingFlow from "./onboarding";
@@ -162,6 +162,36 @@ const superwallKeysPresent = !!(
   process.env.EXPO_PUBLIC_SUPERWALL_IOS_KEY ||
   process.env.EXPO_PUBLIC_SUPERWALL_ANDROID_KEY
 );
+
+function OptionalSuperwallProvider({ children }: { children: React.ReactNode }) {
+  if (!superwallKeysPresent) {
+    return <>{children}</>;
+  }
+
+  return (
+    <CustomPurchaseControllerProvider
+      controller={{
+        onPurchase: async (params) => {
+          const products = await Purchases.getProducts([params.productId]);
+          if (!products?.length) throw new Error('Product not found');
+          await Purchases.purchaseStoreProduct(products[0]);
+        },
+        onPurchaseRestore: async () => {
+          await Purchases.restorePurchases();
+        },
+      }}
+    >
+      <SuperwallProvider
+        apiKeys={{
+          ios: process.env.EXPO_PUBLIC_SUPERWALL_IOS_KEY || '',
+          android: process.env.EXPO_PUBLIC_SUPERWALL_ANDROID_KEY || '',
+        }}
+      >
+        {children}
+      </SuperwallProvider>
+    </CustomPurchaseControllerProvider>
+  );
+}
 
 // Global screen tracking helper (expo-router path + duration)
 function ScreenTracker() {
@@ -695,42 +725,7 @@ export default function RootLayout() {
         <ThemeProvider>
           <AppSettingsProvider>
             <AuthProvider>
-              <CustomPurchaseControllerProvider
-                controller={{
-                  onPurchase: async (params) => {
-                    try {
-                      console.log('[Superwall] Purchase initiated for:', params.productId);
-                      const products = await Purchases.getProducts([params.productId]);
-                      if (!products || products.length === 0) {
-                        console.error('[Superwall] No products found for:', params.productId);
-                        throw new Error('Product not found');
-                      }
-                      console.log('[Superwall] Product found, purchasing:', products[0].identifier);
-                      const { customerInfo } = await Purchases.purchaseStoreProduct(products[0]);
-                      console.log('[Superwall] Purchase completed, active entitlements:', Object.keys(customerInfo?.entitlements?.active || {}));
-                    } catch (error) {
-                      console.error('[Superwall] Purchase failed:', error);
-                      throw error;
-                    }
-                  },
-                  onPurchaseRestore: async () => {
-                    try {
-                      console.log('[Superwall] Restore initiated');
-                      const customerInfo = await Purchases.restorePurchases();
-                      console.log('[Superwall] Purchases restored, active entitlements:', Object.keys(customerInfo?.entitlements?.active || {}));
-                    } catch (error) {
-                      console.error('[Superwall] Restore failed:', error);
-                      throw error;
-                    }
-                  },
-                }}
-              >
-                <SuperwallProvider
-                  apiKeys={{
-                    ios: process.env.EXPO_PUBLIC_SUPERWALL_IOS_KEY || '',
-                    android: process.env.EXPO_PUBLIC_SUPERWALL_ANDROID_KEY || ''
-                  }}
-                >
+              <OptionalSuperwallProvider>
                   <OnboardingProvider>
                     <WarmthSettingsProvider>
                       <WarmthProvider>
@@ -756,8 +751,7 @@ export default function RootLayout() {
                       </WarmthProvider>
                     </WarmthSettingsProvider>
                   </OnboardingProvider>
-                </SuperwallProvider>
-              </CustomPurchaseControllerProvider>
+              </OptionalSuperwallProvider>
             </AuthProvider>
           </AppSettingsProvider>
         </ThemeProvider>
