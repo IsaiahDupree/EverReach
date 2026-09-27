@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "locale": "en-US",
+  "apps": {
+    "suntrace": {
+      "target": {
+        "app_id": "6816634636",
+        "app_name": "SunTrace: Sunlight Tracker",
+        "bundle_id": "com.suntrace.app",
+        "platform": "IOS",
+        "version_string": "1.0",
+        "version_id": "8f84e2c4-b075-441d-96fd-a06f4ab78832",
+        "expected_version_state": "PREPARE_FOR_SUBMISSION",
+        "app_info_id": "e2db867f-d6b5-401a-9618-82876784afad",
+        "app_info_localization_id": "561dbea0-ed80-4dba-bc1f-8a4187273bfb",
+        "version_localization_id": "c5455c65-cd52-4e7a-95d6-548aff20a458"
+      },
+      "metadata": {
+        "subtitle": "Track Sunlight & Local UV",
+        "description": "Build a clearer picture of your time in the sun.\n\nSunTrace combines a simple outdoor timer with local UV conditions, personal exposure estimates, and an easy-to-read history. Start a session when you head outside, then review your minutes, estimated dose, and progress over time.\n\n• Track outdoor sessions with a start-and-stop timer\n• See current UV conditions and a seven-day forecast\n• Get estimates tailored to your skin type and age\n• Review session history and weekly totals\n• Follow streaks and unlock progress badges\n• Find nearby parks, trails, beaches, and other sun spots\n• Keep private account data protected with row-level access controls\n• Delete your account and private SunTrace history from inside the app\n\nLocation access is optional and used while the app is open to retrieve local UV forecasts and nearby places. An account and internet connection are required to save and sync your history.\n\nSunTrace provides informational estimates for awareness and habit tracking. It is not a medical device and does not provide medical advice, diagnosis, or treatment. UV exposure can damage skin; follow local health guidance and advice from a qualified clinician.",
+        "keywords": "sunlight,UV index,outdoor time,vitamin D,sun tracker,UV forecast,daylight,exposure,skin health",
+        "promotional_text": "Track time outside, check local UV conditions, and review your sunlight habits with personal estimates, forecasts, history, streaks, and badges.",
+        "support_url": "https://isaiahdupree.github.io/sonance-apps/suntrace/",
+        "marketing_url": "https://isaiahdupree.github.io/sonance-apps/suntrace/",
+        "privacy_policy_url": "https://isaiahdupree.github.io/sonance-apps/suntrace/privacy/",
+        "primary_category": "HEALTH_AND_FITNESS",
+        "content_rights_declaration": "USES_THIRD_PARTY_CONTENT"
+      }
+    }
+  }
+}
