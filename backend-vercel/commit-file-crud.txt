@@ -1,0 +1,56 @@
+feat: complete file CRUD with audio/image filtering and E2E tests
+
+- Added GET /v1/files/:id - Get file details with download URL
+- Added PATCH /v1/files/:id - Update file metadata  
+- Added DELETE /v1/files/:id - Delete file from storage and database
+- Enhanced GET /v1/files - List with filtering by type and contact
+- Comprehensive E2E test suite (11 tests covering full CRUD)
+- Test runner script for easy CLI testing
+
+File Operations:
+- Upload audio/image files with presigned URLs
+- List and filter by MIME type (audio/*, image/*, video/*, application/*)
+- Get file details with temporary download URL (1 hour expiry)
+- Update file metadata (mime_type, size_bytes)
+- Delete files (removes from both storage and database)
+- Link files to contacts
+
+Query Parameters:
+- ?type=audio - Filter audio files
+- ?type=image - Filter image files
+- ?type=video - Filter video files
+- ?type=document - Filter documents
+- ?contact_id=<id> - Filter by contact
+- ?limit=50 - Limit results
+
+Test Coverage (11 tests):
+1. Upload audio file
+2. Upload image file
+3. List all files
+4. List audio files only
+5. List image files only
+6. Get file details with download URL
+7. Update file metadata
+8. List files for specific contact
+9. Delete file
+10. Verify file deleted (404)
+11. Unauthorized access handling
+
+Security:
+- All endpoints require authentication
+- RLS policies enforce user isolation
+- Presigned URLs for secure uploads
+- Download URLs with 1-hour expiry
+
+Files Created (3):
+- app/api/v1/files/[id]/route.ts (GET, PATCH, DELETE - 150 lines)
+- test/file-crud.mjs (11 comprehensive tests - 550 lines)
+- scripts/test-file-crud.ps1 (test runner - 35 lines)
+
+Updated (2):
+- app/api/v1/files/route.ts (added GET list endpoint with filtering)
+- docs/ALL_ENDPOINTS_MASTER_LIST.md (now 154 total endpoints)
+
+Run tests: .\scripts\test-file-crud.ps1
+Branch: feat/backend-vercel-only-clean
+Status: Ready for deployment and testing

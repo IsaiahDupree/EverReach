@@ -1,0 +1,141 @@
+name: Backend Tests
+
+on:
+  push:
+    branches: [main, feat/backend-vercel-only-clean]
+    paths:
+      - 'backend-vercel/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'backend-vercel/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+          cache-dependency-path: backend-vercel/package-lock.json
+      
+      - name: Install dependencies
+        run: npm ci
+        working-directory: ./backend-vercel
+      
+      - name: Run linter
+        run: npm run lint || echo "Linter not configured"
+        working-directory: ./backend-vercel
+        continue-on-error: true
+      
+      - name: Run unit tests
+        run: npm run test:unit
+        working-directory: ./backend-vercel
+        env:
+          NODE_ENV: test
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          SUPABASE_JWT_SECRET: test-jwt-secret
+          CRON_SECRET: test-cron-secret
+      
+      - name: Run integration tests
+        run: npm run test:integration
+        working-directory: ./backend-vercel
+        env:
+          NODE_ENV: test
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          SUPABASE_JWT_SECRET: test-jwt-secret
+      
+      - name: Generate coverage report
+        run: npm run test:coverage
+        working-directory: ./backend-vercel
+        env:
+          NODE_ENV: test
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          SUPABASE_JWT_SECRET: test-jwt-secret
+      
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./backend-vercel/coverage/lcov.info
+          flags: backend
+          name: backend-coverage-${{ matrix.node-version }}
+          fail_ci_if_error: false
+      
+      - name: Comment coverage on PR
+        if: github.event_name == 'pull_request' && matrix.node-version == '18.x'
+        uses: romeovs/lcov-reporter-action@v0.3.1
+        with:
+          lcov-file: ./backend-vercel/coverage/lcov.info
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          delete-old-comments: true
+      
+      - name: Archive test results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results-${{ matrix.node-version }}
+          path: |
+            backend-vercel/coverage
+            backend-vercel/test-results
+          retention-days: 7
+
+  database-tests:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/feat/backend-vercel-only-clean'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+          cache: 'npm'
+          cache-dependency-path: backend-vercel/package-lock.json
+      
+      - name: Install dependencies
+        run: npm ci
+        working-directory: ./backend-vercel
+      
+      - name: Run database integration tests
+        run: npm test
+        working-directory: ./backend-vercel
+        env:
+          NODE_ENV: test
+          RUN_INTEGRATION_TESTS: true
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_JWT_SECRET: ${{ secrets.SUPABASE_JWT_SECRET }}
+
+  security-audit:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+      
+      - name: Run npm audit
+        run: npm audit --production
+        working-directory: ./backend-vercel
+        continue-on-error: true
+      
+      - name: Check for vulnerabilities
+        run: npm audit --audit-level=moderate
+        working-directory: ./backend-vercel

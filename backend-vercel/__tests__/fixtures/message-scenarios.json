@@ -1,0 +1,315 @@
+[
+  {
+    "name": "business_revive_negative_sentiment",
+    "description": "Cold business contact who went quiet after proposal",
+    "user": {
+      "voice_style": "practical, friendly",
+      "persona_summary": "Founder, values brevity",
+      "default_channels": ["email", "sms"]
+    },
+    "contact": {
+      "name": "Alex Chen",
+      "role": "Ops Lead",
+      "company": "Nordex",
+      "warmth": -35,
+      "pipeline": "business",
+      "status": "revive",
+      "facts": ["uses HubSpot", "timezone PST", "prefers Tue/Thu mornings"],
+      "preferences": ["no long emails"],
+      "boundaries": ["no cold calls"],
+      "email": "alex@nordex.com"
+    },
+    "interactions": [
+      {
+        "date": "2025-07-02",
+        "direction": "out",
+        "channel": "email",
+        "content": "Sent detailed proposal for review",
+        "sentiment": 0,
+        "intent": "proposal"
+      },
+      {
+        "date": "2025-07-10",
+        "direction": "in",
+        "channel": "email",
+        "content": "Thanks, but we're swamped right now. Will circle back.",
+        "sentiment": -1,
+        "intent": "defer"
+      }
+    ],
+    "goal": {
+      "type": "book_meeting",
+      "constraints": {
+        "length": "short",
+        "channel_hint": "email"
+      }
+    },
+    "expect": {
+      "channel": "email",
+      "tone": "respectful, value-focused",
+      "contains": ["acknowledge", "understand", "value"],
+      "not_contains": ["call", "urgent", "need", "asap"],
+      "has_cta": true,
+      "cta_type": "soft_ask",
+      "length_range": [80, 150]
+    }
+  },
+  {
+    "name": "networking_new_warm",
+    "description": "New contact from networking event, warm introduction",
+    "user": {
+      "voice_style": "casual, authentic",
+      "persona_summary": "Marketing lead, relationship builder",
+      "default_channels": ["email", "linkedin"]
+    },
+    "contact": {
+      "name": "Jordan Kim",
+      "role": "Product Manager",
+      "company": "Innovate Labs",
+      "warmth": 60,
+      "pipeline": "networking",
+      "status": "new",
+      "facts": ["met at TechConf 2025", "interested in AI", "based in SF"],
+      "preferences": ["casual communication", "linkedin preferred"],
+      "boundaries": [],
+      "linkedin": "jordan-kim-pm"
+    },
+    "interactions": [
+      {
+        "date": "2025-10-05",
+        "direction": "out",
+        "channel": "linkedin",
+        "content": "Great meeting you at TechConf! Really enjoyed our conversation about AI in product.",
+        "sentiment": 1,
+        "intent": "connection_request"
+      }
+    ],
+    "goal": {
+      "type": "check_in",
+      "constraints": {
+        "length": "short",
+        "channel_hint": "linkedin"
+      }
+    },
+    "expect": {
+      "channel": "linkedin",
+      "tone": "friendly, casual",
+      "contains": ["TechConf", "conversation", "enjoyed"],
+      "not_contains": ["formal", "sir", "madam"],
+      "has_cta": true,
+      "cta_type": "coffee_chat",
+      "length_range": [60, 120]
+    }
+  },
+  {
+    "name": "personal_nurture_high_warmth",
+    "description": "Close personal contact, regular check-ins",
+    "user": {
+      "voice_style": "warm, genuine",
+      "persona_summary": "Friend, stays in touch",
+      "default_channels": ["sms", "email"]
+    },
+    "contact": {
+      "name": "Sam Rodriguez",
+      "role": null,
+      "company": null,
+      "warmth": 92,
+      "pipeline": "personal",
+      "status": "active",
+      "facts": ["friend from college", "has 2 kids", "loves hiking"],
+      "preferences": ["texts okay", "informal"],
+      "boundaries": ["no evening after 9pm"],
+      "phone": "+1-555-0123"
+    },
+    "interactions": [
+      {
+        "date": "2025-09-28",
+        "direction": "in",
+        "channel": "sms",
+        "content": "Hey! Just got back from that Yosemite trip. It was amazing!",
+        "sentiment": 2,
+        "intent": "share_experience"
+      },
+      {
+        "date": "2025-09-29",
+        "direction": "out",
+        "channel": "sms",
+        "content": "That's awesome! Would love to see photos sometime",
+        "sentiment": 1,
+        "intent": "express_interest"
+      }
+    ],
+    "goal": {
+      "type": "check_in",
+      "constraints": {
+        "length": "short",
+        "channel_hint": "sms"
+      }
+    },
+    "expect": {
+      "channel": "sms",
+      "tone": "casual, friendly",
+      "contains": ["Yosemite", "photos", "catch up"],
+      "not_contains": ["professional", "formal"],
+      "has_cta": false,
+      "length_range": [30, 80]
+    }
+  },
+  {
+    "name": "business_active_book_meeting",
+    "description": "Active business contact, scheduling next sync",
+    "user": {
+      "voice_style": "professional, efficient",
+      "persona_summary": "Account manager, organized",
+      "default_channels": ["email"]
+    },
+    "contact": {
+      "name": "Maria Santos",
+      "role": "VP Engineering",
+      "company": "BuildRight Inc",
+      "warmth": 72,
+      "pipeline": "business",
+      "status": "active",
+      "facts": ["quarterly reviews", "timezone EST", "prefers Monday/Wednesday"],
+      "preferences": ["calendar invites", "clear agendas"],
+      "boundaries": ["no Friday meetings"],
+      "email": "maria.santos@buildright.com"
+    },
+    "interactions": [
+      {
+        "date": "2025-09-15",
+        "direction": "out",
+        "channel": "email",
+        "content": "Q3 review completed. Great progress on automation goals.",
+        "sentiment": 1,
+        "intent": "review_summary"
+      },
+      {
+        "date": "2025-10-01",
+        "direction": "in",
+        "channel": "email",
+        "content": "Thanks! Ready to plan Q4 when you are.",
+        "sentiment": 1,
+        "intent": "ready_to_plan"
+      }
+    ],
+    "goal": {
+      "type": "book_meeting",
+      "constraints": {
+        "length": "medium",
+        "channel_hint": "email"
+      },
+      "cta": "Schedule Q4 planning meeting"
+    },
+    "expect": {
+      "channel": "email",
+      "tone": "professional, clear",
+      "contains": ["Q4", "planning", "Monday", "Wednesday", "agenda"],
+      "not_contains": ["Friday", "casual"],
+      "has_cta": true,
+      "cta_type": "meeting_request",
+      "length_range": [100, 180],
+      "has_specific_times": true
+    }
+  },
+  {
+    "name": "business_dormant_value_hook",
+    "description": "Dormant business contact, needs value-first approach",
+    "user": {
+      "voice_style": "consultative, helpful",
+      "persona_summary": "Solutions architect, problem solver",
+      "default_channels": ["email"]
+    },
+    "contact": {
+      "name": "Chris Lee",
+      "role": "CTO",
+      "company": "DataFlow Systems",
+      "warmth": 10,
+      "pipeline": "business",
+      "status": "dormant",
+      "facts": ["interested in security", "compliance focus", "large team"],
+      "preferences": ["data-driven", "ROI focused"],
+      "boundaries": [],
+      "email": "chris.lee@dataflow.com"
+    },
+    "interactions": [
+      {
+        "date": "2025-03-15",
+        "direction": "out",
+        "channel": "email",
+        "content": "Sent case study on security implementation",
+        "sentiment": 0,
+        "intent": "share_resource"
+      }
+    ],
+    "goal": {
+      "type": "share_resource",
+      "constraints": {
+        "length": "medium",
+        "channel_hint": "email"
+      }
+    },
+    "expect": {
+      "channel": "email",
+      "tone": "value-focused, no-pressure",
+      "contains": ["thought", "might find", "relevant", "no obligation"],
+      "not_contains": ["urgent", "need to talk", "call me"],
+      "has_cta": false,
+      "length_range": [80, 140]
+    }
+  },
+  {
+    "name": "networking_nurture_low_ask",
+    "description": "Networking contact in nurture phase, stay top-of-mind",
+    "user": {
+      "voice_style": "helpful, generous",
+      "persona_summary": "Connector, adds value",
+      "default_channels": ["email", "linkedin"]
+    },
+    "contact": {
+      "name": "Taylor Morgan",
+      "role": "Startup Founder",
+      "company": "GrowthHub",
+      "warmth": 45,
+      "pipeline": "networking",
+      "status": "nurture",
+      "facts": ["fundraising", "interested in intros", "fast-paced"],
+      "preferences": ["actionable", "brief"],
+      "boundaries": [],
+      "linkedin": "taylor-morgan-growthhub"
+    },
+    "interactions": [
+      {
+        "date": "2025-08-20",
+        "direction": "out",
+        "channel": "linkedin",
+        "content": "Intro'd you to Sarah at Venture Partners",
+        "sentiment": 1,
+        "intent": "introduction"
+      },
+      {
+        "date": "2025-08-22",
+        "direction": "in",
+        "channel": "linkedin",
+        "content": "Thanks so much! Great connection.",
+        "sentiment": 1,
+        "intent": "gratitude"
+      }
+    ],
+    "goal": {
+      "type": "check_in",
+      "constraints": {
+        "length": "short",
+        "channel_hint": "linkedin"
+      }
+    },
+    "expect": {
+      "channel": "linkedin",
+      "tone": "supportive, low-pressure",
+      "contains": ["how's", "fundraising", "anything I can help"],
+      "not_contains": ["need", "want", "ask"],
+      "has_cta": false,
+      "length_range": [50, 100]
+    }
+  }
+]

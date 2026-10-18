@@ -1,0 +1,205 @@
+[
+  {
+    "Description": "Health Check",
+    "Response": "{\"status\":\"ok\",\"message\":\"Ever Reach Backend API is running\",\"time\":\"2025-10-10T21:38:15.543Z\"}",
+    "Status": 200,
+    "Success": true,
+    "Path": "/api/health"
+  },
+  {
+    "Description": "V1 Health Check",
+    "Error": "Response status code does not indicate success: 403 (Forbidden).",
+    "Status": 403,
+    "Success": false,
+    "Path": "/api/v1/ops/health"
+  },
+  {
+    "Description": "Config Status",
+    "Response": "{\"envs\":{\"SUPABASE_URL\":true,\"SUPABASE_SERVICE_ROLE_KEY\":true,\"RESEND_API_KEY\":true,\"EMAIL_FROM\":true,\"STRIPE_SECRET_KEY\":true,\"STRIPE_WEBHOOK_SECRET\":true,\"APPLE_ASN_VERIFY\":false,\"APPLE_APPSTORE_KEY",
+    "Status": 200,
+    "Success": true,
+    "Path": "/api/v1/ops/config-status"
+  },
+  {
+    "Description": "SKU Status",
+    "Error": "Response status code does not indicate success: 401 (Unauthorized).",
+    "Status": 401,
+    "Success": false,
+    "Path": "/api/v1/ops/sku-status"
+  },
+  {
+    "Description": "List Contacts",
+    "Response": "{\"items\":[{\"id\":\"05084170-fe6b-4d44-9e44-cf9df7f62b24\",\"display_name\":\"Tonya Qualls\",\"emails\":[],\"phones\":[\"+13092195034\"],\"tags\":[\"imported\"],\"warmth\":40,\"warmth_band\":null,\"last_interaction_at\":null",
+    "Status": 200,
+    "Success": true,
+    "Path": "/api/v1/contacts"
+  },
+  {
+    "Description": "Search Contacts",
+    "Error": "Response status code does not indicate success: 405 (Method Not Allowed).",
+    "Status": 405,
+    "Success": false,
+    "Path": "/api/v1/search?q=test"
+  },
+  {
+    "Description": "List Agent Tools",
+    "Response": "{\"tools\":[{\"name\":\"get_contact\",\"description\":\"Retrieve detailed information about a specific contact by ID or search criteria\",\"parameters\":{\"type\":\"object\",\"properties\":{\"contact_id\":{\"type\":\"string",
+    "Status": 200,
+    "Success": true,
+    "Path": "/api/v1/agent/tools"
+  },
+  {
+    "Description": "Agent Chat",
+    "Response": "{\"conversation_id\":\"c9afd9d7-9afd-4b88-a519-c79cca48667b\",\"message\":\"Of course! How can I assist you today?\",\"tool_calls_made\":0,\"tools_used\":[],\"usage\":{\"prompt_tokens\":658,\"completion_tokens\":11,\"to",
+    "Status": 200,
+    "Success": true,
+    "Path": "/api/v1/agent/chat"
+  },
+  {
+    "Description": "Process Voice Note",
+    "Error": "Response status code does not indicate success: 400 (Bad Request).",
+    "Status": 400,
+    "Success": false,
+    "Path": "/api/v1/agent/voice-note/process"
+  },
+  {
+    "Description": "Suggest Actions",
+    "Error": "Response status code does not indicate success: 500 (Internal Server Error).",
+    "Status": 500,
+    "Success": false,
+    "Path": "/api/v1/agent/suggest/actions"
+  },
+  {
+    "Description": "Create Checkout Session",
+    "Error": "Response status code does not indicate success: 400 (Bad Request).",
+    "Status": 400,
+    "Success": false,
+    "Path": "/api/billing/checkout"
+  },
+  {
+    "Description": "Customer Portal",
+    "Error": "Response status code does not indicate success: 500 (Internal Server Error).",
+    "Status": 500,
+    "Success": false,
+    "Path": "/api/billing/portal"
+  },
+  {
+    "Description": "List Interactions",
+    "Response": "{\"items\":[{\"id\":\"522e636a-f826-4837-817e-6bf78d63d9cd\",\"contact_id\":\"d6a9f186-f0c9-4817-b958-9d72d0493192\",\"kind\":\"note\",\"content\":\"jru\",\"metadata\":{\"source\":\"notes-test-page\",\"timestamp\":\"2025-10-06T",
+    "Status": 200,
+    "Success": true,
+    "Path": "/api/v1/interactions"
+  },
+  {
+    "Description": "List Custom Fields",
+    "Error": "Response status code does not indicate success: 500 (Internal Server Error).",
+    "Status": 500,
+    "Success": false,
+    "Path": "/api/v1/custom-fields?entity=contact"
+  },
+  {
+    "Description": "List Pipelines",
+    "Response": "{\"items\":[{\"id\":\"46c7182a-7d48-438c-951c-c024e6ea73f8\",\"key\":\"business\",\"name\":\"Business\",\"created_at\":\"2025-09-29T01:03:13.562077+00:00\"},{\"id\":\"c75919cc-9312-4423-af48-f7b46d950d94\",\"key\":\"networkin",
+    "Status": 200,
+    "Success": true,
+    "Path": "/api/v1/pipelines"
+  },
+  {
+    "Description": "List Goals",
+    "Response": "{\"items\":[]}",
+    "Status": 200,
+    "Success": true,
+    "Path": "/api/v1/goals"
+  },
+  {
+    "Description": "List Templates",
+    "Response": "{\"items\":[],\"limit\":20,\"nextCursor\":null}",
+    "Status": 200,
+    "Success": true,
+    "Path": "/api/v1/templates"
+  },
+  {
+    "Description": "List Messages",
+    "Response": "{\"items\":[{\"id\":\"4d611e7e-370b-482e-8136-f3a5417acd25\",\"thread_id\":\"bba2ec8f-36b1-4f84-a4ef-50cb1b465a6e\",\"role\":\"assistant\",\"content\":\"Dear [Agent's Name],\\n\\nI hope this message finds you well. I am",
+    "Status": 200,
+    "Success": true,
+    "Path": "/api/v1/messages"
+  },
+  {
+    "Description": "Get Current User",
+    "Response": "{\"user\":{\"id\":\"e5eaa347-9c72-4190-bace-ec7a2063f69a\",\"email\":\"isaiahdupree33@gmail.com\",\"display_name\":\"Isaiah Dupree\"},\"org\":null,\"billing\":{\"stripe_customer_id\":\"cus_TBnQ4WG9bZn7Qs\",\"stripe_subscrip",
+    "Status": 200,
+    "Success": true,
+    "Path": "/api/v1/me"
+  },
+  {
+    "Description": "User Account",
+    "Error": "Response status code does not indicate success: 405 (Method Not Allowed).",
+    "Status": 405,
+    "Success": false,
+    "Path": "/api/v1/me/account"
+  },
+  {
+    "Description": "User Entitlements",
+    "Response": "{\"plan\":\"free\",\"valid_until\":null,\"source\":\"manual\",\"features\":{\"compose_runs\":50,\"voice_minutes\":30,\"messages\":200}}",
+    "Status": 200,
+    "Success": true,
+    "Path": "/api/v1/me/entitlements"
+  },
+  {
+    "Description": "Persona Notes",
+    "Response": "{\"items\":[{\"id\":\"28cd7a68-0b7e-45e8-bbf2-f6e8673eec39\",\"type\":\"text\",\"status\":null,\"title\":\"PN c54b43\",\"body_text\":\"Persona note body for Agent PN c54b4391 at 2025-10-05T13:08:21.862Z (c54b43)\",\"file_",
+    "Status": 200,
+    "Success": true,
+    "Path": "/api/v1/me/persona-notes"
+  },
+  {
+    "Description": "Recompute Warmth",
+    "Error": "Response status code does not indicate success: 400 (Bad Request).",
+    "Status": 400,
+    "Success": false,
+    "Path": "/api/v1/warmth/recompute"
+  },
+  {
+    "Description": "List OpenAI Models",
+    "Response": "{\"models\":[{\"id\":\"gpt-4-0613\",\"created\":1686588896,\"owned_by\":\"openai\"},{\"id\":\"gpt-4\",\"created\":1687882411,\"owned_by\":\"openai\"},{\"id\":\"gpt-3.5-turbo\",\"created\":1677610602,\"owned_by\":\"openai\"},{\"id\":\"g",
+    "Status": 200,
+    "Success": true,
+    "Path": "/api/v1/openai/models"
+  },
+  {
+    "Description": "Test OpenAI",
+    "Response": "{\"configured\":true,\"model\":\"gpt-4o-mini\",\"message\":\"OpenAI is configured and ready\"}",
+    "Status": 200,
+    "Success": true,
+    "Path": "/api/v1/openai/test"
+  },
+  {
+    "Description": "List Alerts",
+    "Response": "{\"items\":[],\"total\":0,\"dismissed\":false}",
+    "Status": 200,
+    "Success": true,
+    "Path": "/api/v1/alerts"
+  },
+  {
+    "Description": "Push Tokens",
+    "Response": "{\"items\":[]}",
+    "Status": 200,
+    "Success": true,
+    "Path": "/api/v1/push-tokens"
+  },
+  {
+    "Description": "Test Webhook",
+    "Error": "Response status code does not indicate success: 405 (Method Not Allowed).",
+    "Status": 405,
+    "Success": false,
+    "Path": "/api/v1/webhooks/test"
+  },
+  {
+    "Description": "OpenAPI Specification",
+    "Response": "{\n  \"openapi\": \"3.1.0\",\n  \"info\": {\n    \"title\": \"EverReach API\",\n    \"version\": \"1.0.0\"\n  },\n  \"paths\": {\n    \"/api/v1/me\": {\n      \"get\": {\n        \"summary\": \"Current user info\",\n        \"responses",
+    "Status": 200,
+    "Success": true,
+    "Path": "/api/v1/.well-known/openapi.json"
+  }
+]

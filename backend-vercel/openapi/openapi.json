@@ -1,0 +1,1130 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "EverReach API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/v1/me": { "get": { "summary": "Current user info", "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MeResponse" } } } } } } },
+    "/api/v1/contacts": {
+      "get": {
+        "summary": "List contacts",
+        "parameters": [
+          { "name": "q", "in": "query", "schema": { "type": "string" } },
+          { "name": "tag", "in": "query", "schema": { "type": "string" } },
+          { "name": "has_email", "in": "query", "schema": { "type": "boolean" } },
+          { "name": "updated_since", "in": "query", "schema": { "type": "string", "format": "date-time" } },
+          { "name": "warmth_gte", "in": "query", "schema": { "type": "integer", "minimum": 0, "maximum": 100 } },
+          { "name": "warmth_lte", "in": "query", "schema": { "type": "integer", "minimum": 0, "maximum": 100 } },
+          { "name": "warmth_band", "in": "query", "schema": { "enum": ["hot","warm","neutral","cool","cold"] } },
+          { "name": "pipeline", "in": "query", "schema": { "enum": ["networking","personal","business"] } },
+          { "name": "stage", "in": "query", "schema": { "type": "string" } },
+          { "name": "sort", "in": "query", "schema": { "enum": ["created_at.desc","created_at.asc","warmth.desc","warmth.asc"], "default": "created_at.desc" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 } },
+          { "name": "cursor", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ContactsListResponse" } } }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create contact",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ContactCreateRequest" } } } },
+        "responses": { "201": { "description": "Created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ContactCreatedResponse" } } } } }
+      }
+    },
+    "/api/v1/contacts/{id}": {
+      "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ],
+      "get": {
+        "summary": "Get contact",
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ContactResponse" } } } } }
+      },
+      "patch": {
+        "summary": "Update contact",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ContactUpdateRequest" } } } },
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ContactResponse" } } } } }
+      },
+      "delete": {
+        "summary": "Delete contact",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DeletedResponse" } } }
+          }
+        }
+      }
+    },
+    "/api/v1/contacts/{id}/tags": {
+      "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ],
+      "post": {
+        "summary": "Modify tags",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TagsModifyRequest" } } } },
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ContactTagsUpdatedResponse" } } } } }
+      }
+    },
+    "/api/v1/contacts/{id}/notes": {
+      "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ],
+      "get": {
+        "summary": "List notes",
+        "parameters": [ { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20 } }, { "name": "cursor", "in": "query", "schema": { "type": "string" } } ],
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/NotesListResponse" } } } } }
+      },
+      "post": {
+        "summary": "Create note",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/NoteCreateRequest" } } } },
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/NoteCreatedResponse" } } } } }
+      }
+    },
+    "/api/v1/contacts/{id}/messages": {
+      "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ],
+      "get": {
+        "summary": "List messages for contact",
+        "parameters": [ { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20 } }, { "name": "cursor", "in": "query", "schema": { "type": "string" } } ],
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TimelineListResponse" } } } } }
+      }
+    },
+    "/api/v1/contacts/{id}/files": {
+      "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ],
+      "post": {
+        "summary": "Link a file to contact",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/FileLinkRequest" } } } },
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AttachmentCreatedResponse" } } } } }
+      }
+    },
+    "/api/v1/contacts/{id}/warmth/recompute": {
+      "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ],
+      "post": { "summary": "Recompute contact warmth", "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/WarmthRecomputeResponse" } } } } } }
+    },
+    "/api/v1/contacts/{id}/warmth/current": {
+      "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ],
+      "get": { "summary": "Get current warmth score and details", "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/WarmthCurrentResponse" } } } } } }
+    },
+    "/api/v1/contacts/{id}/warmth/history": {
+      "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ],
+      "get": { 
+        "summary": "Get warmth history over time",
+        "parameters": [
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 30, "maximum": 365 } },
+          { "name": "start_date", "in": "query", "schema": { "type": "string", "format": "date" } },
+          { "name": "end_date", "in": "query", "schema": { "type": "string", "format": "date" } }
+        ],
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/WarmthHistoryResponse" } } } } }
+      }
+    },
+    "/api/v1/contacts/{id}/warmth/windowed-history": {
+      "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ],
+      "get": { 
+        "summary": "Get warmth aggregated by time windows (day/week/month)",
+        "parameters": [
+          { "name": "window_size", "in": "query", "schema": { "enum": ["day","week","month"], "default": "week" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 12, "maximum": 52 } }
+        ],
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/WarmthWindowedHistoryResponse" } } } } }
+      }
+    },
+
+    "/api/v1/interactions": {
+      "get": {
+        "summary": "List interactions",
+        "parameters": [
+          { "name": "contact_id", "in": "query", "schema": { "type": "string", "format": "uuid" } },
+          { "name": "type", "in": "query", "schema": { "type": "string" } },
+          { "name": "start", "in": "query", "schema": { "type": "string", "format": "date-time" } },
+          { "name": "end", "in": "query", "schema": { "type": "string", "format": "date-time" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 } },
+          { "name": "cursor", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/InteractionsListResponse" } } } } }
+      },
+      "post": {
+        "summary": "Create interaction",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/InteractionCreateRequest" } } } },
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/InteractionCreatedResponse" } } } } }
+      }
+    },
+    "/api/v1/interactions/{id}": {
+      "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ],
+      "get": { "summary": "Get interaction", "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/InteractionResponse" } } } } } },
+      "patch": { "summary": "Update interaction", "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/InteractionUpdateRequest" } } } }, "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/InteractionUpdatedResponse" } } } } } }
+    },
+    "/api/v1/interactions/{id}/files": {
+      "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ],
+      "post": { "summary": "Link a file to interaction", "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/FileLinkRequest" } } } }, "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AttachmentCreatedResponse" } } } } } }
+    },
+
+    "/api/v1/messages": {
+      "post": {
+        "summary": "Log a message",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MessageLogRequest" } } } },
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MessageCreatedResponse" } } } } }
+      }
+    },
+    "/api/v1/messages/{id}": {
+      "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ],
+      "get": { "summary": "Get message", "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MessageResponse" } } } } } }
+    },
+    "/api/v1/messages/prepare": {
+      "post": {
+        "summary": "Persist a drafted message",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MessagesPrepareRequest" } } } },
+        "responses": { "201": { "description": "Created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MessagesPrepareResponse" } } } } }
+      }
+    },
+    "/api/v1/messages/send": {
+      "post": {
+        "summary": "Send a prepared message (provider stub)",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MessagesSendRequest" } } } },
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MessagesSendResponse" } } } } }
+      }
+    },
+
+    "/api/v1/files": {
+      "post": {
+        "summary": "Request presigned upload",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UploadSignRequest" } } } },
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UploadSignResponse" } } } } }
+      }
+    },
+    "/api/files/commit": {
+      "post": {
+        "summary": "Commit uploaded file and create attachment record",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/FileCommitRequest" } } } },
+        "responses": { "201": { "description": "Created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/FileCommitResponse" } } } } }
+      }
+    },
+    "/api/v1/files/{id}/transcribe": {
+      "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ],
+      "post": {
+        "summary": "Transcribe audio file (automatic chunking for files > 20MB)",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TranscribeRequest" } } } },
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TranscribeResponse" } } } } }
+      }
+    },
+
+    "/api/v1/compose": {
+      "post": {
+        "summary": "Compose channel-specific draft",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ComposeRequest" } } } },
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ComposeResponse" } } } } }
+      }
+    },
+    "/api/v1/agent/compose/smart": {
+      "post": {
+        "summary": "AI-powered smart message composition with context enrichment",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ComposeSmartRequest" } } } },
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ComposeSmartResponse" } } } } }
+      }
+    },
+    "/api/v1/agent/voice-note/process": {
+      "post": {
+        "summary": "Process voice note with AI (extract contacts, actions, sentiment)",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/VoiceNoteProcessRequest" } } } },
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/VoiceNoteProcessResponse" } } } } }
+      }
+    },
+
+    "/api/v1/me/persona-notes": {
+      "get": {
+        "summary": "List persona notes",
+        "parameters": [
+          { "name": "type", "in": "query", "schema": { "enum": ["text","voice"] } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 } },
+          { "name": "cursor", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PersonaNotesListResponse" } } } } }
+      },
+      "post": {
+        "summary": "Create persona note",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PersonaNoteCreateRequest" } } } },
+        "responses": { "201": { "description": "Created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PersonaNoteCreatedResponse" } } } } }
+      }
+    },
+    "/api/v1/me/persona-notes/{id}": {
+      "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ],
+      "get": { "summary": "Get persona note", "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PersonaNoteResponse" } } } } } },
+      "patch": { "summary": "Update persona note", "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PersonaNoteUpdateRequest" } } } }, "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PersonaNoteUpdatedResponse" } } } } } },
+      "delete": { "summary": "Delete persona note", "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DeletedResponse" } } } } } }
+    },
+    "/api/v1/me/persona-notes/{id}/transcribe": { "post": { "summary": "Transcribe voice note", "responses": { "200": { "description": "OK" }, "202": { "description": "Accepted" } } } },
+
+    "/api/v1/templates": {
+      "get": {
+        "summary": "List templates",
+        "parameters": [
+          { "name": "channel", "in": "query", "schema": { "enum": ["email","sms","dm"] } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 } },
+          { "name": "cursor", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TemplatesListResponse" } } } } }
+      },
+      "post": {
+        "summary": "Create template",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TemplateCreateRequest" } } } },
+        "responses": { "201": { "description": "Created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TemplateCreatedResponse" } } } } }
+      }
+    },
+    "/api/v1/templates/{id}": {
+      "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ],
+      "get": { "summary": "Get template", "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TemplateResponse" } } } } } },
+      "patch": { "summary": "Update template", "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TemplateUpdateRequest" } } } }, "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TemplateUpdatedResponse" } } } } } },
+      "delete": { "summary": "Delete template", "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DeletedResponse" } } } } } }
+    },
+
+    "/api/v1/me/compose-settings": {
+      "get": { "summary": "Get compose settings", "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ComposeSettingsResponse" } } } } } },
+      "patch": { "summary": "Update compose settings", "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ComposeSettingsUpdateRequest" } } } }, "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ComposeSettingsResponse" } } } } } }
+    },
+
+    "/api/v1/merge/contacts": { "post": { "summary": "Merge contacts into a canonical record" } },
+    "/api/v1/audit-logs": { "get": { "summary": "Admin: list audit logs" } },
+    "/api/v1/ops/health": { "get": { "summary": "Admin: operational health" } },
+    "/api/v1/webhooks/test": { "post": { "summary": "Admin: send a signed test webhook" } },
+    "/api/v1/me/account": { "delete": { "summary": "Enqueue account export+erase job" } },
+    "/api/v1/.well-known/openapi.json": { "get": { "summary": "OpenAPI 3.1 spec" } },
+    "/api/billing/checkout": {
+      "post": {
+        "summary": "Create Stripe checkout session for subscription",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BillingCheckoutRequest" } } } },
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BillingCheckoutResponse" } } } } }
+      }
+    },
+    "/api/billing/portal": {
+      "post": {
+        "summary": "Create Stripe customer portal session",
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BillingPortalResponse" } } } } }
+      }
+    },
+    "/api/webhooks/stripe": {
+      "post": {
+        "summary": "Stripe webhook handler (signature-verified)",
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+
+    "/api/cron/interaction-metrics": { "get": { "summary": "Cron: recompute interaction metrics" } },
+    "/api/telemetry/prompt-first": {
+      "post": {
+        "summary": "Log first-prompt telemetry",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PromptFirstRequest" } } } },
+        "responses": { "201": { "description": "created" }, "204": { "description": "ignored (privacy or empty)" } }
+      }
+    },
+    "/api/trending/prompts": {
+      "get": {
+        "summary": "Get trending prompts",
+        "parameters": [
+          { "name": "window", "in": "query", "schema": { "enum": ["today","week","month"], "default": "today" } },
+          { "name": "org", "in": "query", "schema": { "enum": ["me","all"], "default": "all" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 10 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/TrendingPromptItem" } } } }
+          }
+        }
+      }
+    },
+    "/api/cron/prompts-rollup": { "get": { "summary": "Cron: recompute trending prompts" } },
+    "/api/cron/paywall-rollup": { "get": { "summary": "Cron: recompute paywall insights" } },
+    "/api/me/usage-summary": {
+      "get": {
+        "summary": "Usage summary",
+        "parameters": [ { "name": "window", "in": "query", "schema": { "enum": ["30d","90d","mtd"], "default": "30d" } } ],
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UsageSummaryResponse" } } } } }
+      }
+    },
+    "/api/me/impact-summary": {
+      "get": {
+        "summary": "Impact summary",
+        "parameters": [
+          { "name": "window", "in": "query", "schema": { "enum": ["30d","90d","mtd"], "default": "90d" } },
+          { "name": "variant", "in": "query", "schema": { "type": "string", "default": "baseline" } }
+        ],
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ImpactSummaryResponse" } } } } }
+      }
+    },
+    "/api/me/plan-recommendation": {
+      "get": {
+        "summary": "Plan recommendation",
+        "parameters": [
+          { "name": "variant", "in": "query", "schema": { "type": "string", "default": "baseline" } }
+        ],
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PlanRecommendationResponse" } } } } }
+      }
+    },
+    "/api/v1/pipelines": {
+      "get": { "summary": "List pipelines", "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PipelinesListResponse" } } } } } }
+    },
+    "/api/v1/pipelines/{key}/stages": {
+      "parameters": [ { "name": "key", "in": "path", "required": true, "schema": { "enum": ["networking","personal","business"] } } ],
+      "get": { "summary": "List stages for a pipeline", "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PipelineStagesListResponse" } } } } } }
+    },
+    "/api/v1/contacts/{id}/pipeline": {
+      "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ],
+      "get": { "summary": "Current pipeline state for contact", "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PipelineStateResponse" } } } } } },
+      "post": { "summary": "Set pipeline (initial stage)", "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PipelineSetRequest" } } } }, "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PipelineStateResponse" } } } } } }
+    },
+    "/api/v1/contacts/{id}/pipeline/move": {
+      "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ],
+      "post": { "summary": "Move to stage", "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PipelineMoveRequest" } } } }, "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PipelineMoveResponse" } } } } } }
+    },
+    "/api/v1/contacts/{id}/pipeline/history": {
+      "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ],
+      "get": { "summary": "Pipeline change history", "parameters": [ { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20 } }, { "name": "cursor", "in": "query", "schema": { "type": "string" } } ], "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PipelineHistoryListResponse" } } } } } }
+    },
+    "/api/v1/goals": {
+      "get": { "summary": "List goals", "parameters": [ { "name": "kind", "in": "query", "schema": { "enum": ["business","network","personal"] } }, { "name": "scope", "in": "query", "schema": { "enum": ["global","org","user"], "default": "global" } } ], "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/GoalsListResponse" } } } } } },
+      "post": { "summary": "Create custom goal", "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/GoalCreateRequest" } } } }, "responses": { "201": { "description": "Created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/GoalCreatedResponse" } } } } } }
+    },
+    "/api/v1/goals/{id}": {
+      "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ],
+      "patch": { "summary": "Update goal", "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/GoalUpdateRequest" } } } }, "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/GoalUpdatedResponse" } } } } } },
+      "delete": { "summary": "Delete goal", "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DeletedResponse" } } } } } }
+    },
+    "/api/v1/goals/{id}/pin": {
+      "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ],
+      "post": { "summary": "Pin/unpin a goal", "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/GoalPinRequest" } } } }, "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/GoalPinResponse" } } } } } }
+    },
+    "/api/v1/contacts/{id}/goal-suggestions": {
+      "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ],
+      "get": { "summary": "Per-contact goal suggestions", "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/GoalSuggestionsResponse" } } } } } }
+    },
+    "/api/v1/compose/validate": {
+      "post": { "summary": "Validate compose variables against goal schema", "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ComposeValidateRequest" } } } }, "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ComposeValidateResponse" } } } } } }
+    },
+    "/api/v1/analysis/screenshot": {
+      "post": { "summary": "Create screenshot analysis", "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ScreenshotAnalysisCreateRequest" } } } }, "responses": { "201": { "description": "Accepted", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ScreenshotAnalysisCreatedResponse" } } } } } }
+    },
+    "/api/v1/analysis/screenshot/{id}": {
+      "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ],
+      "get": { "summary": "Get screenshot analysis", "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ScreenshotAnalysisResponse" } } } } } }
+    },
+    "/api/v1/analysis/screenshot/{id}/link": {
+      "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ],
+      "post": { 
+        "summary": "Link screenshot analysis to a contact",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ScreenshotLinkRequest" } } } },
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ScreenshotLinkResponse" } } } } }
+      }
+    },
+    "/api/v1/contacts/{id}/context-summary": {
+      "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } } ],
+      "get": { "summary": "Contact context summary", "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ContactContextSummaryResponse" } } } } } }
+    },
+    "/api/v1/telemetry/draft.accepted": { "post": { "summary": "Telemetry: draft accepted", "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ComposeDraftAcceptedRequest" } } } }, "responses": { "201": { "description": "created" } } } },
+    "/api/v1/telemetry/draft.discarded": { "post": { "summary": "Telemetry: draft discarded", "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ComposeDraftDiscardedRequest" } } } }, "responses": { "201": { "description": "created" } } } }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": { "type": "http", "scheme": "bearer", "bearerFormat": "JWT" }
+    },
+    "schemas": {
+      "PromptFirstRequest": {
+        "type": "object",
+        "required": ["prompt_raw"],
+        "properties": {
+          "prompt_raw": { "type": "string" },
+          "lang": { "type": "string" },
+          "intent": { "type": "string" },
+          "entities": { "type": "object", "additionalProperties": true },
+          "source": { "type": "string" },
+          "session_id": { "type": "string" },
+          "latency_ms": { "type": "integer" },
+          "result_kind": { "type": "string" },
+          "error_code": { "type": "string" },
+          "used": { "type": "boolean" }
+        }
+      },
+      "TrendingPromptItem": {
+        "type": "object",
+        "properties": {
+          "rank": { "type": "integer" },
+          "representative_text": { "type": "string" },
+          "intent": { "type": "string", "nullable": true },
+          "uses": { "type": "integer" },
+          "impressions": { "type": "integer" },
+          "ctr": { "type": "number", "nullable": true },
+          "score": { "type": "number", "nullable": true },
+          "deep_link": { "type": "string" }
+        }
+      },
+      "UsageSummaryResponse": {
+        "type": "object",
+        "properties": {
+          "window": { "type": "string" },
+          "usage": {
+            "type": "object",
+            "properties": {
+              "contacts_created": { "type": "integer" },
+              "messages_drafted": { "type": "integer" },
+              "drafts_accepted": { "type": "integer" },
+              "messages_sent": { "type": "integer" },
+              "voice_minutes_used": { "type": "number" },
+              "storage_used_mb": { "type": "number" },
+              "compose_runs_used": { "type": "integer" },
+              "integrations_count": { "type": "integer" },
+              "top_intents": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
+              "updated_at": { "type": "string", "nullable": true }
+            }
+          },
+          "limits": {
+            "type": "object",
+            "properties": {
+              "compose_runs": { "type": "integer" },
+              "voice_minutes": { "type": "integer" },
+              "messages": { "type": "integer" }
+            }
+          },
+          "assumptions": { "type": "array", "items": { "type": "string" } }
+        }
+      },
+      "ImpactSummaryResponse": {
+        "type": "object",
+        "properties": {
+          "window": { "type": "string" },
+          "variant": { "type": "string" },
+          "impact": {
+            "type": "object",
+            "properties": {
+              "reply_rate": { "type": "number", "nullable": true },
+              "time_saved_minutes": { "type": "number", "nullable": true },
+              "warmth_avg_delta": { "type": "number", "nullable": true },
+              "reengaged_contacts": { "type": "integer" },
+              "updated_at": { "type": "string", "nullable": true },
+              "explainers": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        }
+      },
+      "PlanRecommendationResponse": {
+        "type": "object",
+        "properties": {
+          "variant": { "type": "string" },
+          "suggested_plan": { "type": "string", "enum": ["starter","pro"] },
+          "rationale": { "type": "array", "items": { "type": "string" } },
+          "projected_overage": {
+            "type": "object",
+            "properties": {
+              "compose_runs": { "type": "integer" },
+              "voice_minutes": { "type": "integer" },
+              "messages": { "type": "integer" }
+            }
+          }
+        }
+      },
+      "Contact": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "display_name": { "type": "string" },
+          "emails": { "type": "array", "items": { "type": "string", "format": "email" } },
+          "phones": { "type": "array", "items": { "type": "string" } },
+          "company": { "type": "string", "nullable": true },
+          "notes": { "type": "string", "nullable": true },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "avatar_url": { "type": "string", "format": "uri", "nullable": true },
+          "metadata": { "type": "object", "additionalProperties": true, "nullable": true },
+          "warmth": { "type": "integer", "nullable": true },
+          "warmth_band": { "type": "string", "nullable": true },
+          "warmth_override": { "type": "boolean", "nullable": true },
+          "warmth_override_reason": { "type": "string", "nullable": true },
+          "last_interaction_at": { "type": "string", "format": "date-time", "nullable": true },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ContactCreateRequest": {
+        "type": "object",
+        "required": ["display_name"],
+        "properties": {
+          "display_name": { "type": "string" },
+          "emails": { "type": "array", "items": { "type": "string", "format": "email" } },
+          "phones": { "type": "array", "items": { "type": "string" } },
+          "company": { "type": "string" },
+          "notes": { "type": "string" },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "avatar_url": { "type": "string", "format": "uri" },
+          "metadata": { "type": "object", "additionalProperties": true }
+        }
+      },
+      "ContactUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "display_name": { "type": "string" },
+          "emails": { "type": "array", "items": { "type": "string", "format": "email" } },
+          "phones": { "type": "array", "items": { "type": "string" } },
+          "company": { "type": "string" },
+          "notes": { "type": "string" },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "avatar_url": { "type": "string", "format": "uri" },
+          "metadata": { "type": "object", "additionalProperties": true },
+          "warmth": { "type": "integer" },
+          "warmth_override": { "type": "boolean" },
+          "warmth_override_reason": { "type": "string" }
+        }
+      },
+      "ContactsListResponse": {
+        "type": "object",
+        "properties": {
+          "items": { "type": "array", "items": { "$ref": "#/components/schemas/Contact" } },
+          "limit": { "type": "integer" },
+          "nextCursor": { "type": "string", "nullable": true }
+        }
+      },
+      "ContactResponse": {
+        "type": "object",
+        "properties": { "contact": { "$ref": "#/components/schemas/Contact" } }
+      },
+      "ContactCreatedResponse": {
+        "type": "object",
+        "properties": { "contact": { "type": "object", "properties": { "id": { "type": "string" }, "display_name": { "type": "string" }, "created_at": { "type": "string" } } } }
+      },
+      "InteractionCreateRequest": {
+        "type": "object",
+        "required": ["contact_id"],
+        "properties": {
+          "contact_id": { "type": "string", "format": "uuid" },
+          "kind": { "type": "string" },
+          "content": { "type": "string" },
+          "metadata": { "type": "object", "additionalProperties": true }
+        }
+      },
+      "InteractionCreatedResponse": {
+        "type": "object",
+        "properties": {
+          "interaction": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "contact_id": { "type": "string" },
+              "kind": { "type": "string" },
+              "created_at": { "type": "string" }
+            }
+          }
+        }
+      },
+      "InteractionsListResponse": {
+        "type": "object",
+        "properties": {
+          "items": { "type": "array", "items": { "$ref": "#/components/schemas/Interaction" } },
+          "limit": { "type": "integer" },
+          "nextCursor": { "type": "string", "nullable": true }
+        }
+      },
+      "MessageLogRequest": {
+        "type": "object",
+        "required": ["content"],
+        "properties": {
+          "content": { "type": "string" },
+          "role": { "type": "string", "enum": ["user","assistant","system","note"] },
+          "thread_id": { "type": "string", "format": "uuid" },
+          "contact_id": { "type": "string", "format": "uuid" },
+          "metadata": { "type": "object", "additionalProperties": true }
+        }
+      },
+      "MessageCreatedResponse": {
+        "type": "object",
+        "properties": { "message": { "type": "object", "properties": { "id": { "type": "string" }, "thread_id": { "type": "string" }, "role": { "type": "string" }, "content": { "type": "string" }, "metadata": { "type": "object", "additionalProperties": true }, "created_at": { "type": "string" } } } }
+      },
+      "MessagesPrepareRequest": {
+        "type": "object",
+        "required": ["channel","draft"],
+        "properties": {
+          "contact_id": { "type": "string", "format": "uuid" },
+          "thread_id": { "type": "string", "format": "uuid" },
+          "channel": { "type": "string", "enum": ["email","sms","dm"] },
+          "draft": {
+            "type": "object",
+            "properties": {
+              "subject": { "type": "string" },
+              "body": { "type": "string" },
+              "closing": { "type": "string" }
+            },
+            "required": ["body"]
+          },
+          "composer_context": { "type": "object", "additionalProperties": true }
+        }
+      },
+      "MessagesPrepareResponse": {
+        "type": "object",
+        "properties": { "message": { "type": "object", "properties": { "id": { "type": "string" }, "thread_id": { "type": "string" }, "created_at": { "type": "string" } } }, "compose_session_id": { "type": ["string","null"] } }
+      },
+      "MessagesSendRequest": {
+        "type": "object",
+        "required": ["message_id"],
+        "properties": { "message_id": { "type": "string", "format": "uuid" }, "channel_account_id": { "type": "string" } }
+      },
+      "MessagesSendResponse": {
+        "type": "object",
+        "properties": { "sent": { "type": "boolean" }, "message_id": { "type": "string" }, "sent_at": { "type": "string" }, "delivery_status": { "type": "string" } }
+      },
+      "ComposeRequest": {
+        "type": "object",
+        "required": ["contact_id","channel","goal"],
+        "properties": {
+          "contact_id": { "type": "string", "format": "uuid" },
+          "channel": { "type": "string", "enum": ["email","sms","dm"] },
+          "goal": { "type": "string" },
+          "template_id": { "type": "string", "format": "uuid" },
+          "variables": { "type": "object", "additionalProperties": true },
+          "include": {
+            "type": "object",
+            "properties": {
+              "persona_notes": { "type": "boolean" },
+              "recent_interactions": { "type": "integer" },
+              "screenshots": { "type": "boolean" },
+              "voice_tone": { "type": "boolean" }
+            }
+          }
+        }
+      },
+      "ComposeResponse": {
+        "type": "object",
+        "properties": {
+          "compose_session_id": { "type": ["string","null"] },
+          "draft": {
+            "type": "object",
+            "properties": {
+              "email": { "type": "object", "nullable": true, "properties": { "subject": { "type": "string" }, "body": { "type": "string" }, "closing": { "type": "string" } } },
+              "sms": { "type": "object", "nullable": true, "properties": { "body": { "type": "string" } } },
+              "dm": { "type": "object", "nullable": true, "properties": { "body": { "type": "string" } } }
+            }
+          },
+          "sources": {
+            "type": "object",
+            "properties": {
+              "persona_note_ids": { "type": "array", "items": { "type": "string" } },
+              "contact_context": { "type": "object", "nullable": true, "additionalProperties": true },
+              "template_id": { "type": "string", "nullable": true }
+            }
+          },
+          "alternatives": { "type": "array", "items": { "type": "object" } },
+          "safety": { "type": "object", "properties": { "pii_flags": { "type": "array", "items": { "type": "string" } }, "spam_risk": { "type": "string" } } }
+        }
+      },
+      "PersonaNote": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "type": { "type": "string", "enum": ["text","voice"] },
+          "title": { "type": "string", "nullable": true },
+          "body_text": { "type": "string", "nullable": true },
+          "file_url": { "type": "string", "nullable": true },
+          "duration_sec": { "type": "integer", "nullable": true },
+          "transcript": { "type": "string", "nullable": true },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "created_at": { "type": "string" },
+          "updated_at": { "type": "string" }
+        }
+      },
+      "PersonaNotesListResponse": {
+        "type": "object",
+        "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/PersonaNote" } }, "limit": { "type": "integer" }, "nextCursor": { "type": "string", "nullable": true } }
+      },
+      "PersonaNoteCreateRequest": {
+        "type": "object",
+        "required": ["type"],
+        "properties": {
+          "type": { "type": "string", "enum": ["text","voice"] },
+          "title": { "type": "string" },
+          "body_text": { "type": "string" },
+          "file_url": { "type": "string" },
+          "duration_sec": { "type": "integer" },
+          "tags": { "type": "array", "items": { "type": "string" } }
+        }
+      },
+      "PersonaNoteCreatedResponse": {
+        "type": "object",
+        "properties": { "note": { "type": "object", "properties": { "id": { "type": "string" }, "type": { "type": "string" }, "title": { "type": "string" }, "created_at": { "type": "string" } } } }
+      },
+      "PersonaNoteResponse": {
+        "type": "object",
+        "properties": { "note": { "$ref": "#/components/schemas/PersonaNote" } }
+      },
+      "PersonaNoteUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "title": { "type": "string" },
+          "body_text": { "type": "string" },
+          "file_url": { "type": "string" },
+          "duration_sec": { "type": "integer" },
+          "transcript": { "type": "string" },
+          "tags": { "type": "array", "items": { "type": "string" } }
+        }
+      },
+      "PersonaNoteUpdatedResponse": {
+        "type": "object",
+        "properties": { "note": { "type": "object", "properties": { "id": { "type": "string" }, "updated_at": { "type": "string" } } } }
+      },
+      "Template": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "channel": { "type": "string", "enum": ["email","sms","dm"] },
+          "name": { "type": "string" },
+          "description": { "type": "string", "nullable": true },
+          "subject_tmpl": { "type": "string", "nullable": true },
+          "body_tmpl": { "type": "string" },
+          "closing_tmpl": { "type": "string", "nullable": true },
+          "variables": { "type": "array", "items": { "type": "object" } },
+          "visibility": { "type": "string", "enum": ["private","team","org"] },
+          "is_default": { "type": "boolean" },
+          "created_at": { "type": "string" },
+          "updated_at": { "type": "string" }
+        }
+      },
+      "TemplatesListResponse": {
+        "type": "object",
+        "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/Template" } }, "limit": { "type": "integer" }, "nextCursor": { "type": "string", "nullable": true } }
+      },
+      "TemplateCreateRequest": {
+        "type": "object",
+        "required": ["channel","name","body_tmpl"],
+        "properties": {
+          "channel": { "type": "string", "enum": ["email","sms","dm"] },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "subject_tmpl": { "type": "string" },
+          "body_tmpl": { "type": "string" },
+          "closing_tmpl": { "type": "string" },
+          "variables": { "type": "array", "items": { "type": "object" } },
+          "visibility": { "type": "string", "enum": ["private","team","org"] }
+        }
+      },
+      "TemplateCreatedResponse": {
+        "type": "object",
+        "properties": { "template": { "type": "object", "properties": { "id": { "type": "string" }, "channel": { "type": "string" }, "name": { "type": "string" }, "created_at": { "type": "string" } } } }
+      },
+      "TemplateResponse": {
+        "type": "object",
+        "properties": { "template": { "$ref": "#/components/schemas/Template" } }
+      },
+      "TemplateUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "channel": { "type": "string", "enum": ["email","sms","dm"] },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "subject_tmpl": { "type": "string" },
+          "body_tmpl": { "type": "string" },
+          "closing_tmpl": { "type": "string" },
+          "variables": { "type": "array", "items": { "type": "object" } },
+          "visibility": { "type": "string", "enum": ["private","team","org"] },
+          "is_default": { "type": "boolean" }
+        }
+      },
+      "TemplateUpdatedResponse": {
+        "type": "object",
+        "properties": { "template": { "type": "object", "properties": { "id": { "type": "string" }, "updated_at": { "type": "string" } } } }
+      },
+      "ComposeSettings": {
+        "type": "object",
+        "properties": {
+          "user_id": { "type": "string" },
+          "enabled": { "type": "boolean" },
+          "default_channel": { "type": "string", "enum": ["email","sms","dm"] },
+          "auto_use_persona_notes": { "type": "boolean" },
+          "default_template_id": { "type": "string", "nullable": true },
+          "tone": { "type": "string", "enum": ["concise","warm","professional","playful"] },
+          "max_length": { "type": "integer", "nullable": true },
+          "guardrails": { "type": "object", "additionalProperties": true },
+          "updated_at": { "type": "string", "nullable": true }
+        }
+      },
+      "ComposeSettingsUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "enabled": { "type": "boolean" },
+          "default_channel": { "type": "string", "enum": ["email","sms","dm"] },
+          "auto_use_persona_notes": { "type": "boolean" },
+          "default_template_id": { "type": "string", "format": "uuid", "nullable": true },
+          "tone": { "type": "string", "enum": ["concise","warm","professional","playful"] },
+          "max_length": { "type": "integer", "nullable": true },
+          "guardrails": { "type": "object", "additionalProperties": true }
+        }
+      },
+      "ComposeSettingsResponse": {
+        "type": "object",
+        "properties": { "settings": { "$ref": "#/components/schemas/ComposeSettings" } }
+      },
+      "DeletedResponse": {
+        "type": "object",
+        "properties": { "deleted": { "type": "boolean" }, "id": { "type": "string", "nullable": true }, "contact": { "type": "object", "nullable": true, "additionalProperties": true } }
+      },
+      "TagsModifyRequest": {
+        "type": "object",
+        "properties": {
+          "add": { "type": "array", "items": { "type": "string" } },
+          "remove": { "type": "array", "items": { "type": "string" } }
+        }
+      },
+      "ContactTagsUpdatedResponse": {
+        "type": "object",
+        "properties": { "contact": { "type": "object", "properties": { "id": { "type": "string" }, "tags": { "type": "array", "items": { "type": "string" } }, "updated_at": { "type": "string" } } } }
+      },
+      "Interaction": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "contact_id": { "type": "string" },
+          "kind": { "type": "string" },
+          "content": { "type": "string", "nullable": true },
+          "metadata": { "type": "object", "additionalProperties": true },
+          "created_at": { "type": "string" },
+          "updated_at": { "type": "string" }
+        }
+      },
+      "NotesListResponse": {
+        "type": "object",
+        "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/Interaction" } }, "limit": { "type": "integer" }, "nextCursor": { "type": "string", "nullable": true } }
+      },
+      "NoteCreateRequest": { "type": "object", "properties": { "content": { "type": "string" }, "metadata": { "type": "object", "additionalProperties": true } } },
+      "NoteCreatedResponse": { "type": "object", "properties": { "note": { "type": "object", "properties": { "id": { "type": "string" }, "contact_id": { "type": "string" }, "kind": { "type": "string" }, "created_at": { "type": "string" } } } } },
+      "TimelineItem": {
+        "type": "object",
+        "properties": {
+          "type": { "type": "string", "enum": ["interaction","message"] },
+          "id": { "type": "string" },
+          "created_at": { "type": "string" },
+          "payload": { "type": "object", "additionalProperties": true }
+        }
+      },
+      "TimelineListResponse": {
+        "type": "object",
+        "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/TimelineItem" } }, "limit": { "type": "integer" }, "nextCursor": { "type": "string", "nullable": true } }
+      },
+      "FileLinkRequest": {
+        "type": "object",
+        "required": ["path"],
+        "properties": { "path": { "type": "string" }, "mime_type": { "type": "string" }, "size_bytes": { "type": "integer" } }
+      },
+      "AttachmentCreatedResponse": {
+        "type": "object",
+        "properties": { "attachment": { "type": "object", "properties": { "id": { "type": "string" }, "file_path": { "type": "string" }, "created_at": { "type": "string" } } } }
+      },
+      "WarmthRecomputeResponse": {
+        "type": "object",
+        "properties": { "contact": { "type": "object", "properties": { "id": { "type": "string" }, "warmth": { "type": "integer" }, "warmth_band": { "type": "string" }, "warmth_updated_at": { "type": "string" } } } }
+      },
+      "InteractionResponse": { "type": "object", "properties": { "interaction": { "$ref": "#/components/schemas/Interaction" } } },
+      "InteractionUpdateRequest": { "type": "object", "properties": { "content": { "type": "string" }, "metadata": { "type": "object", "additionalProperties": true } } },
+      "InteractionUpdatedResponse": { "type": "object", "properties": { "interaction": { "type": "object", "properties": { "id": { "type": "string" }, "updated_at": { "type": "string" } } } } },
+      "UploadSignRequest": { "type": "object", "required": ["path"], "properties": { "path": { "type": "string" }, "contentType": { "type": "string" } } },
+      "UploadSignResponse": { "type": "object", "properties": { "url": { "type": "string" }, "path": { "type": "string" }, "contentType": { "type": "string" } } },
+      "MessageResponse": { "type": "object", "properties": { "message": { "type": "object", "properties": { "id": { "type": "string" }, "thread_id": { "type": "string" }, "role": { "type": "string" }, "content": { "type": "string" }, "metadata": { "type": "object", "additionalProperties": true }, "created_at": { "type": "string" }, "updated_at": { "type": "string" } } } } },
+      "MeResponse": {
+        "type": "object",
+        "properties": {
+          "user": { "type": "object", "properties": { "id": { "type": "string" }, "email": { "type": "string", "nullable": true }, "display_name": { "type": "string", "nullable": true } } },
+          "org": { "type": "null" },
+          "billing": {
+            "type": ["object","null"],
+            "properties": {
+              "stripe_customer_id": { "type": ["string","null"] },
+              "stripe_subscription_id": { "type": ["string","null"] },
+              "stripe_price_id": { "type": ["string","null"] },
+              "subscription_status": { "type": ["string","null"] },
+              "current_period_end": { "type": ["string","null"] }
+            }
+          }
+        }
+      },
+      "Pipeline": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "key": { "type": "string", "enum": ["networking","personal","business"] },
+          "name": { "type": "string" },
+          "created_at": { "type": "string" }
+        }
+      },
+      "PipelinesListResponse": {
+        "type": "object",
+        "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/Pipeline" } } }
+      },
+      "PipelineStage": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "pipeline_id": { "type": "string" },
+          "key": { "type": "string" },
+          "name": { "type": "string" },
+          "position": { "type": "integer" },
+          "terminal": { "type": "boolean" }
+        }
+      },
+      "PipelineStagesListResponse": {
+        "type": "object",
+        "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/PipelineStage" } } }
+      },
+      "PipelineStateResponse": {
+        "type": "object",
+        "properties": {
+          "contact_id": { "type": "string" },
+          "pipeline_id": { "type": "string" },
+          "stage_id": { "type": "string" },
+          "pipeline_key": { "type": "string" },
+          "stage_key": { "type": "string" },
+          "stage_name": { "type": "string" },
+          "started_at": { "type": "string" },
+          "updated_at": { "type": "string" },
+          "allowed_moves": { "type": "array", "items": { "type": "object", "properties": { "stage_id": { "type": "string" }, "stage_key": { "type": "string" }, "stage_name": { "type": "string" } } } }
+        }
+      },
+      "PipelineSetRequest": {
+        "type": "object",
+        "required": ["pipeline_key"],
+        "properties": { "pipeline_key": { "type": "string", "enum": ["networking","personal","business"] }, "stage_key": { "type": "string" } }
+      },
+      "PipelineMoveRequest": {
+        "type": "object",
+        "required": ["stage_id"],
+        "properties": { "stage_id": { "type": "string", "format": "uuid" }, "reason": { "type": "string" } }
+      },
+      "PipelineMoveResponse": {
+        "type": "object",
+        "properties": {
+          "from_stage_id": { "type": "string", "nullable": true },
+          "to_stage_id": { "type": "string" },
+          "changed_by_user_id": { "type": "string" },
+          "reason": { "type": "string", "nullable": true },
+          "created_at": { "type": "string" }
+        }
+      },
+      "PipelineHistoryItem": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "contact_id": { "type": "string" },
+          "pipeline_id": { "type": "string" },
+          "from_stage_id": { "type": "string", "nullable": true },
+          "to_stage_id": { "type": "string" },
+          "changed_by_user_id": { "type": "string" },
+          "reason": { "type": "string", "nullable": true },
+          "created_at": { "type": "string" }
+        }
+      },
+      "PipelineHistoryListResponse": {
+        "type": "object",
+        "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/PipelineHistoryItem" } }, "limit": { "type": "integer" }, "nextCursor": { "type": "string", "nullable": true } }
+      },
+      "Goal": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "org_id": { "type": ["string","null"] },
+          "owner_user_id": { "type": ["string","null"] },
+          "kind": { "type": "string", "enum": ["business","network","personal"] },
+          "name": { "type": "string" },
+          "description": { "type": ["string","null"] },
+          "channel_suggestions": { "type": "array", "items": { "type": "string" } },
+          "variables_schema": { "type": "object", "additionalProperties": true },
+          "default_template_id": { "type": ["string","null"] },
+          "is_active": { "type": "boolean" },
+          "popularity_score": { "type": "number" },
+          "created_at": { "type": "string" },
+          "updated_at": { "type": "string" }
+        }
+      },
+      "GoalsListResponse": {
+        "type": "object",
+        "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/Goal" } } }
+      },
+      "GoalCreateRequest": {
+        "type": "object",
+        "required": ["kind","name"],
+        "properties": {
+          "kind": { "type": "string", "enum": ["business","network","personal"] },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "channel_suggestions": { "type": "array", "items": { "type": "string" } },
+          "variables_schema": { "type": "object", "additionalProperties": true },
+          "default_template_id": { "type": "string" }
+        }
+      },
+      "GoalCreatedResponse": { "type": "object", "properties": { "goal": { "type": "object", "properties": { "id": { "type": "string" }, "name": { "type": "string" }, "created_at": { "type": "string" } } } } },
+      "GoalUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "kind": { "type": "string", "enum": ["business","network","personal"] },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "channel_suggestions": { "type": "array", "items": { "type": "string" } },
+          "variables_schema": { "type": "object", "additionalProperties": true },
+          "default_template_id": { "type": "string" },
+          "is_active": { "type": "boolean" }
+        }
+      },
+      "GoalUpdatedResponse": { "type": "object", "properties": { "goal": { "type": "object", "properties": { "id": { "type": "string" }, "updated_at": { "type": "string" } } } } },
+      "GoalPinRequest": { "type": "object", "properties": { "pinned": { "type": "boolean" } } },
+      "GoalPinResponse": { "type": "object", "properties": { "goal_id": { "type": "string" }, "pinned": { "type": "boolean" } } },
+      "GoalSuggestionsResponse": {
+        "type": "object",
+        "properties": {
+          "items": { "type": "array", "items": { "type": "object", "properties": { "goal_id": { "type": "string" }, "name": { "type": "string" }, "score": { "type": "number" }, "reason": { "type": "string", "nullable": true } } } }
+        }
+      },
+      "ComposeValidateRequest": {
+        "type": "object",
+        "properties": {
+          "goal_id": { "type": "string", "format": "uuid" },
+          "goal_text": { "type": "string" },
+          "variables": { "type": "object", "additionalProperties": true }
+        }
+      },
+      "ComposeValidateResponse": {
+        "type": "object",
+        "properties": { "ok": { "type": "boolean" }, "missing": { "type": "array", "items": { "type": "string" } }, "errors": { "type": "array", "items": { "type": "string" } } }
+      },
+      "ScreenshotAnalysisCreateRequest": { "type": "object", "required": ["file_url"], "properties": { "file_url": { "type": "string" }, "contact_id": { "type": "string", "format": "uuid" } } },
+      "ScreenshotAnalysisCreatedResponse": { "type": "object", "properties": { "analysis_id": { "type": "string" }, "status": { "type": "string", "enum": ["pending","processing","ready","failed"] } } },
+      "ScreenshotAnalysisResponse": {
+        "type": "object",
+        "properties": {
+          "analysis_id": { "type": "string" },
+          "status": { "type": "string", "enum": ["pending","processing","ready","failed"] },
+          "ocr_text": { "type": ["string","null"] },
+          "inferred_goal": { "type": ["object","null"], "properties": { "id": { "type": ["string","null"] }, "text": { "type": ["string","null"] } } },
+          "variables": { "type": "object", "additionalProperties": true },
+          "confidence": { "type": ["number","null"] },
+          "created_at": { "type": "string" },
+          "updated_at": { "type": "string" }
+        }
+      },
+      "ContactContextSummaryResponse": {
+        "type": "object",
+        "properties": {
+          "last_contact_delta_days": { "type": ["number","null"] },
+          "last_topics": { "type": "array", "items": { "type": "string" } },
+          "interests": { "type": "array", "items": { "type": "string" } },
+          "warmth": { "type": ["number","null"] },
+          "warmth_band": { "type": ["string","null"] },
+          "recent_interactions": { "type": "array", "items": { "type": "object", "properties": { "id": { "type": "string" }, "type": { "type": "string" }, "created_at": { "type": "string" }, "snippet": { "type": "string" } } } }
+        }
+      },
+      "ComposeDraftAcceptedRequest": { "type": "object", "properties": { "compose_session_id": { "type": "string", "format": "uuid" } }, "required": ["compose_session_id"] },
+      "ComposeDraftDiscardedRequest": { "type": "object", "properties": { "compose_session_id": { "type": "string", "format": "uuid" }, "reason": { "type": "string" } }, "required": ["compose_session_id"] },
+      "FileCommitRequest": { "type": "object", "required": ["path","mime_type","size_bytes"], "properties": { "path": { "type": "string" }, "mime_type": { "type": "string" }, "size_bytes": { "type": "integer" }, "contact_id": { "type": "string", "format": "uuid" }, "message_id": { "type": "string", "format": "uuid" } } },
+      "FileCommitResponse": { "type": "object", "properties": { "attachment": { "type": "object", "properties": { "id": { "type": "string", "format": "uuid" }, "file_path": { "type": "string" }, "created_at": { "type": "string", "format": "date-time" } } } } },
+      "TranscribeRequest": { "type": "object", "properties": { "language": { "type": "string", "default": "en" }, "prompt": { "type": "string" } } },
+      "TranscribeResponse": { "type": "object", "properties": { "transcript": { "type": "string" }, "metadata": { "type": "object", "properties": { "file_id": { "type": "string" }, "total_size_mb": { "type": "string" }, "was_chunked": { "type": "boolean" }, "chunks_processed": { "type": "integer" }, "transcript_length": { "type": "integer" } } } } },
+      "ComposeSmartRequest": { "type": "object", "required": ["contact_id"], "properties": { "contact_id": { "type": "string", "format": "uuid" }, "goal": { "enum": ["personal","networking","business"] }, "goal_type": { "enum": ["personal","networking","business"] }, "goal_description": { "type": "string" }, "channel": { "enum": ["email","sms","dm"], "default": "email" }, "tone": { "enum": ["concise","warm","professional","playful"], "default": "warm" }, "include_context": { "type": "boolean", "default": true }, "include_voice_context": { "type": "boolean" }, "include_interaction_history": { "type": "boolean" }, "max_length": { "type": "integer", "minimum": 50, "maximum": 2000 } } },
+      "ComposeSmartResponse": { "type": "object", "properties": { "draft": { "type": "object", "properties": { "email": { "type": "object", "properties": { "subject": { "type": "string" }, "body": { "type": "string" } } }, "sms": { "type": "object", "properties": { "body": { "type": "string" } } }, "dm": { "type": "object", "properties": { "body": { "type": "string" } } } } }, "contact": { "type": "object", "properties": { "id": { "type": "string" }, "name": { "type": "string" } } }, "message": { "type": "object", "properties": { "channel": { "type": "string" }, "subject": { "type": "string", "nullable": true }, "body": { "type": "string" }, "tone": { "type": "string" }, "estimated_length": { "type": "integer" } } }, "context_used": { "type": "array", "items": { "type": "string" } }, "context_sources": { "type": "object", "properties": { "voice_notes_used": { "type": "boolean" }, "interactions_used": { "type": "boolean" }, "contact_warmth": { "type": "integer" } } }, "usage": { "type": "object", "properties": { "prompt_tokens": { "type": "integer" }, "completion_tokens": { "type": "integer" }, "total_tokens": { "type": "integer" } } } } },
+      "VoiceNoteProcessRequest": { "type": "object", "required": ["note_id"], "properties": { "note_id": { "type": "string", "format": "uuid" } } },
+      "VoiceNoteProcessResponse": { "type": "object", "properties": { "note_id": { "type": "string" }, "extracted_contacts": { "type": "array", "items": { "type": "object", "properties": { "name": { "type": "string" }, "context": { "type": "string" } } } }, "suggested_actions": { "type": "array", "items": { "type": "object", "properties": { "type": { "type": "string" }, "description": { "type": "string" }, "priority": { "type": "string" } } } }, "sentiment": { "type": "string", "enum": ["positive","neutral","negative"] }, "category": { "type": "string" }, "suggested_tags": { "type": "array", "items": { "type": "string" } } } },
+      "WarmthCurrentResponse": { "type": "object", "properties": { "contact_id": { "type": "string" }, "warmth": { "type": "integer" }, "warmth_band": { "type": "string", "enum": ["hot","warm","neutral","cool","cold"] }, "last_interaction_at": { "type": "string", "format": "date-time", "nullable": true }, "days_since_last_interaction": { "type": "integer", "nullable": true }, "interaction_count": { "type": "integer" }, "computed_at": { "type": "string", "format": "date-time" } } },
+      "WarmthHistoryResponse": { "type": "object", "properties": { "contact_id": { "type": "string" }, "history": { "type": "array", "items": { "type": "object", "properties": { "date": { "type": "string", "format": "date" }, "warmth": { "type": "integer" }, "interaction_count": { "type": "integer" } } } }, "metadata": { "type": "object", "properties": { "start_date": { "type": "string" }, "end_date": { "type": "string" }, "count": { "type": "integer" } } } } },
+      "WarmthWindowedHistoryResponse": { "type": "object", "properties": { "contact_id": { "type": "string" }, "window_size": { "type": "string" }, "windows": { "type": "array", "items": { "type": "object", "properties": { "window_start": { "type": "string", "format": "date" }, "window_end": { "type": "string", "format": "date" }, "avg_warmth": { "type": "number" }, "min_warmth": { "type": "integer" }, "max_warmth": { "type": "integer" }, "interaction_count": { "type": "integer" } } } } } },
+      "ScreenshotLinkRequest": { "type": "object", "required": ["contact_id"], "properties": { "contact_id": { "type": "string", "format": "uuid" } } },
+      "ScreenshotLinkResponse": { "type": "object", "properties": { "analysis_id": { "type": "string" }, "contact_id": { "type": "string" }, "linked_at": { "type": "string", "format": "date-time" } } },
+      "BillingCheckoutRequest": { "type": "object", "properties": { "price_id": { "type": "string" }, "success_url": { "type": "string" }, "cancel_url": { "type": "string" } } },
+      "BillingCheckoutResponse": { "type": "object", "properties": { "url": { "type": "string", "format": "uri" } } },
+      "BillingPortalResponse": { "type": "object", "properties": { "url": { "type": "string", "format": "uri" } } }
+    }
+  },
+  "security": [ { "bearerAuth": [] } ]
+}

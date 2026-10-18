@@ -1,0 +1,14 @@
+# Minimal Maestro smoke test for the mobile app
+# Requires a built app installed on a simulator/device
+# Usage:
+#   ANDROID: maestro test maestro/flows/smoke.yaml -e APP_ID=com.yourcompany.yourapp
+#   iOS:     maestro test maestro/flows/smoke.yaml -e APP_ID=com.yourcompany.yourapp
+
+appId: ${APP_ID}
+name: Smoke - Launch and UI sanity
+
+steps:
+  - launchApp: { clearState: true }
+  - waitForAnimationToEnd
+  - assertVisible: "Choose Your Plan"
+  - takeScreenshot: smoke-home

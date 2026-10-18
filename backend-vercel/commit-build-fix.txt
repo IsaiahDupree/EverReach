@@ -1,0 +1,7 @@
+fix: support REVENUECAT_SECRET_KEY env var and ensure Node runtime compatibility
+
+- Accept both REVENUECAT_WEBHOOK_SECRET and REVENUECAT_SECRET_KEY env vars
+- Switch entitlements route to nodejs runtime to avoid Edge + crypto bundling issues
+- Use namespace crypto import for Node compatibility
+- Add explicit Supabase env checks with clear error messages
+- Prevents build failures from missing env vars or Edge incompatibilities

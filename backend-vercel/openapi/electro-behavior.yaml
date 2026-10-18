@@ -1,0 +1,591 @@
+openapi: 3.1.0
+info:
+  title: EverReach Electro-Behavior API
+  version: 0.1.0
+  description: |
+    Simulate, estimate, forecast, and recommend actions for consumer behavior using EE-inspired models fused with your events.
+    
+    ## Authentication
+    All endpoints require Bearer token authentication via JWT.
+    
+    ## Rate Limits
+    - Default: 100 QPS per project (burst 200)
+    - Headers: X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset
+    
+    ## Async Operations
+    Long-running operations (estimate, simulate, recommend) support `?async=true` query param.
+    Returns 202 Accepted with `Location: /jobs/{job_id}` header.
+
+servers:
+  - url: https://api.everreach.app/v1
+    description: Production
+  - url: http://localhost:3000/v1
+    description: Development
+
+security:
+  - bearerAuth: []
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      tags: [System]
+      security: []
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: healthy }
+                  version: { type: string, example: '0.1.0' }
+                  timestamp: { type: string, format: date-time }
+
+  /events:
+    post:
+      summary: Ingest analytics/telemetry events (batch or single)
+      tags: [Events]
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: false
+          schema: { type: string }
+          description: UUID for idempotent ingestion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventIngest'
+            examples:
+              single:
+                summary: Single event
+                value:
+                  project_id: proj_123
+                  events:
+                    - user_id: u_1
+                      ts: '2025-10-22T01:00:00Z'
+                      name: app_open
+                      props: { platform: ios, latency_ms: 180 }
+              batch:
+                summary: Batch events
+                value:
+                  project_id: proj_123
+                  mode: batch
+                  events:
+                    - user_id: u_1
+                      ts: '2025-10-22T01:00:00Z'
+                      name: app_open
+                      props: { platform: ios }
+                    - user_id: u_1
+                      ts: '2025-10-22T01:05:00Z'
+                      name: purchase
+                      props: { value: 24.0, currency: USD }
+      responses:
+        '202':
+          description: Accepted
+          headers:
+            X-RateLimit-Limit: { schema: { type: integer }, description: Requests per minute }
+            X-RateLimit-Remaining: { schema: { type: integer } }
+            Retry-After: { schema: { type: integer }, description: Seconds until next safe attempt }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IngestAck'
+        '4XX':
+          description: Client error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '5XX':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /estimate:
+    post:
+      summary: Estimate model parameters per segment/cohort
+      tags: [Modeling]
+      parameters:
+        - in: query
+          name: async
+          schema: { type: boolean, default: false }
+          description: If true, return job ID for polling
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EstimateRequest'
+            examples:
+              rc_retention:
+                summary: RC retention model
+                value:
+                  project_id: proj_123
+                  model: rc_retention
+                  segments:
+                    - name: new_ios_us_last30
+                      filter: platform=ios AND country=US AND days_since_signup<=30
+                  priors:
+                    R: { min: 0.1, max: 10.0 }
+                    C: { min: 0.1, max: 60.0 }
+      responses:
+        '200':
+          description: Parameter estimates
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EstimateResponse'
+        '202':
+          description: Job queued (if async=true)
+          headers:
+            Location: { schema: { type: string }, example: /jobs/job_abc123 }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobStatus'
+
+  /simulate:
+    post:
+      summary: Run what-if simulations over a future horizon
+      tags: [Modeling]
+      parameters:
+        - in: query
+          name: async
+          schema: { type: boolean, default: false }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SimulateRequest'
+            examples:
+              state_space:
+                summary: State-space simulation
+                value:
+                  project_id: proj_123
+                  model: state_space
+                  horizon_days: 28
+                  initial_state: auto
+                  inputs:
+                    - day: 0
+                      u: { rollout_pct: 0.2, promo_voltage: 0.0 }
+                    - day: 7
+                      u: { rollout_pct: 0.5, promo_voltage: 0.3 }
+                  constraints: { max_latency_ms: 250 }
+      responses:
+        '200':
+          description: Simulation results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimulateResponse'
+        '202':
+          description: Job queued
+          headers:
+            Location: { schema: { type: string } }
+
+  /recommend:
+    post:
+      summary: Recommend constrained actions (bandit/MPC)
+      tags: [Optimization]
+      parameters:
+        - in: query
+          name: async
+          schema: { type: boolean, default: false }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecommendRequest'
+            examples:
+              constrained_bandit:
+                summary: Revenue maximization with guardrails
+                value:
+                  project_id: proj_123
+                  objective: maximize_revenue
+                  guards:
+                    retention_d7_min: 0.24
+                    latency_p95_max_ms: 250
+                    budget_weekly_usd: 3000
+                  actions: [price_variant, copy_variant, rollout_pct, promo_voltage]
+                  algo: constrained_bandit
+      responses:
+        '200':
+          description: Policy recommendation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecommendResponse'
+
+  /forecast:
+    post:
+      summary: Forecast KPIs given current state and planned inputs
+      tags: [Modeling]
+      parameters:
+        - in: query
+          name: async
+          schema: { type: boolean, default: false }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForecastRequest'
+      responses:
+        '200':
+          description: Forecast results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForecastResponse'
+
+  /jobs/{job_id}:
+    get:
+      summary: Poll long-running task status
+      tags: [System]
+      parameters:
+        - in: path
+          name: job_id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Job status / result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobStatus'
+
+  /usage:
+    get:
+      summary: Get metered usage for billing/limits
+      tags: [System]
+      responses:
+        '200':
+          description: Current usage metrics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  events_month: { type: integer, example: 2400000 }
+                  sim_minutes_month: { type: number, example: 142.5 }
+                  rate_limit_qps: { type: integer, example: 100 }
+                  period_start: { type: string, format: date-time }
+                  period_end: { type: string, format: date-time }
+
+  /projects/{project_id}/models:
+    get:
+      summary: List configured models for a project
+      tags: [Projects]
+      parameters:
+        - in: path
+          name: project_id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Model catalog
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  models:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ModelDescriptor'
+
+  /segments:
+    get:
+      summary: List segments available to the caller
+      tags: [Segments]
+      parameters:
+        - in: query
+          name: project_id
+          schema: { type: string }
+      responses:
+        '200':
+          description: Segments
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  segments:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Segment'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Event:
+      type: object
+      required: [user_id, ts, name]
+      properties:
+        user_id: { type: string, example: u_abc123 }
+        anon_id: { type: string, nullable: true, example: anon_xyz789 }
+        ts: { type: string, format: date-time, example: '2025-10-22T01:00:00Z' }
+        name: { type: string, example: app_open }
+        props:
+          type: object
+          additionalProperties: true
+          example: { platform: ios, latency_ms: 180 }
+        project_id: { type: string, example: proj_123 }
+
+    EventIngest:
+      type: object
+      required: [project_id, events]
+      properties:
+        project_id: { type: string, example: proj_123 }
+        events:
+          type: array
+          items: { $ref: '#/components/schemas/Event' }
+        mode:
+          type: string
+          enum: [batch, stream]
+          default: batch
+
+    IngestAck:
+      type: object
+      properties:
+        accepted: { type: integer, example: 98 }
+        rejected: { type: integer, example: 2 }
+        errors:
+          type: array
+          items: { type: string }
+          example: ['event 5: missing ts field', 'event 12: invalid user_id']
+
+    Segment:
+      type: object
+      properties:
+        name: { type: string, example: new_ios_us }
+        filter: { type: string, example: 'platform=ios AND country=US' }
+
+    EstimateRequest:
+      type: object
+      required: [project_id, model]
+      properties:
+        project_id: { type: string }
+        model:
+          type: string
+          enum: [ohm_simple, rc_retention, state_space]
+        segments:
+          type: array
+          items: { $ref: '#/components/schemas/Segment' }
+        priors:
+          type: object
+          additionalProperties: true
+          example:
+            R: { min: 0.1, max: 10.0 }
+            C: { min: 0.1, max: 60.0 }
+
+    EstimateResponse:
+      type: object
+      properties:
+        segment_params:
+          type: array
+          items:
+            type: object
+            properties:
+              segment: { type: string }
+              R: { type: number, nullable: true, example: 2.3 }
+              C: { type: number, nullable: true, example: 14.5 }
+              RC: { type: number, nullable: true, example: 33.35 }
+              coefficients:
+                type: object
+                additionalProperties: true
+                example: { rollout_pct: 0.45, promo_voltage: 0.32 }
+              stderr:
+                type: object
+                additionalProperties: true
+                example: { R: 0.15, C: 1.2 }
+        fit:
+          type: object
+          properties:
+            rmse: { type: number, example: 0.023 }
+            r2: { type: number, example: 0.87 }
+
+    SimulateRequest:
+      type: object
+      required: [project_id, model, horizon_days]
+      properties:
+        project_id: { type: string }
+        model:
+          type: string
+          enum: [state_space, rc_retention]
+        horizon_days: { type: integer, minimum: 1, example: 28 }
+        initial_state:
+          oneOf:
+            - type: string
+              enum: [auto]
+            - type: object
+        inputs:
+          type: array
+          items:
+            type: object
+            properties:
+              day: { type: integer }
+              u:
+                type: object
+                additionalProperties: true
+                example: { rollout_pct: 0.5, promo_voltage: 0.3 }
+        disturbances:
+          type: array
+          items:
+            type: object
+            properties:
+              day: { type: integer }
+              d: { type: object, additionalProperties: true }
+        constraints:
+          type: object
+          additionalProperties: true
+          example: { max_latency_ms: 250 }
+
+    SimulateResponse:
+      type: object
+      properties:
+        kpis:
+          type: object
+          additionalProperties:
+            type: array
+            items: { type: number }
+          example:
+            daily_active_users: [5200, 5350, 5480]
+            retention_d7: [0.24, 0.26, 0.28]
+        confidence_bands:
+          type: object
+          additionalProperties: true
+          example:
+            daily_active_users:
+              lower: [5100, 5220, 5340]
+              upper: [5300, 5480, 5620]
+
+    RecommendRequest:
+      type: object
+      required: [project_id, objective, actions]
+      properties:
+        project_id: { type: string }
+        objective: { type: string, example: maximize_revenue }
+        guards:
+          type: object
+          additionalProperties: true
+          example:
+            retention_d7_min: 0.24
+            latency_p95_max_ms: 250
+            budget_weekly_usd: 3000
+        actions:
+          type: array
+          items: { type: string }
+          example: [price_variant, copy_variant, rollout_pct, promo_voltage]
+        algo:
+          type: string
+          enum: [constrained_bandit, mpc]
+          default: constrained_bandit
+
+    RecommendResponse:
+      type: object
+      properties:
+        policy:
+          type: array
+          items:
+            type: object
+            properties:
+              day: { type: integer }
+              action:
+                type: object
+                additionalProperties: true
+                example:
+                  price_variant: B
+                  rollout_pct: 0.5
+        expected_uplift:
+          type: object
+          additionalProperties: { type: number }
+          example: { revenue: 2400, retention_d7: 0.02 }
+        guardrail_violations:
+          type: array
+          items: { type: string }
+          example: []
+        expected_regret: { type: number, example: 120.5 }
+
+    ForecastRequest:
+      type: object
+      required: [project_id, horizon_days]
+      properties:
+        project_id: { type: string }
+        horizon_days: { type: integer, example: 90 }
+        planned_inputs:
+          type: array
+          items: { type: object }
+
+    ForecastResponse:
+      type: object
+      properties:
+        kpis:
+          type: object
+          additionalProperties:
+            type: array
+            items: { type: number }
+
+    ModelDescriptor:
+      type: object
+      properties:
+        model_id: { type: string }
+        model_type: { type: string }
+        created_at: { type: string, format: date-time }
+        config: { type: object }
+
+    JobStatus:
+      type: object
+      properties:
+        job_id: { type: string, example: job_abc123 }
+        state:
+          type: string
+          enum: [queued, running, succeeded, failed, canceled]
+          example: running
+        submitted_at: { type: string, format: date-time }
+        finished_at: { type: string, format: date-time, nullable: true }
+        progress_pct: { type: integer, minimum: 0, maximum: 100, example: 45 }
+        result: { type: object, nullable: true }
+        error: { $ref: '#/components/schemas/Error' }
+
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          example: RATE_LIMITED
+          enum: [INVALID_REQUEST, RATE_LIMITED, UNAUTHORIZED, NOT_FOUND, SERVER_ERROR]
+        message: { type: string, example: 'Rate limit exceeded: 100 requests per minute' }
+        details:
+          type: object
+          additionalProperties: true
+        request_id: { type: string, example: req_abc123xyz }
+
+tags:
+  - name: System
+    description: Health, usage, jobs
+  - name: Events
+    description: Event ingestion
+  - name: Modeling
+    description: Estimate, simulate, forecast
+  - name: Optimization
+    description: Policy recommendations
+  - name: Projects
+    description: Project management
+  - name: Segments
+    description: User segments

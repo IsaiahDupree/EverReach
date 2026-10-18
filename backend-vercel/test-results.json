@@ -1,0 +1,116 @@
+[
+  {
+    "name": "GET /api/v1/me",
+    "status": "FAIL"
+  },
+  {
+    "name": "GET /api/v1/me/trial-stats",
+    "status": "PASS",
+    "data": {
+      "trial": {
+        "start_date": "2025-11-01T03:35:43.478Z",
+        "days_elapsed": 6,
+        "days_remaining": 8,
+        "status": "active",
+        "platform": "play"
+      },
+      "stats": {
+        "messages_sent": 0,
+        "warmth_improvements": 0,
+        "days_active": 0,
+        "pending_checkins": 51
+      },
+      "warmth_distribution": {
+        "hot": 0,
+        "warm": 3,
+        "neutral": 1,
+        "cool": 51,
+        "cold": 0,
+        "total": 55
+      },
+      "progress_message": "Start your journey by reaching out to someone today!"
+    }
+  },
+  {
+    "name": "GET /api/v1/me/entitlements",
+    "status": "PASS",
+    "data": {
+      "tier": "pro",
+      "subscription_status": "ACTIVE",
+      "trial_ends_at": null,
+      "current_period_end": "2025-12-01T21:53:46.17+00:00",
+      "payment_platform": "apple",
+      "features": {
+        "compose_runs": 1000,
+        "voice_minutes": 300,
+        "messages": 2000,
+        "contacts": -1
+      }
+    }
+  },
+  {
+    "name": "GET /api/v1/me/compose-settings",
+    "status": "PASS",
+    "data": {
+      "settings": {
+        "user_id": "e5eaa347-9c72-4190-bace-ec7a2063f69a",
+        "enabled": true,
+        "default_channel": "email",
+        "auto_use_persona_notes": true,
+        "default_template_id": null,
+        "tone": "professional",
+        "max_length": 500,
+        "guardrails": {
+          "avoid_topics": [
+            "politics",
+            "religion"
+          ],
+          "required_tone": "professional"
+        },
+        "updated_at": "2025-10-11T17:55:18.049448+00:00"
+      }
+    }
+  },
+  {
+    "name": "POST /api/v1/billing/cancel (dry run)",
+    "status": "ERROR",
+    "error": "Unexpected end of JSON input"
+  },
+  {
+    "name": "GET /api/health",
+    "status": "PASS",
+    "data": {
+      "status": "healthy",
+      "version": "1.0.0",
+      "timestamp": "2025-11-07T18:51:27.077Z",
+      "uptime": 0,
+      "services": {
+        "database": "healthy",
+        "database_latency_ms": 45,
+        "stripe": "configured",
+        "openai": "configured"
+      }
+    }
+  },
+  {
+    "name": "GET /api/v1/ops/config-status",
+    "status": "PASS",
+    "data": {
+      "envs": {
+        "SUPABASE_URL": true,
+        "SUPABASE_SERVICE_ROLE_KEY": true,
+        "RESEND_API_KEY": true,
+        "EMAIL_FROM": true,
+        "STRIPE_SECRET_KEY": true,
+        "STRIPE_WEBHOOK_SECRET": true,
+        "APPLE_ASN_VERIFY": false,
+        "APPLE_APPSTORE_KEY_ID": false,
+        "APPLE_APPSTORE_ISSUER_ID": false,
+        "APPLE_APPSTORE_BUNDLE_ID": false,
+        "APPLE_APPSTORE_PRIVATE_KEY_or_BASE64": false,
+        "PLAY_PACKAGE_NAME": false,
+        "GOOGLE_SERVICE_ACCOUNT_JSON": false
+      }
+    }
+  }
+]

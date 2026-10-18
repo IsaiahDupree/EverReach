@@ -1,0 +1,77 @@
+feat: Complete RevenueCat webhook integration with comprehensive tests
+
+Implemented full RevenueCat subscription state mirroring into EverReach backend.
+
+Database Migration:
+- user_subscriptions table (tracks subscription state per user)
+- revenuecat_webhook_events table (idempotency tracking)
+- Helper functions (get_active_subscription, get_tier_from_product)
+- RLS policies for security
+- Auto-cleanup for old events (48 hours)
+
+Webhook Processing:
+- HMAC SHA256 signature verification
+- Support for 7 event types: INITIAL_PURCHASE, RENEWAL, CANCELLATION, EXPIRATION, REFUND, PRODUCT_CHANGE, UNCANCELLATION
+- Idempotency checks (prevents duplicate processing)
+- Status derivation logic (trial, active, canceled, expired, refunded)
+- Platform detection (app_store, play)
+- Environment tracking (SANDBOX, PRODUCTION)
+
+API Endpoints:
+- POST /api/v1/billing/revenuecat/webhook (webhook receiver)
+- GET /v1/me/entitlements (updated to use subscription data)
+
+Event Types Handled:
+- INITIAL_PURCHASE → trial or active (based on period_type)
+- RENEWAL → active (updates current_period_end)
+- CANCELLATION → canceled (access until period end)
+- EXPIRATION → expired (no access)
+- REFUND → refunded (immediate access removal)
+- PRODUCT_CHANGE → active (updates product_id)
+- UNCANCELLATION → active (reactivates canceled sub)
+
+Security:
+- HMAC signature verification using REVENUECAT_WEBHOOK_SECRET
+- Constant-time comparison to prevent timing attacks
+- Event ID deduplication
+- RLS policies on all tables
+
+Testing:
+- 10 comprehensive E2E tests
+- Signature verification tests (valid, invalid, missing)
+- All event type tests
+- Idempotency tests
+- Invalid data handling tests
+- Test runner script
+
+Tier & Features Mapping:
+- Free: 50 compose_runs, 30 voice_minutes, 200 messages, 100 contacts
+- Core: 500 compose_runs, 120 voice_minutes, 1000 messages, 500 contacts
+- Pro: 1000 compose_runs, 300 voice_minutes, 2000 messages, unlimited contacts
+- Team: Unlimited everything, 10 team_members
+
+Documentation:
+- REVENUECAT_IMPLEMENTATION.md (800 lines) - Complete guide
+- REVENUECAT_QUICK_START.md (300 lines) - Quick start
+- docs/REVENUECAT_WEBHOOK_SPEC.md (already exists)
+
+Files Created (8 files, ~2,200 lines):
+- supabase/migrations/20251026172100_revenuecat_subscriptions.sql (200 lines)
+- lib/revenuecat-webhook.ts (350 lines)
+- app/api/v1/billing/revenuecat/webhook/route.ts (150 lines)
+- app/api/v1/me/entitlements/route.ts (updated, 45 lines)
+- test/revenuecat-webhook.mjs (600 lines)
+- scripts/test-revenuecat-webhook.ps1 (25 lines)
+- REVENUECAT_IMPLEMENTATION.md (800 lines)
+- REVENUECAT_QUICK_START.md (300 lines)
+
+Next Steps:
+1. Apply migration: npx supabase db push
+2. Configure webhook in RevenueCat dashboard
+3. Set REVENUECAT_WEBHOOK_SECRET in .env
+4. Deploy to Vercel
+5. Run tests
+6. Configure mobile apps with user IDs
+
+Status: Ready for deployment
+Branch: feat/backend-vercel-only-clean

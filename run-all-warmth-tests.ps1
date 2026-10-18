@@ -1,0 +1,99 @@
+$env:SUPABASE_URL = "https://utasetfxiqcrnwyfforx.supabase.co"
+$env:SUPABASE_SERVICE_ROLE_KEY = $env:SUPABASE_SERVICE_ROLE_KEY
+$env:SUPABASE_ANON_KEY = $env:SUPABASE_ANON_KEY
+$env:TEST_USER_ID = "e5eaa347-9c72-4190-bace-ec7a2063f69a"
+$env:BACKEND_URL = "https://ever-reach-be.vercel.app"
+$env:TEST_EMAIL = "isaiahdupree33@gmail.com"
+$env:TEST_PASSWORD = "Frogger12"
+
+Write-Host "============================================================" -ForegroundColor Cyan
+Write-Host "🧪 WARMTH SCORE TEST SUITE" -ForegroundColor Cyan
+Write-Host "============================================================" -ForegroundColor Cyan
+Write-Host ""
+
+$totalTests = 0
+$passedTests = 0
+$failedTests = 0
+
+# Test 1: Continuity Test
+Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Yellow
+Write-Host "TEST SUITE 1: Warmth Continuity (Mode Switching)" -ForegroundColor Yellow
+Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Yellow
+Write-Host ""
+
+node test-warmth-continuity-improved.mjs
+$continuityResult = $LASTEXITCODE
+
+if ($continuityResult -eq 0) {
+    Write-Host "Continuity Test: PASSED" -ForegroundColor Green
+    $passedTests++
+} else {
+    Write-Host "Continuity Test: FAILED" -ForegroundColor Red
+    $failedTests++
+}
+$totalTests++
+
+Write-Host ""
+Write-Host ""
+
+# Test 2: Interactions Test
+Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Yellow
+Write-Host "TEST SUITE 2: Warmth + Interactions" -ForegroundColor Yellow
+Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Yellow
+Write-Host ""
+
+node test-warmth-interactions.mjs
+$interactionResult = $LASTEXITCODE
+
+if ($interactionResult -eq 0) {
+    Write-Host "Interactions Test: PASSED" -ForegroundColor Green
+    $passedTests++
+} else {
+    Write-Host "Interactions Test: FAILED" -ForegroundColor Red
+    $failedTests++
+}
+$totalTests++
+
+Write-Host ""
+Write-Host ""
+
+# Test 3: Message Sent Test
+Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Yellow
+Write-Host "TEST SUITE 3: Warmth + Message Sent" -ForegroundColor Yellow
+Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Yellow
+Write-Host ""
+
+node test-warmth-message-sent.mjs
+$messageSentResult = $LASTEXITCODE
+
+if ($messageSentResult -eq 0) {
+    Write-Host "Message Sent Test: PASSED" -ForegroundColor Green
+    $passedTests++
+} else {
+    Write-Host "Message Sent Test: FAILED" -ForegroundColor Red
+    $failedTests++
+}
+$totalTests++
+
+Write-Host ""
+Write-Host ""
+
+# Summary
+Write-Host "============================================================" -ForegroundColor Cyan
+Write-Host "FINAL TEST SUMMARY" -ForegroundColor Cyan
+Write-Host "============================================================" -ForegroundColor Cyan
+Write-Host "Total Test Suites: $totalTests"
+Write-Host "Passed: $passedTests" -ForegroundColor Green
+Write-Host "Failed: $failedTests" -ForegroundColor Red
+$successRate = [math]::Round(($passedTests / $totalTests) * 100, 1)
+Write-Host "Success Rate: $successRate%"
+Write-Host "============================================================" -ForegroundColor Cyan
+Write-Host ""
+
+if ($failedTests -gt 0) {
+    Write-Host "SOME TESTS FAILED" -ForegroundColor Red
+    exit 1
+} else {
+    Write-Host "ALL TESTS PASSED!" -ForegroundColor Green
+    exit 0
+}

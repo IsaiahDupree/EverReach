@@ -1,0 +1,33 @@
+feat: Personal Profile API complete with E2E tests (10/10 passing)
+
+- Added display_name and preferences columns to profiles table
+- Implemented 10 new /v1/me/* endpoints (Profile, Compose, Persona Notes)
+- Created complete E2E test suite (test/e2e-user-profile-journey.mjs)
+- Built CLI migration workflow with 9 automation scripts
+- Applied migration to production database
+- Deployed to Vercel and verified in production
+- All 10 E2E tests passing (100% success rate)
+
+Endpoints:
+- GET/PATCH /v1/me (profile with preferences)
+- GET/PATCH /v1/me/compose-settings (AI settings)
+- Full CRUD on /v1/me/persona-notes (text, voice, pagination)
+
+Scripts:
+- scripts/migrate-and-verify.ps1
+- scripts/run-e2e-tests.ps1
+- scripts/get-auth-token.mjs
+- scripts/deploy-to-vercel.ps1
+- scripts/commit-and-push.ps1
++ 4 more helper scripts
+
+Documentation:
+- PERSONAL_PROFILE_API_SUCCESS.md (complete summary)
+- CLI_MIGRATION_WORKFLOW.md (migration guide)
+- Updated RECENT_WORK_RUNDOWN.md
+- Updated docs/ALL_ENDPOINTS_MASTER_LIST.md
+
+Files: 19 created/modified
+Lines: ~2,500 new code
+Test Coverage: 100% of new endpoints
+Status: Production Ready
