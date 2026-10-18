@@ -1,0 +1,2509 @@
+{
+  "project": "EverReach App Kit",
+  "description": "Production-ready starter kit with iOS (React Native/Expo), Backend (Next.js API), and Web (Next.js) templates - auth, payments, and modern UI out of the box",
+  "version": "1.0",
+  "totalFeatures": 134,
+  "completedFeatures": 134,
+  "kits": {
+    "ios": "React Native / Expo mobile starter (6-10 days)",
+    "backend": "Next.js API Routes / Vercel serverless (4-5 days)",
+    "web": "Next.js 14 App Router / Tailwind / shadcn (5-6 days)",
+    "handoff": "Developer handoff documentation & cleanup (21-30 hours)"
+  },
+  "features": [
+    {
+      "id": "IOS-FOUND-001",
+      "name": "iOS Monorepo Structure",
+      "description": "Set up Expo project structure with app/, components/, hooks/, lib/, types/, providers/ directories",
+      "priority": "P0",
+      "kit": "ios",
+      "phase": "foundation",
+      "effort": "2h",
+      "passes": true,
+      "category": "setup",
+      "files": [
+        "app/",
+        "components/",
+        "hooks/",
+        "lib/",
+        "types/",
+        "providers/"
+      ],
+      "acceptance": [
+        "Directory structure created",
+        "All folders accessible"
+      ]
+    },
+    {
+      "id": "IOS-FOUND-002",
+      "name": "Expo Configuration",
+      "description": "Configure app.json with placeholder values for app name, bundle ID, icons",
+      "priority": "P0",
+      "kit": "ios",
+      "phase": "foundation",
+      "effort": "1h",
+      "passes": true,
+      "category": "setup",
+      "files": [
+        "app.json",
+        "eas.json"
+      ],
+      "acceptance": [
+        "YOUR_APP_NAME placeholders",
+        "EAS build config ready"
+      ]
+    },
+    {
+      "id": "IOS-FOUND-003",
+      "name": "Environment Template",
+      "description": "Create .env.example with all required and optional variables documented",
+      "priority": "P0",
+      "kit": "ios",
+      "phase": "foundation",
+      "effort": "1h",
+      "passes": true,
+      "category": "setup",
+      "files": [
+        ".env.example"
+      ],
+      "acceptance": [
+        "All vars documented",
+        "DEV_MODE flag included"
+      ]
+    },
+    {
+      "id": "IOS-FOUND-004",
+      "name": "Package Dependencies",
+      "description": "Configure package.json with Expo, React Native, navigation, and utility dependencies",
+      "priority": "P0",
+      "kit": "ios",
+      "phase": "foundation",
+      "effort": "1h",
+      "passes": true,
+      "category": "setup",
+      "files": [
+        "package.json"
+      ],
+      "acceptance": [
+        "npm install works",
+        "No version conflicts"
+      ]
+    },
+    {
+      "id": "IOS-FOUND-005",
+      "name": "TypeScript Configuration",
+      "description": "Set up tsconfig.json with proper path aliases and strict mode",
+      "priority": "P0",
+      "kit": "ios",
+      "phase": "foundation",
+      "effort": "30m",
+      "passes": true,
+      "category": "setup",
+      "files": [
+        "tsconfig.json"
+      ],
+      "acceptance": [
+        "Path aliases work",
+        "Type checking passes"
+      ]
+    },
+    {
+      "id": "IOS-AUTH-001",
+      "name": "Supabase Client Setup",
+      "description": "Create Supabase client configuration for React Native",
+      "priority": "P0",
+      "kit": "ios",
+      "phase": "auth",
+      "effort": "2h",
+      "passes": true,
+      "category": "auth",
+      "files": [
+        "lib/supabase.ts"
+      ],
+      "acceptance": [
+        "Client initializes",
+        "Secure storage configured"
+      ]
+    },
+    {
+      "id": "IOS-AUTH-002",
+      "name": "Auth Provider",
+      "description": "Create AuthProvider context with user state and auth methods",
+      "priority": "P0",
+      "kit": "ios",
+      "phase": "auth",
+      "effort": "3h",
+      "passes": true,
+      "category": "auth",
+      "files": [
+        "providers/AuthProvider.tsx"
+      ],
+      "acceptance": [
+        "Provides user state",
+        "Handles auth changes"
+      ]
+    },
+    {
+      "id": "IOS-AUTH-003",
+      "name": "useAuth Hook",
+      "description": "Create useAuth hook for accessing auth state and methods",
+      "priority": "P0",
+      "kit": "ios",
+      "phase": "auth",
+      "effort": "1h",
+      "passes": true,
+      "category": "auth",
+      "files": [
+        "hooks/useAuth.ts"
+      ],
+      "acceptance": [
+        "Returns user, loading, signIn, signOut, signUp"
+      ]
+    },
+    {
+      "id": "IOS-AUTH-004",
+      "name": "Login Screen",
+      "description": "Create login screen with email/password form",
+      "priority": "P0",
+      "kit": "ios",
+      "phase": "auth",
+      "effort": "3h",
+      "passes": true,
+      "category": "auth",
+      "files": [
+        "app/(auth)/login.tsx"
+      ],
+      "acceptance": [
+        "Form validation",
+        "Error handling",
+        "Loading states"
+      ]
+    },
+    {
+      "id": "IOS-AUTH-005",
+      "name": "Signup Screen",
+      "description": "Create signup screen with email/password registration",
+      "priority": "P0",
+      "kit": "ios",
+      "phase": "auth",
+      "effort": "3h",
+      "passes": true,
+      "category": "auth",
+      "files": [
+        "app/(auth)/signup.tsx"
+      ],
+      "acceptance": [
+        "Form validation",
+        "Password strength check"
+      ]
+    },
+    {
+      "id": "IOS-AUTH-006",
+      "name": "Forgot Password Screen",
+      "description": "Create password reset request screen",
+      "priority": "P1",
+      "kit": "ios",
+      "phase": "auth",
+      "effort": "2h",
+      "passes": true,
+      "category": "auth",
+      "files": [
+        "app/(auth)/forgot-password.tsx"
+      ],
+      "acceptance": [
+        "Sends reset email",
+        "Success feedback"
+      ]
+    },
+    {
+      "id": "IOS-AUTH-007",
+      "name": "OAuth Buttons Component",
+      "description": "Create reusable OAuth buttons for Google and Apple Sign In",
+      "priority": "P1",
+      "kit": "ios",
+      "phase": "auth",
+      "effort": "3h",
+      "passes": true,
+      "category": "auth",
+      "files": [
+        "components/auth/OAuthButtons.tsx"
+      ],
+      "acceptance": [
+        "Google OAuth works",
+        "Apple Sign In works"
+      ]
+    },
+    {
+      "id": "IOS-AUTH-008",
+      "name": "Auth Layout",
+      "description": "Create auth stack layout with navigation between auth screens",
+      "priority": "P0",
+      "kit": "ios",
+      "phase": "auth",
+      "effort": "1h",
+      "passes": true,
+      "category": "auth",
+      "files": [
+        "app/(auth)/_layout.tsx"
+      ],
+      "acceptance": [
+        "Stack navigation works",
+        "Back navigation"
+      ]
+    },
+    {
+      "id": "IOS-NAV-001",
+      "name": "Root Layout",
+      "description": "Create root layout with providers and global navigation",
+      "priority": "P0",
+      "kit": "ios",
+      "phase": "navigation",
+      "effort": "2h",
+      "passes": true,
+      "category": "navigation",
+      "files": [
+        "app/_layout.tsx"
+      ],
+      "acceptance": [
+        "Providers wrapped",
+        "Auth redirect works"
+      ]
+    },
+    {
+      "id": "IOS-NAV-002",
+      "name": "Tab Navigation",
+      "description": "Create bottom tab navigation with Home, Search, Settings",
+      "priority": "P0",
+      "kit": "ios",
+      "phase": "navigation",
+      "effort": "2h",
+      "passes": true,
+      "category": "navigation",
+      "files": [
+        "app/(tabs)/_layout.tsx"
+      ],
+      "acceptance": [
+        "Tabs render",
+        "Icons display",
+        "Active state works"
+      ]
+    },
+    {
+      "id": "IOS-NAV-003",
+      "name": "Home Screen (Items List)",
+      "description": "Create main list screen with generic item display",
+      "priority": "P0",
+      "kit": "ios",
+      "phase": "navigation",
+      "effort": "4h",
+      "passes": true,
+      "category": "screens",
+      "files": [
+        "app/(tabs)/index.tsx"
+      ],
+      "acceptance": [
+        "Shows items",
+        "Pull to refresh",
+        "Empty state"
+      ]
+    },
+    {
+      "id": "IOS-NAV-004",
+      "name": "Search Screen",
+      "description": "Create search screen with filtering capability",
+      "priority": "P1",
+      "kit": "ios",
+      "phase": "navigation",
+      "effort": "3h",
+      "passes": true,
+      "category": "screens",
+      "files": [
+        "app/(tabs)/search.tsx"
+      ],
+      "acceptance": [
+        "Search input",
+        "Results list",
+        "Debounced search"
+      ]
+    },
+    {
+      "id": "IOS-NAV-005",
+      "name": "Settings Screen",
+      "description": "Create settings screen with profile, subscription, logout",
+      "priority": "P0",
+      "kit": "ios",
+      "phase": "navigation",
+      "effort": "3h",
+      "passes": true,
+      "category": "screens",
+      "files": [
+        "app/(tabs)/settings.tsx"
+      ],
+      "acceptance": [
+        "Shows user info",
+        "Logout works",
+        "Links to sub-screens"
+      ]
+    },
+    {
+      "id": "IOS-NAV-006",
+      "name": "Item Detail Screen",
+      "description": "Create item detail screen with dynamic routing",
+      "priority": "P0",
+      "kit": "ios",
+      "phase": "navigation",
+      "effort": "3h",
+      "passes": true,
+      "category": "screens",
+      "files": [
+        "app/item/[id].tsx"
+      ],
+      "acceptance": [
+        "Loads item by ID",
+        "Edit/delete actions"
+      ]
+    },
+    {
+      "id": "IOS-NAV-007",
+      "name": "Profile Screen",
+      "description": "Create user profile editing screen",
+      "priority": "P1",
+      "kit": "ios",
+      "phase": "navigation",
+      "effort": "3h",
+      "passes": true,
+      "category": "screens",
+      "files": [
+        "app/profile.tsx"
+      ],
+      "acceptance": [
+        "Edit name",
+        "Upload avatar",
+        "Save changes"
+      ]
+    },
+    {
+      "id": "IOS-NAV-008",
+      "name": "Paywall Screen",
+      "description": "Create subscription paywall with tier selection",
+      "priority": "P0",
+      "kit": "ios",
+      "phase": "navigation",
+      "effort": "4h",
+      "passes": true,
+      "category": "screens",
+      "files": [
+        "app/paywall.tsx"
+      ],
+      "acceptance": [
+        "Shows tiers",
+        "Purchase flow",
+        "Restore purchases"
+      ]
+    },
+    {
+      "id": "IOS-DATA-001",
+      "name": "Item Types",
+      "description": "Create TypeScript types for generic Item entity",
+      "priority": "P0",
+      "kit": "ios",
+      "phase": "data",
+      "effort": "1h",
+      "passes": true,
+      "category": "types",
+      "files": [
+        "types/item.ts"
+      ],
+      "acceptance": [
+        "Item interface defined",
+        "CRUD input types"
+      ]
+    },
+    {
+      "id": "IOS-DATA-002",
+      "name": "User Types",
+      "description": "Create TypeScript types for User entity",
+      "priority": "P0",
+      "kit": "ios",
+      "phase": "data",
+      "effort": "30m",
+      "passes": true,
+      "category": "types",
+      "files": [
+        "types/user.ts"
+      ],
+      "acceptance": [
+        "User interface defined",
+        "Profile types"
+      ]
+    },
+    {
+      "id": "IOS-DATA-003",
+      "name": "Subscription Types",
+      "description": "Create TypeScript types for Subscription entity",
+      "priority": "P0",
+      "kit": "ios",
+      "phase": "data",
+      "effort": "30m",
+      "passes": true,
+      "category": "types",
+      "files": [
+        "types/subscription.ts"
+      ],
+      "acceptance": [
+        "Subscription interface",
+        "Tier enum"
+      ]
+    },
+    {
+      "id": "IOS-DATA-004",
+      "name": "useItems Hook",
+      "description": "Create React Query hook for items CRUD",
+      "priority": "P0",
+      "kit": "ios",
+      "phase": "data",
+      "effort": "3h",
+      "passes": true,
+      "category": "hooks",
+      "files": [
+        "hooks/useItems.ts"
+      ],
+      "acceptance": [
+        "useItems query",
+        "useCreateItem mutation",
+        "useDeleteItem mutation"
+      ]
+    },
+    {
+      "id": "IOS-DATA-005",
+      "name": "useUser Hook",
+      "description": "Create hook for user profile operations",
+      "priority": "P0",
+      "kit": "ios",
+      "phase": "data",
+      "effort": "2h",
+      "passes": true,
+      "category": "hooks",
+      "files": [
+        "hooks/useUser.ts"
+      ],
+      "acceptance": [
+        "Get profile",
+        "Update profile"
+      ]
+    },
+    {
+      "id": "IOS-DATA-006",
+      "name": "useSubscription Hook",
+      "description": "Create hook for subscription status and operations",
+      "priority": "P0",
+      "kit": "ios",
+      "phase": "data",
+      "effort": "2h",
+      "passes": true,
+      "category": "hooks",
+      "files": [
+        "hooks/useSubscription.ts"
+      ],
+      "acceptance": [
+        "Get status",
+        "Check tier access"
+      ]
+    },
+    {
+      "id": "IOS-COMP-001",
+      "name": "Button Component",
+      "description": "Create themed button with variants",
+      "priority": "P0",
+      "kit": "ios",
+      "phase": "components",
+      "effort": "2h",
+      "passes": true,
+      "category": "ui",
+      "files": [
+        "components/common/Button.tsx"
+      ],
+      "acceptance": [
+        "Primary, secondary, ghost variants",
+        "Loading state"
+      ]
+    },
+    {
+      "id": "IOS-COMP-002",
+      "name": "Input Component",
+      "description": "Create themed text input with validation",
+      "priority": "P0",
+      "kit": "ios",
+      "phase": "components",
+      "effort": "2h",
+      "passes": true,
+      "category": "ui",
+      "files": [
+        "components/common/Input.tsx"
+      ],
+      "acceptance": [
+        "Error state",
+        "Label support",
+        "Icon support"
+      ]
+    },
+    {
+      "id": "IOS-COMP-003",
+      "name": "Card Component",
+      "description": "Create card container component",
+      "priority": "P0",
+      "kit": "ios",
+      "phase": "components",
+      "effort": "1h",
+      "passes": true,
+      "category": "ui",
+      "files": [
+        "components/common/Card.tsx"
+      ],
+      "acceptance": [
+        "Shadow",
+        "Border radius",
+        "Padding"
+      ]
+    },
+    {
+      "id": "IOS-COMP-004",
+      "name": "ItemCard Component",
+      "description": "Create item list card component",
+      "priority": "P0",
+      "kit": "ios",
+      "phase": "components",
+      "effort": "2h",
+      "passes": true,
+      "category": "items",
+      "files": [
+        "components/items/ItemCard.tsx"
+      ],
+      "acceptance": [
+        "Shows item info",
+        "Tap navigates to detail"
+      ]
+    },
+    {
+      "id": "IOS-COMP-005",
+      "name": "ItemForm Component",
+      "description": "Create item create/edit form",
+      "priority": "P0",
+      "kit": "ios",
+      "phase": "components",
+      "effort": "3h",
+      "passes": true,
+      "category": "items",
+      "files": [
+        "components/items/ItemForm.tsx"
+      ],
+      "acceptance": [
+        "Form validation",
+        "Create and edit modes"
+      ]
+    },
+    {
+      "id": "IOS-COMP-006",
+      "name": "LoadingSpinner Component",
+      "description": "Create loading indicator component",
+      "priority": "P0",
+      "kit": "ios",
+      "phase": "components",
+      "effort": "30m",
+      "passes": true,
+      "category": "ui",
+      "files": [
+        "components/common/LoadingSpinner.tsx"
+      ],
+      "acceptance": [
+        "Animated spinner",
+        "Customizable size"
+      ]
+    },
+    {
+      "id": "IOS-PAY-001",
+      "name": "RevenueCat Setup",
+      "description": "Configure RevenueCat client for iOS subscriptions",
+      "priority": "P0",
+      "kit": "ios",
+      "phase": "payments",
+      "effort": "3h",
+      "passes": true,
+      "category": "payments",
+      "files": [
+        "lib/revenuecat.ts"
+      ],
+      "acceptance": [
+        "SDK initialized",
+        "User identified"
+      ]
+    },
+    {
+      "id": "IOS-PAY-002",
+      "name": "Purchase Flow",
+      "description": "Implement subscription purchase with RevenueCat",
+      "priority": "P0",
+      "kit": "ios",
+      "phase": "payments",
+      "effort": "4h",
+      "passes": true,
+      "category": "payments",
+      "files": [
+        "hooks/useSubscription.ts"
+      ],
+      "acceptance": [
+        "Purchase succeeds",
+        "Entitlement updated"
+      ]
+    },
+    {
+      "id": "IOS-PAY-003",
+      "name": "Restore Purchases",
+      "description": "Implement restore purchases functionality",
+      "priority": "P0",
+      "kit": "ios",
+      "phase": "payments",
+      "effort": "2h",
+      "passes": true,
+      "category": "payments",
+      "files": [
+        "hooks/useSubscription.ts"
+      ],
+      "acceptance": [
+        "Restores entitlements",
+        "Shows feedback"
+      ]
+    },
+    {
+      "id": "IOS-THEME-001",
+      "name": "Theme Provider",
+      "description": "Create theme provider with dark mode support",
+      "priority": "P0",
+      "kit": "ios",
+      "phase": "theme",
+      "effort": "2h",
+      "passes": true,
+      "category": "theme",
+      "files": [
+        "providers/ThemeProvider.tsx"
+      ],
+      "acceptance": [
+        "System preference detection",
+        "Manual toggle"
+      ]
+    },
+    {
+      "id": "IOS-THEME-002",
+      "name": "Color Constants",
+      "description": "Define color palette for light and dark modes",
+      "priority": "P0",
+      "kit": "ios",
+      "phase": "theme",
+      "effort": "1h",
+      "passes": true,
+      "category": "theme",
+      "files": [
+        "constants/colors.ts"
+      ],
+      "acceptance": [
+        "Light colors",
+        "Dark colors",
+        "Brand colors"
+      ]
+    },
+    {
+      "id": "IOS-THEME-003",
+      "name": "Config Constants",
+      "description": "Create app configuration constants",
+      "priority": "P0",
+      "kit": "ios",
+      "phase": "theme",
+      "effort": "1h",
+      "passes": true,
+      "category": "config",
+      "files": [
+        "constants/config.ts"
+      ],
+      "acceptance": [
+        "DEV_MODE flag",
+        "API URLs",
+        "Feature flags"
+      ]
+    },
+    {
+      "id": "IOS-DEV-001",
+      "name": "DevModeOverlay Component",
+      "description": "Create in-app developer guide overlay",
+      "priority": "P1",
+      "kit": "ios",
+      "phase": "devtools",
+      "effort": "4h",
+      "passes": true,
+      "category": "devtools",
+      "files": [
+        "components/dev/DevModeOverlay.tsx"
+      ],
+      "acceptance": [
+        "Shows customization checklist",
+        "Toggleable",
+        "File paths listed"
+      ]
+    },
+    {
+      "id": "IOS-DB-001",
+      "name": "Database Schema",
+      "description": "Create Supabase schema with users, items, subscriptions tables",
+      "priority": "P0",
+      "kit": "ios",
+      "phase": "database",
+      "effort": "2h",
+      "passes": true,
+      "category": "database",
+      "files": [
+        "supabase/schema.sql"
+      ],
+      "acceptance": [
+        "Tables created",
+        "RLS policies",
+        "Indexes"
+      ]
+    },
+    {
+      "id": "IOS-DOC-001",
+      "name": "QUICKSTART Documentation",
+      "description": "Write 15-minute setup guide",
+      "priority": "P0",
+      "kit": "ios",
+      "phase": "docs",
+      "effort": "2h",
+      "passes": true,
+      "category": "docs",
+      "files": [
+        "QUICKSTART.md"
+      ],
+      "acceptance": [
+        "Step-by-step guide",
+        "Prerequisites listed"
+      ]
+    },
+    {
+      "id": "IOS-DOC-002",
+      "name": "CUSTOMIZATION Documentation",
+      "description": "Write customization guide for developers",
+      "priority": "P0",
+      "kit": "ios",
+      "phase": "docs",
+      "effort": "2h",
+      "passes": true,
+      "category": "docs",
+      "files": [
+        "docs/CUSTOMIZATION.md"
+      ],
+      "acceptance": [
+        "File map",
+        "What to change",
+        "Examples"
+      ]
+    },
+    {
+      "id": "BACK-FOUND-001",
+      "name": "Backend Project Structure",
+      "description": "Set up Next.js App Router API structure with app/api/, lib/, types/",
+      "priority": "P0",
+      "kit": "backend",
+      "phase": "foundation",
+      "effort": "2h",
+      "passes": true,
+      "category": "setup",
+      "files": [
+        "app/api/",
+        "lib/",
+        "types/"
+      ],
+      "acceptance": [
+        "Directory structure created",
+        "API routes accessible"
+      ]
+    },
+    {
+      "id": "BACK-FOUND-002",
+      "name": "Next.js Configuration",
+      "description": "Configure next.config.js for API-only usage",
+      "priority": "P0",
+      "kit": "backend",
+      "phase": "foundation",
+      "effort": "1h",
+      "passes": true,
+      "category": "setup",
+      "files": [
+        "next.config.js"
+      ],
+      "acceptance": [
+        "API routes work",
+        "CORS headers configured"
+      ]
+    },
+    {
+      "id": "BACK-FOUND-003",
+      "name": "Vercel Configuration",
+      "description": "Create vercel.json for serverless deployment",
+      "priority": "P0",
+      "kit": "backend",
+      "phase": "foundation",
+      "effort": "30m",
+      "passes": true,
+      "category": "setup",
+      "files": [
+        "vercel.json"
+      ],
+      "acceptance": [
+        "Deployment config ready",
+        "Region configured"
+      ]
+    },
+    {
+      "id": "BACK-FOUND-004",
+      "name": "Environment Template",
+      "description": "Create .env.example with all backend variables",
+      "priority": "P0",
+      "kit": "backend",
+      "phase": "foundation",
+      "effort": "30m",
+      "passes": true,
+      "category": "setup",
+      "files": [
+        ".env.example"
+      ],
+      "acceptance": [
+        "All vars documented",
+        "Secrets placeholders"
+      ]
+    },
+    {
+      "id": "BACK-FOUND-005",
+      "name": "Package Dependencies",
+      "description": "Configure package.json with API dependencies",
+      "priority": "P0",
+      "kit": "backend",
+      "phase": "foundation",
+      "effort": "1h",
+      "passes": true,
+      "category": "setup",
+      "files": [
+        "package.json"
+      ],
+      "acceptance": [
+        "npm install works",
+        "Scripts defined"
+      ]
+    },
+    {
+      "id": "BACK-DB-001",
+      "name": "Supabase Server Client",
+      "description": "Create Supabase server-side client",
+      "priority": "P0",
+      "kit": "backend",
+      "phase": "database",
+      "effort": "1h",
+      "passes": true,
+      "category": "database",
+      "files": [
+        "lib/supabase/server.ts"
+      ],
+      "acceptance": [
+        "Server client works",
+        "Types generated"
+      ]
+    },
+    {
+      "id": "BACK-DB-002",
+      "name": "Supabase Admin Client",
+      "description": "Create Supabase admin client with service role",
+      "priority": "P0",
+      "kit": "backend",
+      "phase": "database",
+      "effort": "1h",
+      "passes": true,
+      "category": "database",
+      "files": [
+        "lib/supabase/admin.ts"
+      ],
+      "acceptance": [
+        "Admin client works",
+        "Bypasses RLS"
+      ]
+    },
+    {
+      "id": "BACK-DB-003",
+      "name": "Database Schema",
+      "description": "Create comprehensive database schema with RLS",
+      "priority": "P0",
+      "kit": "backend",
+      "phase": "database",
+      "effort": "3h",
+      "passes": true,
+      "category": "database",
+      "files": [
+        "supabase/schema.sql"
+      ],
+      "acceptance": [
+        "Users, items, subscriptions tables",
+        "RLS policies"
+      ]
+    },
+    {
+      "id": "BACK-AUTH-001",
+      "name": "Auth Middleware",
+      "description": "Create withAuth middleware for protected routes",
+      "priority": "P0",
+      "kit": "backend",
+      "phase": "auth",
+      "effort": "2h",
+      "passes": true,
+      "category": "auth",
+      "files": [
+        "lib/auth/middleware.ts"
+      ],
+      "acceptance": [
+        "Validates JWT",
+        "Returns user",
+        "401 on invalid"
+      ]
+    },
+    {
+      "id": "BACK-AUTH-002",
+      "name": "Login Endpoint",
+      "description": "POST /api/auth/login endpoint",
+      "priority": "P0",
+      "kit": "backend",
+      "phase": "auth",
+      "effort": "2h",
+      "passes": true,
+      "category": "auth",
+      "files": [
+        "app/api/auth/login/route.ts"
+      ],
+      "acceptance": [
+        "Email/password login",
+        "Returns tokens"
+      ]
+    },
+    {
+      "id": "BACK-AUTH-003",
+      "name": "Signup Endpoint",
+      "description": "POST /api/auth/signup endpoint",
+      "priority": "P0",
+      "kit": "backend",
+      "phase": "auth",
+      "effort": "2h",
+      "passes": true,
+      "category": "auth",
+      "files": [
+        "app/api/auth/signup/route.ts"
+      ],
+      "acceptance": [
+        "Creates user",
+        "Returns tokens",
+        "Validates input"
+      ]
+    },
+    {
+      "id": "BACK-AUTH-004",
+      "name": "Logout Endpoint",
+      "description": "POST /api/auth/logout endpoint",
+      "priority": "P0",
+      "kit": "backend",
+      "phase": "auth",
+      "effort": "1h",
+      "passes": true,
+      "category": "auth",
+      "files": [
+        "app/api/auth/logout/route.ts"
+      ],
+      "acceptance": [
+        "Invalidates session"
+      ]
+    },
+    {
+      "id": "BACK-AUTH-005",
+      "name": "Refresh Token Endpoint",
+      "description": "POST /api/auth/refresh endpoint",
+      "priority": "P0",
+      "kit": "backend",
+      "phase": "auth",
+      "effort": "2h",
+      "passes": true,
+      "category": "auth",
+      "files": [
+        "app/api/auth/refresh/route.ts"
+      ],
+      "acceptance": [
+        "Refreshes access token"
+      ]
+    },
+    {
+      "id": "BACK-AUTH-006",
+      "name": "Current User Endpoint",
+      "description": "GET /api/auth/me endpoint",
+      "priority": "P0",
+      "kit": "backend",
+      "phase": "auth",
+      "effort": "1h",
+      "passes": true,
+      "category": "auth",
+      "files": [
+        "app/api/auth/me/route.ts"
+      ],
+      "acceptance": [
+        "Returns current user",
+        "Requires auth"
+      ]
+    },
+    {
+      "id": "BACK-AUTH-007",
+      "name": "Forgot Password Endpoint",
+      "description": "POST /api/auth/forgot-password endpoint",
+      "priority": "P1",
+      "kit": "backend",
+      "phase": "auth",
+      "effort": "2h",
+      "passes": true,
+      "category": "auth",
+      "files": [
+        "app/api/auth/forgot-password/route.ts"
+      ],
+      "acceptance": [
+        "Sends reset email"
+      ]
+    },
+    {
+      "id": "BACK-USER-001",
+      "name": "Get Profile Endpoint",
+      "description": "GET /api/users/profile endpoint",
+      "priority": "P0",
+      "kit": "backend",
+      "phase": "users",
+      "effort": "1h",
+      "passes": true,
+      "category": "users",
+      "files": [
+        "app/api/users/profile/route.ts"
+      ],
+      "acceptance": [
+        "Returns user profile",
+        "Requires auth"
+      ]
+    },
+    {
+      "id": "BACK-USER-002",
+      "name": "Update Profile Endpoint",
+      "description": "PUT /api/users/profile endpoint",
+      "priority": "P0",
+      "kit": "backend",
+      "phase": "users",
+      "effort": "2h",
+      "passes": true,
+      "category": "users",
+      "files": [
+        "app/api/users/profile/route.ts"
+      ],
+      "acceptance": [
+        "Updates profile",
+        "Validates input"
+      ]
+    },
+    {
+      "id": "BACK-USER-003",
+      "name": "Delete Account Endpoint",
+      "description": "DELETE /api/users/profile endpoint",
+      "priority": "P1",
+      "kit": "backend",
+      "phase": "users",
+      "effort": "2h",
+      "passes": true,
+      "category": "users",
+      "files": [
+        "app/api/users/profile/route.ts"
+      ],
+      "acceptance": [
+        "Deletes user and data",
+        "Cascade delete"
+      ]
+    },
+    {
+      "id": "BACK-ITEM-001",
+      "name": "List Items Endpoint",
+      "description": "GET /api/items endpoint with pagination",
+      "priority": "P0",
+      "kit": "backend",
+      "phase": "items",
+      "effort": "2h",
+      "passes": true,
+      "category": "items",
+      "files": [
+        "app/api/items/route.ts"
+      ],
+      "acceptance": [
+        "Returns paginated items",
+        "Filters by user"
+      ]
+    },
+    {
+      "id": "BACK-ITEM-002",
+      "name": "Create Item Endpoint",
+      "description": "POST /api/items endpoint",
+      "priority": "P0",
+      "kit": "backend",
+      "phase": "items",
+      "effort": "2h",
+      "passes": true,
+      "category": "items",
+      "files": [
+        "app/api/items/route.ts"
+      ],
+      "acceptance": [
+        "Creates item",
+        "Validates input",
+        "Returns created item"
+      ]
+    },
+    {
+      "id": "BACK-ITEM-003",
+      "name": "Get Item Endpoint",
+      "description": "GET /api/items/:id endpoint",
+      "priority": "P0",
+      "kit": "backend",
+      "phase": "items",
+      "effort": "1h",
+      "passes": true,
+      "category": "items",
+      "files": [
+        "app/api/items/[id]/route.ts"
+      ],
+      "acceptance": [
+        "Returns item by ID",
+        "404 if not found"
+      ]
+    },
+    {
+      "id": "BACK-ITEM-004",
+      "name": "Update Item Endpoint",
+      "description": "PUT /api/items/:id endpoint",
+      "priority": "P0",
+      "kit": "backend",
+      "phase": "items",
+      "effort": "2h",
+      "passes": true,
+      "category": "items",
+      "files": [
+        "app/api/items/[id]/route.ts"
+      ],
+      "acceptance": [
+        "Updates item",
+        "Validates ownership"
+      ]
+    },
+    {
+      "id": "BACK-ITEM-005",
+      "name": "Delete Item Endpoint",
+      "description": "DELETE /api/items/:id endpoint",
+      "priority": "P0",
+      "kit": "backend",
+      "phase": "items",
+      "effort": "1h",
+      "passes": true,
+      "category": "items",
+      "files": [
+        "app/api/items/[id]/route.ts"
+      ],
+      "acceptance": [
+        "Deletes item",
+        "Validates ownership"
+      ]
+    },
+    {
+      "id": "BACK-ITEM-006",
+      "name": "Search Items Endpoint",
+      "description": "GET /api/items/search endpoint",
+      "priority": "P1",
+      "kit": "backend",
+      "phase": "items",
+      "effort": "2h",
+      "passes": true,
+      "category": "items",
+      "files": [
+        "app/api/items/search/route.ts"
+      ],
+      "acceptance": [
+        "Full-text search",
+        "Returns matching items"
+      ]
+    },
+    {
+      "id": "BACK-SUB-001",
+      "name": "Subscription Status Endpoint",
+      "description": "GET /api/subscriptions/status endpoint",
+      "priority": "P0",
+      "kit": "backend",
+      "phase": "subscriptions",
+      "effort": "2h",
+      "passes": true,
+      "category": "subscriptions",
+      "files": [
+        "app/api/subscriptions/status/route.ts"
+      ],
+      "acceptance": [
+        "Returns current tier",
+        "Shows expiry"
+      ]
+    },
+    {
+      "id": "BACK-SUB-002",
+      "name": "Subscription Tiers Endpoint",
+      "description": "GET /api/subscriptions/tiers endpoint",
+      "priority": "P0",
+      "kit": "backend",
+      "phase": "subscriptions",
+      "effort": "1h",
+      "passes": true,
+      "category": "subscriptions",
+      "files": [
+        "app/api/subscriptions/tiers/route.ts"
+      ],
+      "acceptance": [
+        "Returns available tiers",
+        "Public endpoint"
+      ]
+    },
+    {
+      "id": "BACK-SUB-003",
+      "name": "Checkout Session Endpoint",
+      "description": "POST /api/subscriptions/checkout endpoint",
+      "priority": "P0",
+      "kit": "backend",
+      "phase": "subscriptions",
+      "effort": "3h",
+      "passes": true,
+      "category": "subscriptions",
+      "files": [
+        "app/api/subscriptions/checkout/route.ts"
+      ],
+      "acceptance": [
+        "Creates Stripe checkout",
+        "Returns URL"
+      ]
+    },
+    {
+      "id": "BACK-SUB-004",
+      "name": "Billing Portal Endpoint",
+      "description": "POST /api/subscriptions/portal endpoint",
+      "priority": "P1",
+      "kit": "backend",
+      "phase": "subscriptions",
+      "effort": "2h",
+      "passes": true,
+      "category": "subscriptions",
+      "files": [
+        "app/api/subscriptions/portal/route.ts"
+      ],
+      "acceptance": [
+        "Creates portal session",
+        "Returns URL"
+      ]
+    },
+    {
+      "id": "BACK-HOOK-001",
+      "name": "Stripe Webhook Handler",
+      "description": "POST /api/webhooks/stripe endpoint",
+      "priority": "P0",
+      "kit": "backend",
+      "phase": "webhooks",
+      "effort": "4h",
+      "passes": true,
+      "category": "webhooks",
+      "files": [
+        "app/api/webhooks/stripe/route.ts"
+      ],
+      "acceptance": [
+        "Verifies signature",
+        "Handles checkout.session.completed",
+        "Updates subscription"
+      ]
+    },
+    {
+      "id": "BACK-HOOK-002",
+      "name": "RevenueCat Webhook Handler",
+      "description": "POST /api/webhooks/revenuecat endpoint",
+      "priority": "P0",
+      "kit": "backend",
+      "phase": "webhooks",
+      "effort": "3h",
+      "passes": true,
+      "category": "webhooks",
+      "files": [
+        "app/api/webhooks/revenuecat/route.ts"
+      ],
+      "acceptance": [
+        "Verifies signature",
+        "Handles subscription events"
+      ]
+    },
+    {
+      "id": "BACK-UTIL-001",
+      "name": "CORS Utility",
+      "description": "Create CORS configuration utility",
+      "priority": "P0",
+      "kit": "backend",
+      "phase": "utils",
+      "effort": "1h",
+      "passes": true,
+      "category": "utils",
+      "files": [
+        "lib/utils/cors.ts"
+      ],
+      "acceptance": [
+        "Configurable origins",
+        "Handles preflight"
+      ]
+    },
+    {
+      "id": "BACK-UTIL-002",
+      "name": "Error Handler",
+      "description": "Create consistent error response utility",
+      "priority": "P0",
+      "kit": "backend",
+      "phase": "utils",
+      "effort": "1h",
+      "passes": true,
+      "category": "utils",
+      "files": [
+        "lib/utils/errors.ts"
+      ],
+      "acceptance": [
+        "Standard error format",
+        "HTTP status codes"
+      ]
+    },
+    {
+      "id": "BACK-UTIL-003",
+      "name": "Rate Limiter",
+      "description": "Create rate limiting middleware",
+      "priority": "P0",
+      "kit": "backend",
+      "phase": "utils",
+      "effort": "2h",
+      "passes": true,
+      "category": "utils",
+      "files": [
+        "lib/utils/rate-limit.ts"
+      ],
+      "acceptance": [
+        "Per-user limits",
+        "Per-IP limits",
+        "429 response"
+      ]
+    },
+    {
+      "id": "BACK-UTIL-004",
+      "name": "Input Validation",
+      "description": "Create Zod validation helpers",
+      "priority": "P0",
+      "kit": "backend",
+      "phase": "utils",
+      "effort": "2h",
+      "passes": true,
+      "category": "utils",
+      "files": [
+        "lib/utils/validation.ts",
+        "lib/validation/item.ts"
+      ],
+      "acceptance": [
+        "Zod schemas",
+        "Error formatting"
+      ]
+    },
+    {
+      "id": "BACK-HEALTH-001",
+      "name": "Health Check Endpoint",
+      "description": "GET /api/health endpoint",
+      "priority": "P0",
+      "kit": "backend",
+      "phase": "health",
+      "effort": "1h",
+      "passes": true,
+      "category": "health",
+      "files": [
+        "app/api/health/route.ts"
+      ],
+      "acceptance": [
+        "Returns status",
+        "Checks DB connection"
+      ]
+    },
+    {
+      "id": "BACK-UPLOAD-001",
+      "name": "File Upload Endpoint",
+      "description": "POST /api/upload endpoint",
+      "priority": "P1",
+      "kit": "backend",
+      "phase": "upload",
+      "effort": "3h",
+      "passes": true,
+      "category": "upload",
+      "files": [
+        "app/api/upload/route.ts"
+      ],
+      "acceptance": [
+        "Uploads to Supabase Storage",
+        "Returns URL"
+      ]
+    },
+    {
+      "id": "BACK-DOC-001",
+      "name": "API Reference Documentation",
+      "description": "Document all API endpoints",
+      "priority": "P0",
+      "kit": "backend",
+      "phase": "docs",
+      "effort": "3h",
+      "passes": true,
+      "category": "docs",
+      "files": [
+        "docs/API_REFERENCE.md"
+      ],
+      "acceptance": [
+        "All endpoints documented",
+        "Request/response examples"
+      ]
+    },
+    {
+      "id": "WEB-FOUND-001",
+      "name": "Web Project Structure",
+      "description": "Set up Next.js 14 App Router structure",
+      "priority": "P0",
+      "kit": "web",
+      "phase": "foundation",
+      "effort": "2h",
+      "passes": true,
+      "category": "setup",
+      "files": [
+        "app/",
+        "components/",
+        "hooks/",
+        "lib/",
+        "types/",
+        "config/"
+      ],
+      "acceptance": [
+        "Directory structure created",
+        "App Router works"
+      ]
+    },
+    {
+      "id": "WEB-FOUND-002",
+      "name": "Tailwind Configuration",
+      "description": "Configure Tailwind CSS with custom theme",
+      "priority": "P0",
+      "kit": "web",
+      "phase": "foundation",
+      "effort": "2h",
+      "passes": true,
+      "category": "setup",
+      "files": [
+        "tailwind.config.ts",
+        "app/globals.css"
+      ],
+      "acceptance": [
+        "Custom colors",
+        "Dark mode support"
+      ]
+    },
+    {
+      "id": "WEB-FOUND-003",
+      "name": "shadcn/ui Setup",
+      "description": "Install and configure shadcn/ui components",
+      "priority": "P0",
+      "kit": "web",
+      "phase": "foundation",
+      "effort": "2h",
+      "passes": true,
+      "category": "setup",
+      "files": [
+        "components/ui/"
+      ],
+      "acceptance": [
+        "Button, Input, Card, Dialog installed"
+      ]
+    },
+    {
+      "id": "WEB-FOUND-004",
+      "name": "Site Configuration",
+      "description": "Create site config with metadata",
+      "priority": "P0",
+      "kit": "web",
+      "phase": "foundation",
+      "effort": "1h",
+      "passes": true,
+      "category": "setup",
+      "files": [
+        "config/site.ts"
+      ],
+      "acceptance": [
+        "Site name, description, URLs"
+      ]
+    },
+    {
+      "id": "WEB-FOUND-005",
+      "name": "Navigation Configuration",
+      "description": "Create navigation config for sidebar and navbar",
+      "priority": "P0",
+      "kit": "web",
+      "phase": "foundation",
+      "effort": "1h",
+      "passes": true,
+      "category": "setup",
+      "files": [
+        "config/nav.ts"
+      ],
+      "acceptance": [
+        "Dashboard nav items",
+        "Marketing nav items"
+      ]
+    },
+    {
+      "id": "WEB-AUTH-001",
+      "name": "Supabase Browser Client",
+      "description": "Create Supabase client for browser",
+      "priority": "P0",
+      "kit": "web",
+      "phase": "auth",
+      "effort": "1h",
+      "passes": true,
+      "category": "auth",
+      "files": [
+        "lib/supabase/client.ts"
+      ],
+      "acceptance": [
+        "Client initializes",
+        "Types generated"
+      ]
+    },
+    {
+      "id": "WEB-AUTH-002",
+      "name": "Supabase Server Client",
+      "description": "Create Supabase client for server components",
+      "priority": "P0",
+      "kit": "web",
+      "phase": "auth",
+      "effort": "1h",
+      "passes": true,
+      "category": "auth",
+      "files": [
+        "lib/supabase/server.ts"
+      ],
+      "acceptance": [
+        "Server client works",
+        "Cookie handling"
+      ]
+    },
+    {
+      "id": "WEB-AUTH-003",
+      "name": "Auth Middleware",
+      "description": "Create Next.js middleware for protected routes",
+      "priority": "P0",
+      "kit": "web",
+      "phase": "auth",
+      "effort": "2h",
+      "passes": true,
+      "category": "auth",
+      "files": [
+        "middleware.ts"
+      ],
+      "acceptance": [
+        "Redirects unauthenticated",
+        "Refreshes session"
+      ]
+    },
+    {
+      "id": "WEB-AUTH-004",
+      "name": "Login Page",
+      "description": "Create login page with form",
+      "priority": "P0",
+      "kit": "web",
+      "phase": "auth",
+      "effort": "3h",
+      "passes": true,
+      "category": "auth",
+      "files": [
+        "app/(auth)/login/page.tsx"
+      ],
+      "acceptance": [
+        "Form validation",
+        "Error handling",
+        "OAuth buttons"
+      ]
+    },
+    {
+      "id": "WEB-AUTH-005",
+      "name": "Signup Page",
+      "description": "Create signup page with form",
+      "priority": "P0",
+      "kit": "web",
+      "phase": "auth",
+      "effort": "3h",
+      "passes": true,
+      "category": "auth",
+      "files": [
+        "app/(auth)/signup/page.tsx"
+      ],
+      "acceptance": [
+        "Form validation",
+        "Password requirements"
+      ]
+    },
+    {
+      "id": "WEB-AUTH-006",
+      "name": "Auth Layout",
+      "description": "Create auth pages layout",
+      "priority": "P0",
+      "kit": "web",
+      "phase": "auth",
+      "effort": "1h",
+      "passes": true,
+      "category": "auth",
+      "files": [
+        "app/(auth)/layout.tsx"
+      ],
+      "acceptance": [
+        "Centered layout",
+        "Redirect if logged in"
+      ]
+    },
+    {
+      "id": "WEB-AUTH-007",
+      "name": "useAuth Hook",
+      "description": "Create useAuth hook for auth state",
+      "priority": "P0",
+      "kit": "web",
+      "phase": "auth",
+      "effort": "2h",
+      "passes": true,
+      "category": "auth",
+      "files": [
+        "hooks/use-auth.ts"
+      ],
+      "acceptance": [
+        "Returns user, loading",
+        "signIn, signOut methods"
+      ]
+    },
+    {
+      "id": "WEB-LAYOUT-001",
+      "name": "Root Layout",
+      "description": "Create root layout with providers",
+      "priority": "P0",
+      "kit": "web",
+      "phase": "layout",
+      "effort": "2h",
+      "passes": true,
+      "category": "layout",
+      "files": [
+        "app/layout.tsx"
+      ],
+      "acceptance": [
+        "Providers wrapped",
+        "Fonts loaded",
+        "Metadata"
+      ]
+    },
+    {
+      "id": "WEB-LAYOUT-002",
+      "name": "Dashboard Layout",
+      "description": "Create dashboard layout with sidebar",
+      "priority": "P0",
+      "kit": "web",
+      "phase": "layout",
+      "effort": "4h",
+      "passes": true,
+      "category": "layout",
+      "files": [
+        "app/(dashboard)/layout.tsx"
+      ],
+      "acceptance": [
+        "Sidebar navigation",
+        "User menu",
+        "Mobile responsive"
+      ]
+    },
+    {
+      "id": "WEB-LAYOUT-003",
+      "name": "Marketing Layout",
+      "description": "Create marketing pages layout",
+      "priority": "P0",
+      "kit": "web",
+      "phase": "layout",
+      "effort": "2h",
+      "passes": true,
+      "category": "layout",
+      "files": [
+        "app/(marketing)/layout.tsx"
+      ],
+      "acceptance": [
+        "Navbar",
+        "Footer",
+        "Full width"
+      ]
+    },
+    {
+      "id": "WEB-LAYOUT-004",
+      "name": "Navbar Component",
+      "description": "Create responsive navbar",
+      "priority": "P0",
+      "kit": "web",
+      "phase": "layout",
+      "effort": "3h",
+      "passes": true,
+      "category": "components",
+      "files": [
+        "components/layout/navbar.tsx"
+      ],
+      "acceptance": [
+        "Logo",
+        "Nav links",
+        "Mobile menu"
+      ]
+    },
+    {
+      "id": "WEB-LAYOUT-005",
+      "name": "Sidebar Component",
+      "description": "Create dashboard sidebar",
+      "priority": "P0",
+      "kit": "web",
+      "phase": "layout",
+      "effort": "3h",
+      "passes": true,
+      "category": "components",
+      "files": [
+        "components/layout/sidebar.tsx"
+      ],
+      "acceptance": [
+        "Nav items",
+        "Active state",
+        "Collapsible"
+      ]
+    },
+    {
+      "id": "WEB-LAYOUT-006",
+      "name": "Footer Component",
+      "description": "Create marketing footer",
+      "priority": "P1",
+      "kit": "web",
+      "phase": "layout",
+      "effort": "2h",
+      "passes": true,
+      "category": "components",
+      "files": [
+        "components/layout/footer.tsx"
+      ],
+      "acceptance": [
+        "Links",
+        "Copyright",
+        "Social icons"
+      ]
+    },
+    {
+      "id": "WEB-PAGE-001",
+      "name": "Landing Page",
+      "description": "Create marketing landing page",
+      "priority": "P0",
+      "kit": "web",
+      "phase": "pages",
+      "effort": "4h",
+      "passes": true,
+      "category": "pages",
+      "files": [
+        "app/(marketing)/page.tsx"
+      ],
+      "acceptance": [
+        "Hero section",
+        "Features",
+        "CTA"
+      ]
+    },
+    {
+      "id": "WEB-PAGE-002",
+      "name": "Pricing Page",
+      "description": "Create pricing page with tiers",
+      "priority": "P0",
+      "kit": "web",
+      "phase": "pages",
+      "effort": "4h",
+      "passes": true,
+      "category": "pages",
+      "files": [
+        "app/(marketing)/pricing/page.tsx"
+      ],
+      "acceptance": [
+        "Pricing cards",
+        "Feature comparison",
+        "Checkout buttons"
+      ]
+    },
+    {
+      "id": "WEB-PAGE-003",
+      "name": "Dashboard Page",
+      "description": "Create main dashboard page",
+      "priority": "P0",
+      "kit": "web",
+      "phase": "pages",
+      "effort": "4h",
+      "passes": true,
+      "category": "pages",
+      "files": [
+        "app/(dashboard)/dashboard/page.tsx"
+      ],
+      "acceptance": [
+        "Overview stats",
+        "Recent items",
+        "Quick actions"
+      ]
+    },
+    {
+      "id": "WEB-PAGE-004",
+      "name": "Items List Page",
+      "description": "Create items list page",
+      "priority": "P0",
+      "kit": "web",
+      "phase": "pages",
+      "effort": "4h",
+      "passes": true,
+      "category": "pages",
+      "files": [
+        "app/(dashboard)/items/page.tsx"
+      ],
+      "acceptance": [
+        "Data table",
+        "Pagination",
+        "Create button"
+      ]
+    },
+    {
+      "id": "WEB-PAGE-005",
+      "name": "Item Detail Page",
+      "description": "Create item detail page",
+      "priority": "P0",
+      "kit": "web",
+      "phase": "pages",
+      "effort": "3h",
+      "passes": true,
+      "category": "pages",
+      "files": [
+        "app/(dashboard)/items/[id]/page.tsx"
+      ],
+      "acceptance": [
+        "Show item details",
+        "Edit/delete actions"
+      ]
+    },
+    {
+      "id": "WEB-PAGE-006",
+      "name": "Settings Page",
+      "description": "Create user settings page",
+      "priority": "P0",
+      "kit": "web",
+      "phase": "pages",
+      "effort": "3h",
+      "passes": true,
+      "category": "pages",
+      "files": [
+        "app/(dashboard)/settings/page.tsx"
+      ],
+      "acceptance": [
+        "Profile settings",
+        "Navigation to sub-pages"
+      ]
+    },
+    {
+      "id": "WEB-PAGE-007",
+      "name": "Billing Page",
+      "description": "Create subscription/billing page",
+      "priority": "P0",
+      "kit": "web",
+      "phase": "pages",
+      "effort": "3h",
+      "passes": true,
+      "category": "pages",
+      "files": [
+        "app/(dashboard)/settings/billing/page.tsx"
+      ],
+      "acceptance": [
+        "Current plan",
+        "Upgrade options",
+        "Portal link"
+      ]
+    },
+    {
+      "id": "WEB-DATA-001",
+      "name": "React Query Setup",
+      "description": "Configure TanStack Query provider",
+      "priority": "P0",
+      "kit": "web",
+      "phase": "data",
+      "effort": "1h",
+      "passes": true,
+      "category": "data",
+      "files": [
+        "components/providers/query-provider.tsx"
+      ],
+      "acceptance": [
+        "Provider wraps app",
+        "DevTools available"
+      ]
+    },
+    {
+      "id": "WEB-DATA-002",
+      "name": "useItems Hook",
+      "description": "Create React Query hook for items",
+      "priority": "P0",
+      "kit": "web",
+      "phase": "data",
+      "effort": "2h",
+      "passes": true,
+      "category": "hooks",
+      "files": [
+        "hooks/use-items.ts"
+      ],
+      "acceptance": [
+        "useItems query",
+        "useMutations for CRUD"
+      ]
+    },
+    {
+      "id": "WEB-DATA-003",
+      "name": "useSubscription Hook",
+      "description": "Create hook for subscription status",
+      "priority": "P0",
+      "kit": "web",
+      "phase": "data",
+      "effort": "2h",
+      "passes": true,
+      "category": "hooks",
+      "files": [
+        "hooks/use-subscription.ts"
+      ],
+      "acceptance": [
+        "Returns tier",
+        "Check access"
+      ]
+    },
+    {
+      "id": "WEB-PAY-001",
+      "name": "Stripe Client Setup",
+      "description": "Configure Stripe.js client",
+      "priority": "P0",
+      "kit": "web",
+      "phase": "payments",
+      "effort": "1h",
+      "passes": true,
+      "category": "payments",
+      "files": [
+        "lib/stripe/client.ts"
+      ],
+      "acceptance": [
+        "Stripe loads",
+        "Checkout works"
+      ]
+    },
+    {
+      "id": "WEB-PAY-002",
+      "name": "Pricing Cards Component",
+      "description": "Create pricing tier cards",
+      "priority": "P0",
+      "kit": "web",
+      "phase": "payments",
+      "effort": "3h",
+      "passes": true,
+      "category": "components",
+      "files": [
+        "components/billing/pricing-cards.tsx"
+      ],
+      "acceptance": [
+        "Shows tiers",
+        "Current tier highlighted"
+      ]
+    },
+    {
+      "id": "WEB-PAY-003",
+      "name": "Checkout Button Component",
+      "description": "Create Stripe checkout button",
+      "priority": "P0",
+      "kit": "web",
+      "phase": "payments",
+      "effort": "2h",
+      "passes": true,
+      "category": "components",
+      "files": [
+        "components/billing/checkout-button.tsx"
+      ],
+      "acceptance": [
+        "Redirects to Stripe",
+        "Loading state"
+      ]
+    },
+    {
+      "id": "WEB-PAY-004",
+      "name": "Stripe Webhook API",
+      "description": "Create Stripe webhook handler",
+      "priority": "P0",
+      "kit": "web",
+      "phase": "payments",
+      "effort": "3h",
+      "passes": true,
+      "category": "api",
+      "files": [
+        "app/api/stripe/webhook/route.ts"
+      ],
+      "acceptance": [
+        "Verifies signature",
+        "Updates subscription"
+      ]
+    },
+    {
+      "id": "WEB-THEME-001",
+      "name": "Theme Provider",
+      "description": "Create theme provider with dark mode",
+      "priority": "P0",
+      "kit": "web",
+      "phase": "theme",
+      "effort": "2h",
+      "passes": true,
+      "category": "theme",
+      "files": [
+        "components/providers/theme-provider.tsx"
+      ],
+      "acceptance": [
+        "System detection",
+        "Manual toggle",
+        "Persisted"
+      ]
+    },
+    {
+      "id": "WEB-THEME-002",
+      "name": "Theme Toggle Component",
+      "description": "Create dark mode toggle button",
+      "priority": "P1",
+      "kit": "web",
+      "phase": "theme",
+      "effort": "1h",
+      "passes": true,
+      "category": "components",
+      "files": [
+        "components/theme-toggle.tsx"
+      ],
+      "acceptance": [
+        "Toggle icon",
+        "Switches theme"
+      ]
+    },
+    {
+      "id": "WEB-SEO-001",
+      "name": "Metadata Configuration",
+      "description": "Configure site metadata and Open Graph",
+      "priority": "P0",
+      "kit": "web",
+      "phase": "seo",
+      "effort": "2h",
+      "passes": true,
+      "category": "seo",
+      "files": [
+        "app/layout.tsx",
+        "config/site.ts"
+      ],
+      "acceptance": [
+        "Title, description",
+        "OG images",
+        "Twitter cards"
+      ]
+    },
+    {
+      "id": "WEB-SEO-002",
+      "name": "Sitemap Generation",
+      "description": "Create sitemap.xml generator",
+      "priority": "P1",
+      "kit": "web",
+      "phase": "seo",
+      "effort": "1h",
+      "passes": true,
+      "category": "seo",
+      "files": [
+        "app/sitemap.ts"
+      ],
+      "acceptance": [
+        "Lists all public pages",
+        "Auto-generated"
+      ]
+    },
+    {
+      "id": "WEB-SEO-003",
+      "name": "Robots.txt",
+      "description": "Create robots.txt",
+      "priority": "P1",
+      "kit": "web",
+      "phase": "seo",
+      "effort": "30m",
+      "passes": true,
+      "category": "seo",
+      "files": [
+        "app/robots.ts"
+      ],
+      "acceptance": [
+        "Allows indexing",
+        "Sitemap reference"
+      ]
+    },
+    {
+      "id": "WEB-DOC-001",
+      "name": "Web QUICKSTART Documentation",
+      "description": "Write setup guide for web kit",
+      "priority": "P0",
+      "kit": "web",
+      "phase": "docs",
+      "effort": "2h",
+      "passes": true,
+      "category": "docs",
+      "files": [
+        "QUICKSTART.md"
+      ],
+      "acceptance": [
+        "15-minute guide",
+        "All steps covered"
+      ]
+    },
+    {
+      "id": "HO-README-001",
+      "name": "Backend README Rewrite",
+      "description": "Comprehensive README with overview, prerequisites, quick start, env setup, scripts, architecture, deployment, troubleshooting",
+      "priority": "P0",
+      "kit": "handoff",
+      "phase": "documentation",
+      "effort": "2h",
+      "passes": true,
+      "category": "docs",
+      "files": [
+        "backend/README.md"
+      ],
+      "acceptance": [
+        "All 8 required sections",
+        "Commands work as documented",
+        "Troubleshooting covers common issues"
+      ]
+    },
+    {
+      "id": "HO-README-002",
+      "name": "Web Frontend README Rewrite",
+      "description": "Comprehensive README for web-frontend with all required sections",
+      "priority": "P0",
+      "kit": "handoff",
+      "phase": "documentation",
+      "effort": "2h",
+      "passes": true,
+      "category": "docs",
+      "files": [
+        "web-frontend/README.md"
+      ],
+      "acceptance": [
+        "All 8 required sections",
+        "Commands work",
+        "Troubleshooting included"
+      ]
+    },
+    {
+      "id": "HO-README-003",
+      "name": "iOS App README Rewrite",
+      "description": "Comprehensive README for ios-app with Expo-specific instructions",
+      "priority": "P0",
+      "kit": "handoff",
+      "phase": "documentation",
+      "effort": "2h",
+      "passes": true,
+      "category": "docs",
+      "files": [
+        "ios-app/README.md"
+      ],
+      "acceptance": [
+        "All 8 required sections",
+        "Expo commands documented",
+        "Simulator setup guide"
+      ]
+    },
+    {
+      "id": "HO-README-004",
+      "name": "Root Monorepo README",
+      "description": "Overview README explaining the monorepo structure and linking to component docs",
+      "priority": "P0",
+      "kit": "handoff",
+      "phase": "documentation",
+      "effort": "1h",
+      "passes": true,
+      "category": "docs",
+      "files": [
+        "README.md"
+      ],
+      "acceptance": [
+        "Monorepo overview",
+        "Links to all sub-READMEs",
+        "Quick navigation"
+      ]
+    },
+    {
+      "id": "HO-DB-001",
+      "name": "Database Setup Documentation",
+      "description": "Complete Supabase setup guide: project creation, tables, migrations, RLS, edge functions",
+      "priority": "P0",
+      "kit": "handoff",
+      "phase": "documentation",
+      "effort": "2h",
+      "passes": true,
+      "category": "docs",
+      "files": [
+        "backend/docs/DATABASE_SETUP.md"
+      ],
+      "acceptance": [
+        "Create project instructions",
+        "Schema documented",
+        "Migrations explained"
+      ]
+    },
+    {
+      "id": "HO-DB-002",
+      "name": "Migration Documentation",
+      "description": "Verify and document all Supabase migrations",
+      "priority": "P0",
+      "kit": "handoff",
+      "phase": "documentation",
+      "effort": "1h",
+      "passes": true,
+      "category": "docs",
+      "files": [
+        "supabase/migrations/"
+      ],
+      "acceptance": [
+        "All migrations documented",
+        "Run order clear",
+        "No missing migrations"
+      ]
+    },
+    {
+      "id": "HO-DB-003",
+      "name": "Database Setup Script",
+      "description": "Create automated database setup script",
+      "priority": "P1",
+      "kit": "handoff",
+      "phase": "automation",
+      "effort": "1h",
+      "passes": true,
+      "category": "scripts",
+      "files": [
+        "scripts/setup-database.sh"
+      ],
+      "acceptance": [
+        "Runs migrations",
+        "Creates seed data",
+        "Verifies connection"
+      ]
+    },
+    {
+      "id": "HO-SCRIPTS-001",
+      "name": "Web Frontend Standard Scripts",
+      "description": "Replace rork commands with standard Expo/npm commands",
+      "priority": "P0",
+      "kit": "handoff",
+      "phase": "cleanup",
+      "effort": "30m",
+      "passes": true,
+      "category": "config",
+      "files": [
+        "web-frontend/package.json"
+      ],
+      "acceptance": [
+        "npm run dev works",
+        "No rork dependency",
+        "All scripts documented"
+      ]
+    },
+    {
+      "id": "HO-SCRIPTS-002",
+      "name": "iOS App Standard Scripts",
+      "description": "Replace rork commands with standard Expo commands (dev, dev:ios, dev:android, dev:tunnel)",
+      "priority": "P0",
+      "kit": "handoff",
+      "phase": "cleanup",
+      "effort": "30m",
+      "passes": true,
+      "category": "config",
+      "files": [
+        "ios-app/package.json"
+      ],
+      "acceptance": [
+        "npx expo start works",
+        "All platform scripts",
+        "Tunnel option available"
+      ]
+    },
+    {
+      "id": "HO-SCRIPTS-003",
+      "name": "Backend Standard Scripts",
+      "description": "Document and standardize backend development scripts",
+      "priority": "P0",
+      "kit": "handoff",
+      "phase": "cleanup",
+      "effort": "30m",
+      "passes": true,
+      "category": "config",
+      "files": [
+        "backend/package.json"
+      ],
+      "acceptance": [
+        "npm run dev works",
+        "Build script works",
+        "All scripts documented"
+      ]
+    },
+    {
+      "id": "HO-CLEANUP-001",
+      "name": "Remove Duplicate Backend from iOS",
+      "description": "Remove ios-app/backend/, ios-app/backend-vercel/, ios-app/supabase/ folders",
+      "priority": "P1",
+      "kit": "handoff",
+      "phase": "cleanup",
+      "effort": "1h",
+      "passes": true,
+      "category": "cleanup",
+      "files": [
+        "ios-app/backend/",
+        "ios-app/backend-vercel/",
+        "ios-app/supabase/"
+      ],
+      "acceptance": [
+        "Folders removed",
+        "iOS app still builds",
+        "No broken imports"
+      ]
+    },
+    {
+      "id": "HO-ARCH-001",
+      "name": "Architecture Documentation",
+      "description": "Create high-level architecture doc with diagrams (auth flow, data flow, deployment)",
+      "priority": "P1",
+      "kit": "handoff",
+      "phase": "documentation",
+      "effort": "3h",
+      "passes": true,
+      "category": "docs",
+      "files": [
+        "docs/ARCHITECTURE.md"
+      ],
+      "acceptance": [
+        "High-level diagram",
+        "Auth flow",
+        "Data flow",
+        "Deployment architecture"
+      ]
+    },
+    {
+      "id": "HO-QUICK-001",
+      "name": "Quick Start Guide",
+      "description": "Root-level guide for new developers to run app in under 15 minutes",
+      "priority": "P1",
+      "kit": "handoff",
+      "phase": "documentation",
+      "effort": "2h",
+      "passes": true,
+      "category": "docs",
+      "files": [
+        "QUICK_START.md"
+      ],
+      "acceptance": [
+        "5 steps or less",
+        "Prerequisites listed",
+        "Verification checklist"
+      ]
+    },
+    {
+      "id": "HO-HELP-001",
+      "name": "Tooltip Component",
+      "description": "Create reusable tooltip/help overlay component for first-time feature use",
+      "priority": "P2",
+      "kit": "handoff",
+      "phase": "ux",
+      "effort": "3h",
+      "passes": true,
+      "category": "components",
+      "files": [
+        "components/Tooltip.tsx",
+        "components/HelpOverlay.tsx"
+      ],
+      "acceptance": [
+        "Reusable component",
+        "Dismissible",
+        "Persists dismissal"
+      ]
+    },
+    {
+      "id": "HO-HELP-002",
+      "name": "Warmth Score Help Content",
+      "description": "Add help explanations for warmth scores, bands, and contact pipeline",
+      "priority": "P2",
+      "kit": "handoff",
+      "phase": "ux",
+      "effort": "2h",
+      "passes": true,
+      "category": "content",
+      "files": [
+        "lib/help-content.ts"
+      ],
+      "acceptance": [
+        "Warmth score explained",
+        "Bands explained",
+        "Pipeline explained"
+      ]
+    },
+    {
+      "id": "HO-HELP-003",
+      "name": "Feature Help Integration",
+      "description": "Add help buttons to Voice Notes, AI Chat, and other complex screens",
+      "priority": "P2",
+      "kit": "handoff",
+      "phase": "ux",
+      "effort": "4h",
+      "passes": true,
+      "category": "integration",
+      "files": [
+        "app/voice-notes/",
+        "app/ai-chat/"
+      ],
+      "acceptance": [
+        "Help buttons visible",
+        "Content displays",
+        "Dismissible overlays"
+      ]
+    },
+    {
+      "id": "NOMOCK-001",
+      "name": "Implement Real RevenueCat Paywall Integration",
+      "description": "Replace 2 TODO stubs in ios-starter/app/paywall.tsx with actual RevenueCat SDK implementation for in-app purchases and subscription management",
+      "priority": "P0",
+      "category": "monetization",
+      "passes": true,
+      "files": [
+        "ios-starter/app/paywall.tsx"
+      ],
+      "acceptance": [
+        "RevenueCat SDK initialized and configured",
+        "Real purchase flow using RevenueCat offerings",
+        "Subscription restore functionality working",
+        "No TODO.*Replace.*RevenueCat stubs remain in paywall.tsx"
+      ]
+    }
+  ]
+}
