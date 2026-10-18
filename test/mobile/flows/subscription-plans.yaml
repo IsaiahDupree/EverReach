@@ -1,0 +1,15 @@
+appId: ${APP_ID}
+name: Subscription Plans - UI elements visible
+steps:
+  - launchApp: { clearState: true }
+  - waitForAnimationToEnd
+  
+  # Verify plan screen elements
+  - assertVisible: "Choose Your Plan"
+  - takeScreenshot: subscription-plan-screen
+  
+  # Look for plan-related text (adjust based on actual UI)
+  # Note: These might fail if text differs - update as needed
+  - assertVisible:
+      text: "Choose"
+      enabled: true

@@ -1,0 +1,11 @@
+appId: ${APP_ID}
+name: Health - Connectivity
+steps:
+  - launchApp: { clearState: true }
+  - waitForAnimationToEnd
+  - openLink: "everreach://health"
+  - waitForAnimationToEnd
+  - assertVisible: "Connectivity Checks"
+  - assertVisible: "Backend"
+  - assertVisible: "Supabase"
+  - takeScreenshot: health-cards

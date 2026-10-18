@@ -1,0 +1,52 @@
+appId: com.everreach.app
+---
+# User Journey: Power User Daily Workflow
+# Tests a typical power user's daily routine
+
+- launchApp
+- takeScreenshot: screenshots/journey-daily-01-home.png
+
+# Check relationship health dashboard
+- assertVisible: "Relationship Health"
+- tapOn: "Cold"
+- takeScreenshot: screenshots/journey-daily-02-cold-contacts.png
+- back
+
+# Record a quick voice note
+- tapOn: "Voice Note"
+- assertVisible: "Start Recording"
+- takeScreenshot: screenshots/journey-daily-03-voice-note-ready.png
+# Note: Can't actually record in automation, so we go back
+- back
+
+# Check alerts
+- tapOn: "People"
+- assertVisible: "All Contacts"
+- takeScreenshot: screenshots/journey-daily-04-people.png
+
+# View a contact and check context
+- tapOn:
+    index: 0
+- tapOn: "Context"
+- assertVisible: "Recent Summary"
+- takeScreenshot: screenshots/journey-daily-05-context.png
+- back
+
+# Compose a message
+- tapOn: "Chat"
+- tapOn:
+    text: "Type a message"
+- inputText: "Draft a check-in message for Sarah"
+- takeScreenshot: screenshots/journey-daily-06-compose.png
+- back
+
+# Check notifications
+- tapOn: "Settings"
+- tapOn: "Notification Settings"
+- takeScreenshot: screenshots/journey-daily-07-notifications.png
+- back
+
+# Return to home
+- tapOn: "Home"
+- assertVisible: "Welcome"
+- takeScreenshot: screenshots/journey-daily-08-end.png

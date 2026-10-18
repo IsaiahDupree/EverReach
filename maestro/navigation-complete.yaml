@@ -1,0 +1,147 @@
+appId: com.everreach.app
+---
+# Comprehensive Navigation Test Suite
+# Tests all major navigation flows through the app
+
+- launchApp
+- takeScreenshot: screenshots/nav-full-01-launch.png
+
+###############################################################################
+# PHASE 1: HOME TAB NAVIGATION
+###############################################################################
+
+# Home tab should be visible by default
+- assertVisible: "Welcome"
+- assertVisible: "Relationship Health"
+- takeScreenshot: screenshots/nav-full-02-home.png
+
+# Test Quick Actions from Home
+- tapOn: "Voice Note"
+- assertVisible: "Start Recording"
+- takeScreenshot: screenshots/nav-full-03-voice-note.png
+- back
+
+- tapOn: "Add Contact"
+- assertVisible: "Contact Name"
+- takeScreenshot: screenshots/nav-full-04-add-contact.png
+- back
+
+- tapOn: "Screenshot"
+- takeScreenshot: screenshots/nav-full-05-screenshot.png
+- back
+
+# Test Relationship Health cards
+- tapOn: "Hot"
+- assertVisible: "People"
+- takeScreenshot: screenshots/nav-full-06-hot-contacts.png
+- back
+
+###############################################################################
+# PHASE 2: PEOPLE TAB NAVIGATION  
+###############################################################################
+
+- tapOn: "People"
+- assertVisible: "All Contacts"
+- takeScreenshot: screenshots/nav-full-07-people-tab.png
+
+# Test contact detail navigation (tap first contact)
+- tapOn: 
+    index: 0
+- takeScreenshot: screenshots/nav-full-08-contact-detail.png
+
+# Test contact sub-pages
+- tapOn: "Context"
+- assertVisible: "Recent Summary"
+- takeScreenshot: screenshots/nav-full-09-contact-context.png
+- back
+
+- tapOn: "Notes"
+- takeScreenshot: screenshots/nav-full-10-contact-notes.png
+- back
+
+- tapOn: "History"
+- takeScreenshot: screenshots/nav-full-11-contact-history.png
+- back
+
+# Navigate back to People
+- back
+
+###############################################################################
+# PHASE 3: CHAT TAB NAVIGATION
+###############################################################################
+
+- tapOn: "Chat"
+- assertVisible: "AI CRM Assistant"
+- takeScreenshot: screenshots/nav-full-12-chat-tab.png
+
+# Test message composition
+- tapOn: 
+    text: "Type a message"
+- inputText: "Test message"
+- takeScreenshot: screenshots/nav-full-13-chat-input.png
+
+# Clear input and go back
+- back
+
+###############################################################################
+# PHASE 4: SETTINGS TAB NAVIGATION
+###############################################################################
+
+- tapOn: "Settings"
+- assertVisible: "Account & Subscription"
+- takeScreenshot: screenshots/nav-full-14-settings.png
+
+# Test Settings sub-pages
+- tapOn: "Personal Profile"
+- assertVisible: "Your Profile"
+- takeScreenshot: screenshots/nav-full-15-personal-profile.png
+- back
+
+- tapOn: "Privacy Settings"
+- takeScreenshot: screenshots/nav-full-16-privacy-settings.png
+- back
+
+- tapOn: "Notification Settings"
+- takeScreenshot: screenshots/nav-full-17-notifications.png
+- back
+
+- tapOn: "Subscription Plans"
+- assertVisible: "Core Monthly"
+- takeScreenshot: screenshots/nav-full-18-subscription-plans.png
+- back
+
+###############################################################################
+# PHASE 5: CROSS-TAB NAVIGATION
+###############################################################################
+
+# Navigate: Settings -> Home
+- tapOn: "Home"
+- assertVisible: "Welcome"
+- takeScreenshot: screenshots/nav-full-19-back-to-home.png
+
+# Navigate: Home -> People -> Chat
+- tapOn: "People"
+- assertVisible: "All Contacts"
+- tapOn: "Chat" 
+- assertVisible: "AI CRM Assistant"
+- takeScreenshot: screenshots/nav-full-20-cross-tab.png
+
+# Navigate back to Home
+- tapOn: "Home"
+- assertVisible: "Welcome"
+
+###############################################################################
+# PHASE 6: DEEP LINK NAVIGATION (from Home quick actions)
+###############################################################################
+
+# Test direct navigation to various screens
+- tapOn: "View Personal Profile"
+- assertVisible: "Your Profile"
+- takeScreenshot: screenshots/nav-full-21-profile-from-home.png
+- back
+
+###############################################################################
+# COMPLETION
+###############################################################################
+
+- takeScreenshot: screenshots/nav-full-22-final.png

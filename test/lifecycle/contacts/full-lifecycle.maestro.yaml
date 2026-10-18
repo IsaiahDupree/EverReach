@@ -1,0 +1,135 @@
+appId: com.everreach.crm
+name: Complete Contact Lifecycle Test
+---
+
+# === STAGE 1: CREATE ===
+- launchApp:
+    clearState: true
+
+- tapOn: "People"
+- takeScreenshot: lifecycle-stage-01a-people-screen
+
+- tapOn:
+    text: "Add.*"
+    index: 0
+- tapOn: "Name"
+- inputText: "Full Lifecycle ${TIMESTAMP}"
+- tapOn: "Email"
+- inputText: "full-lifecycle-${TIMESTAMP}@test.com"
+- tapOn: "Phone"
+- inputText: "+15555559999"
+- takeScreenshot: lifecycle-stage-01b-form-filled
+
+- tapOn: "Save"
+- assertVisible: "Full Lifecycle"
+- takeScreenshot: lifecycle-stage-01c-contact-created
+
+# === STAGE 2: VIEW ===
+- tapOn:
+    text: "Full Lifecycle.*"
+    index: 0
+- assertVisible: "Email"
+- assertVisible: "full-lifecycle-.*@test.com"
+- assertVisible: "Warmth"
+- takeScreenshot: lifecycle-stage-02a-initial-view
+
+# Verify default warmth (40 / Neutral)
+- assertVisible:
+    text: "40|Neutral"
+- takeScreenshot: lifecycle-stage-02b-default-warmth
+
+# === STAGE 3: UPDATE ===
+- tapOn: "Edit"
+- tapOn: "Company"
+- inputText: "Lifecycle Test Corp"
+- takeScreenshot: lifecycle-stage-03a-company-added
+
+- tapOn: "Tags"
+- inputText: "lifecycle,test,vip"
+- takeScreenshot: lifecycle-stage-03b-tags-added
+
+- tapOn: "Save"
+- assertVisible: "Lifecycle Test Corp"
+- assertVisible: "lifecycle"
+- takeScreenshot: lifecycle-stage-03c-updates-saved
+
+# === STAGE 4: ADD NOTE ===
+- tapOn: "Notes"
+- tapOn: "Add Note"
+- inputText: "Initial contact - met at virtual conference"
+- tapOn: "Save"
+- assertVisible: "Initial contact"
+- takeScreenshot: lifecycle-stage-04-note-added
+
+# === STAGE 5: LOG INTERACTION ===
+- tapOn: "Interactions"
+- tapOn: "Log Interaction"
+- tapOn: "Type"
+- tapOn: "Call"
+- tapOn: "Summary"
+- inputText: "Discussed product needs and pricing"
+- tapOn: "Save"
+- assertVisible: "Discussed product"
+- takeScreenshot: lifecycle-stage-05-interaction-logged
+
+# === STAGE 6: COMPOSE MESSAGE (DRAFT) ===
+- tapOn: "Messages"
+- tapOn: "Compose"
+- tapOn: "Subject"
+- inputText: "Follow-up from our call"
+- tapOn: "Body"
+- inputText: "Thank you for taking the time to discuss your needs."
+- takeScreenshot: lifecycle-stage-06a-message-composed
+
+- tapOn: "Save Draft"
+- assertVisible: "Draft"
+- takeScreenshot: lifecycle-stage-06b-draft-saved
+
+# === STAGE 7: VERIFY WARMTH INCREASED ===
+- tapOn: "Back"
+- tapOn: "Back"
+# After interaction, warmth should be > 40
+- assertVisible: "Warmth"
+- takeScreenshot: lifecycle-stage-07-warmth-after-interaction
+
+# === STAGE 8: VIEW TIMELINE ===
+- tapOn: "Timeline"
+- assertVisible: "Discussed product"
+- assertVisible: "Initial contact"
+- takeScreenshot: lifecycle-stage-08-timeline-view
+
+# === STAGE 9: SEARCH & FIND ===
+- tapOn: "Back"
+- tapOn: "Back"
+- tapOn: "Search"
+- inputText: "Full Lifecycle"
+- assertVisible:
+    text: "Full Lifecycle.*"
+- takeScreenshot: lifecycle-stage-09-search-results
+
+# === STAGE 10: TAG FILTER (if supported) ===
+- tapOn: "Filter"
+- tapOn: "Tags"
+- tapOn: "vip"
+- assertVisible: "Full Lifecycle"
+- takeScreenshot: lifecycle-stage-10-tag-filter
+
+# === STAGE 11: CONTEXT VIEW ===
+- tapOn: "Full Lifecycle"
+- tapOn: "Context"
+# Verify relationship context is displayed
+- assertVisible: "Last Contact"
+- assertVisible: "Interactions"
+- takeScreenshot: lifecycle-stage-11-context-view
+
+# === STAGE 12: ARCHIVE ===
+- tapOn: "More"
+- tapOn: "Archive"
+- tapOn: "Confirm"
+- assertNotVisible: "Full Lifecycle"
+- takeScreenshot: lifecycle-stage-12-archived
+
+# === FINAL: Verify not in list ===
+- tapOn: "People"
+- assertNotVisible: "Full Lifecycle"
+- takeScreenshot: lifecycle-stage-13-removed-from-list

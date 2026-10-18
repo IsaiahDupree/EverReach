@@ -1,0 +1,56 @@
+{
+  "events": {
+    "App Opened": { "requiredFields": ["platform", "is_first_launch"] },
+    "App Backgrounded": { "requiredFields": ["session_duration", "screens_viewed"] },
+
+    "Sign In Attempted": { "requiredFields": ["method"] },
+    "Sign In Succeeded": { "requiredFields": ["method", "is_new_user"] },
+    "Sign In Failed": { "requiredFields": ["method", "error_type"] },
+    "Sign Out": { "requiredFields": ["session_duration"] },
+
+    "Onboarding Started": { "requiredFields": [] },
+    "Onboarding Step Completed": { "requiredFields": ["step_number", "step_name"] },
+    "Onboarding Completed": { "requiredFields": ["duration", "steps_completed"] },
+    "Onboarding Skipped": { "requiredFields": ["at_step"] },
+
+    "Contact Created": { "requiredFields": ["source", "has_phone", "has_email"] },
+    "Contact Updated": { "requiredFields": ["contact_id", "fields_changed"] },
+    "Contact Deleted": { "requiredFields": ["contact_id", "had_interactions"] },
+    "Contacts Imported": { "requiredFields": ["source", "total_imported", "duplicates_skipped", "duration"] },
+
+    "Pipeline Stage Changed": { "requiredFields": ["contact_id", "from_stage", "to_stage", "pipeline"] },
+    "Warmth Score Changed": { "requiredFields": ["contact_id", "from_score", "to_score"] },
+
+    "Message Generation Started": { "requiredFields": ["contact_id", "channel", "goal"] },
+    "Message Generated": { "requiredFields": ["contact_id", "channel", "goal", "generation_time", "message_length"] },
+    "Message Generation Failed": { "requiredFields": ["contact_id", "channel", "goal", "error_type", "generation_time"] },
+    "Message Regenerated": { "requiredFields": ["contact_id", "attempt_number"] },
+    "Message Edited": { "requiredFields": ["contact_id", "edit_type", "original_length", "edited_length"] },
+    "Message Sent": { "requiredFields": ["contact_id", "channel", "goal", "was_edited", "time_to_send"] },
+    "Message Discarded": { "requiredFields": ["contact_id", "channel", "goal"] },
+
+    "Screenshot Analyzed": { "requiredFields": ["ocr_chars", "latency_ms", "fields_extracted", "confidence_score"] },
+    "Screenshot Analysis Failed": { "requiredFields": ["error_type", "file_size_kb"] },
+
+    "Template Created": { "requiredFields": ["template_type", "channel"] },
+    "Template Used": { "requiredFields": ["template_id", "template_type", "is_custom"] },
+    "Template Edited": { "requiredFields": ["template_id"] },
+    "Template Deleted": { "requiredFields": ["template_id", "usage_count"] },
+
+    "Paywall Viewed": { "requiredFields": ["trigger", "plan_shown"] },
+    "Trial Started": { "requiredFields": ["plan", "duration_days"] },
+    "Trial Converted": { "requiredFields": ["plan", "trial_duration_days"] },
+    "Trial Canceled": { "requiredFields": ["plan", "days_into_trial"] },
+    "Subscription Purchased": { "requiredFields": ["plan", "billing_period", "price", "currency"] },
+    "Subscription Canceled": { "requiredFields": ["plan", "days_subscribed"] },
+    "Subscription Restored": { "requiredFields": ["plan", "platform"] },
+
+    "Settings Changed": { "requiredFields": ["setting_name", "old_value", "new_value"] },
+    "Theme Changed": { "requiredFields": ["theme"] },
+    "Cloud Mode Toggled": { "requiredFields": ["enabled"] },
+    "Analytics Consent Changed": { "requiredFields": ["consented"] },
+
+    "Error Occurred": { "requiredFields": ["error_type", "screen", "is_fatal"] },
+    "API Error": { "requiredFields": ["endpoint", "status_code", "error_type"] }
+  }
+}

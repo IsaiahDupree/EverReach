@@ -1,0 +1,11 @@
+docs: Add E2E test and architecture documentation
+
+Added 5 comprehensive documentation files:
+- ARCHITECTURE_ENDPOINTS_EXPLAINED.md - Complete endpoint architecture
+- E2E_TEST_RESULTS_SUMMARY.md - Test results and status
+- E2E_TESTS_FIX_PROGRESS.md - Fix methodology  
+- E2E_WARMTH_TEST_STATUS.md - Warmth test analysis
+- TEST_ARCHITECTURE_SUMMARY.md - Test patterns overview
+
+These docs explain the two-tier architecture with Vercel backend
+and Supabase REST API and document all test infrastructure improvements.

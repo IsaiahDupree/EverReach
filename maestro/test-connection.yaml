@@ -1,0 +1,6 @@
+appId: com.everreach.app
+---
+# Minimal test to verify Maestro connectivity
+
+- launchApp
+- takeScreenshot: screenshots/test-connection.png

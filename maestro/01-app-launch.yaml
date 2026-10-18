@@ -1,0 +1,9 @@
+appId: com.everreach.app
+---
+# Test 1: Basic App Launch
+# Purpose: Verify app starts and shows main screen
+
+- launchApp
+- takeScreenshot: screenshots/01-launch.png
+- assertVisible: "Settings"
+- assertVisible: "Chat"

@@ -1,0 +1,46 @@
+appId: com.everreach.app
+---
+# Smoke Test: Critical Path Verification
+# Quick test to verify core functionality is working
+# Run this before every release
+
+- launchApp
+- takeScreenshot: screenshots/smoke-01-launch.png
+
+# Verify app launches
+- assertVisible: "Welcome"
+
+# Verify all main tabs load
+- tapOn: "People"
+- assertVisible: "All Contacts"
+- takeScreenshot: screenshots/smoke-02-people.png
+
+- tapOn: "Chat"
+- assertVisible: "AI CRM Assistant"
+- takeScreenshot: screenshots/smoke-03-chat.png
+
+- tapOn: "Settings"
+- assertVisible: "Account & Subscription"
+- takeScreenshot: screenshots/smoke-04-settings.png
+
+- tapOn: "Home"
+- assertVisible: "Relationship Health"
+- takeScreenshot: screenshots/smoke-05-home.png
+
+# Verify quick actions work
+- tapOn: "Voice Note"
+- assertVisible: "Start Recording"
+- back
+
+- tapOn: "Add Contact"
+- assertVisible: "Contact Name"
+- back
+
+# Verify critical settings
+- tapOn: "Settings"
+- tapOn: "Subscription Plans"
+- assertVisible: "Core Monthly"
+- takeScreenshot: screenshots/smoke-06-subscription.png
+
+# Test complete
+- takeScreenshot: screenshots/smoke-07-complete.png

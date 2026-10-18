@@ -1,0 +1,29 @@
+appId: com.everreach.app
+---
+# Test 3: Subscription UI
+# Purpose: Verify subscription screens display correctly
+# Note: Does NOT complete purchase (StoreKit manual step)
+
+- launchApp
+
+# Navigate to subscription plans
+- tapOn: "Settings"
+- tapOn: "Subscription Plans"
+- assertVisible: "Core Monthly"
+- takeScreenshot: screenshots/03-plans-view.png
+
+# Verify plan details
+- assertVisible: "$14.99"
+- assertVisible: "per month"
+
+# Verify all plan options visible
+- scrollUntilVisible:
+    element: "Core Yearly"
+- assertVisible: "Core Yearly"
+- takeScreenshot: screenshots/03-yearly-plan.png
+
+# Test restore purchases button exists
+- scrollUntilVisible:
+    element: "Restore Purchases"
+- assertVisible: "Restore Purchases"
+- takeScreenshot: screenshots/03-restore-button.png

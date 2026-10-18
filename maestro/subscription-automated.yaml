@@ -1,0 +1,68 @@
+appId: com.everreach.app
+---
+# Automated Subscription Flow Test
+# Run: maestro test maestro/subscription-automated.yaml
+
+# Step 1: Launch and Sign In
+- launchApp
+- tapOn: "Sign In"
+- inputText: "lcreator34@gmail.com"
+- tapOn: "Password"
+- inputText: "your-password-here"
+- tapOn: "Sign In"
+- assertVisible: "Settings"
+
+# Step 2: Check Current Status
+- tapOn: "Settings"
+- assertVisible: "Account & Subscription"
+- scrollUntilVisible:
+    element: "Subscription Status"
+- takeScreenshot: screenshots/01-current-status.png
+
+# Step 3: Navigate to Subscription Plans
+- tapOn: "Subscription Plans"
+- assertVisible: "Core Monthly"
+- takeScreenshot: screenshots/02-plans-screen.png
+
+# Step 4: Purchase Subscription
+- tapOn: "Core Monthly"
+- assertVisible: "Subscribe"
+- tapOn: "Subscribe"
+# Note: StoreKit dialog handled manually in sandbox environment
+- takeScreenshot: screenshots/03-purchase-initiated.png
+
+# Step 5: Wait for Purchase to Complete
+- waitForAnimationToEnd
+- assertVisible: "Subscription Activated!"
+- takeScreenshot: screenshots/04-purchase-success.png
+
+# Step 6: Verify Auto-Sync
+- back
+- tapOn: "Settings"
+- assertVisible: "Pro (active)"
+- takeScreenshot: screenshots/05-status-updated.png
+
+# Step 7: Verify Premium Features
+- back
+- tapOn: "CRM Assistant"
+- assertNotVisible: "Upgrade to Pro"
+- takeScreenshot: screenshots/06-features-unlocked.png
+
+# Step 8: Test Manual Sync
+- tapOn: "Settings"
+- scrollUntilVisible:
+    element: "Backend Recompute Entitlements"
+- tapOn: "Backend Recompute Entitlements"
+- assertVisible: "Success"
+- takeScreenshot: screenshots/07-manual-sync.png
+
+# Step 9: Test Restore Purchases
+- tapOn: "Subscription Plans"
+- scrollUntilVisible:
+    element: "Restore Purchases"
+- tapOn: "Restore Purchases"
+- assertVisible: "Success"
+- takeScreenshot: screenshots/08-restore-success.png
+
+# Test Complete!
+- takeScreenshot: screenshots/09-test-complete.png
