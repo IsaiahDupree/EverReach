@@ -34,18 +34,18 @@ export default function AuthGate({
       )
     );
   }
-  const { loading, session } = auth;
+  const { loading, isAuthenticated } = auth;
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && requireAuth && !session) {
+    if (!loading && requireAuth && !isAuthenticated) {
       try {
         router.replace(redirectTo as any);
       } catch (e) {
         console.error('[AuthGate] Navigation error:', e);
       }
     }
-  }, [loading, requireAuth, session, router, redirectTo]);
+  }, [loading, requireAuth, isAuthenticated, router, redirectTo]);
 
   if (loading) {
     return (
@@ -57,7 +57,7 @@ export default function AuthGate({
     );
   }
 
-  if (requireAuth && !session) {
+  if (requireAuth && !isAuthenticated) {
     return (
       fallback ?? (
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFFFFF' }}>
