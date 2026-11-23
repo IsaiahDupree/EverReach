@@ -3,15 +3,15 @@ import { StyleSheet, View, Text, ScrollView, TouchableOpacity, TextInput, Platfo
 import { Stack } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Bell, Shield, CheckCircle2, XCircle, Wrench, ChevronRight, Copy, Info, RefreshCcw } from 'lucide-react-native';
+import { apiFetch, backendBase } from '@/lib/api';
+import { useAppSettings, type Theme } from '@/providers/AppSettingsProvider';
+import { FLAGS } from '@/constants/flags';
 // Notifications loaded dynamically on native to keep web compatible
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 let Notifications: any = null;
 if (typeof window === 'undefined' || (typeof navigator !== 'undefined' && navigator.product !== 'ReactNative')) {
   // noop for SSR or non-native, safety guard
 }
-import { apiFetch, backendBase } from '@/lib/api';
-import { useAppSettings, type Theme } from '@/providers/AppSettingsProvider';
-import { FLAGS } from '@/constants/flags';
 
 interface TestResult {
   id: string;
@@ -99,7 +99,7 @@ export default function WarmthAlertsTestScreen() {
 
       if (Platform.OS !== 'web') {
         try {
-          // eslint-disable-next-line @typescript-eslint/no-var-requires
+
           Notifications = require('expo-notifications');
         } catch (e) {
           Alert.alert('Unavailable', 'expo-notifications not available in this environment');

@@ -99,7 +99,7 @@ export default function OnboardingV2Screen() {
             placeholder: q.placeholder || undefined,
             header: q.header || undefined,
             explainer: q.explainer || undefined,
-            options: q.options ? (q.options as Array<{ value: string; label: string }>) : undefined,
+            options: q.options ? (q.options as { value: string; label: string }[]) : undefined,
             required: q.required,
           }));
           setQuestions(transformedQuestions);

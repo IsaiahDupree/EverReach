@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAppSettings, type Theme } from "@/providers/AppSettingsProvider";
-import { router } from "expo-router";
+import { router , useFocusEffect } from "expo-router";
 import { 
   Users, 
   User,
@@ -32,7 +32,6 @@ import Avatar from "@/components/Avatar";
 import { getWarmthColor } from "@/lib/imageUpload";
 import { usePeople } from "@/providers/PeopleProvider";
 import { useWarmth } from "@/providers/WarmthProvider";
-import { useFocusEffect } from "expo-router";
 import { useAnalytics } from "@/hooks/useAnalytics";
 import { useAuth } from "@/providers/AuthProviderV2";
 import { supabase } from "@/lib/supabase";

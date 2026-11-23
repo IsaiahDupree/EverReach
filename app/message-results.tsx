@@ -9,6 +9,7 @@ import {
   Alert,
   TextInput,
   Platform,
+  Linking,
 } from 'react-native';
 
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
@@ -27,7 +28,7 @@ import { VoiceNote, TextNote } from '@/storage/types';
 import { Channel, ToneStyle } from '@/types/message';
 import * as Clipboard from 'expo-clipboard';
 import * as SMS from 'expo-sms';
-import { Linking } from 'react-native';
+
 import { useAnalytics } from '@/hooks/useAnalytics';
 import analytics from '@/lib/analytics';
 import { parseMessageResultsParams } from '@/lib/params';

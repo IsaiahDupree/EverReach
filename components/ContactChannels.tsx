@@ -20,11 +20,6 @@ import {
   LayoutAnimation,
   UIManager,
 } from 'react-native';
-
-// Enable LayoutAnimation on Android
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
 import { Ionicons } from '@expo/vector-icons';
 import * as SMS from 'expo-sms';
 import {
@@ -38,6 +33,11 @@ import {
 import { openSocialChannel, openEmail, openPhone } from '@/lib/deepLinking';
 import * as Haptics from 'expo-haptics';
 import { useAppSettings } from '@/providers/AppSettingsProvider';
+
+// Enable LayoutAnimation on Android
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 export interface ContactChannelsProps {
   contactId: string;

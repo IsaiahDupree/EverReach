@@ -53,7 +53,7 @@ type PersonalNote = {
     type?: string;
     file_url?: string;
     file_id?: string;
-    linked_contacts?: Array<{ id: string; name: string }>;
+    linked_contacts?: { id: string; name: string }[];
   };
 };
 

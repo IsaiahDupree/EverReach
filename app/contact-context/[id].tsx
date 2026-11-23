@@ -141,7 +141,7 @@ export default function ContactContextScreen() {
   const [imageLoading, setImageLoading] = useState<Set<string>>(new Set());
   const [aiSuggestions, setAiSuggestions] = useState<any[]>([]);
   const [loadingInsights, setLoadingInsights] = useState(false);
-  const [warmthHistory, setWarmthHistory] = useState<Array<{ date: string; score: number }>>([]);
+  const [warmthHistory, setWarmthHistory] = useState<{ date: string; score: number }[]>([]);
   const [loadingWarmthHistory, setLoadingWarmthHistory] = useState(false);
   const [selectedWindow, setSelectedWindow] = useState<7 | 30 | 90>(30);
   // Log each note's debug payload only once to avoid noisy repeated console logs on re-renders
@@ -1561,7 +1561,7 @@ export default function ContactContextScreen() {
           const c = (bundleQuery.data as any)?.contact || {};
           const fromLocal = Array.isArray((person as any).customFields) ? (person as any).customFields : [];
           const fromCamel = Array.isArray(c.customFields) ? c.customFields : [];
-          let fromSnake: Array<{ key: string; value: any }> = [];
+          let fromSnake: { key: string; value: any }[] = [];
           if (Array.isArray(c.custom_fields)) {
             fromSnake = c.custom_fields
               .map((it: any) => ({ key: it?.key || it?.slug || it?.name, value: it?.value }))
@@ -1572,7 +1572,7 @@ export default function ContactContextScreen() {
 
           // Also support metadata shapes
           const meta = (c.metadata || {}) as any;
-          let fromMeta: Array<{ key: string; value: any }> = [];
+          let fromMeta: { key: string; value: any }[] = [];
           if (Array.isArray(meta?.custom_fields)) {
             fromMeta = meta.custom_fields
               .map((it: any) => ({ key: it?.key || it?.slug || it?.name, value: it?.value }))
@@ -1585,7 +1585,7 @@ export default function ContactContextScreen() {
               .filter((f: any) => typeof f?.key === 'string' && f.key.length > 0);
           }
 
-          const merged: Array<{ key: string; value: string }> = [];
+          const merged: { key: string; value: string }[] = [];
           const seen = new Set<string>();
           [...fromLocal, ...fromCamel, ...fromSnake, ...fromMeta].forEach((f: any) => {
             if (!f || typeof f.key !== 'string' || f.key.length === 0) return;

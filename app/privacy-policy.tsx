@@ -8,9 +8,8 @@ import {
   Linking,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter , Stack } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
-import { Stack } from 'expo-router';
 import { useAnalytics } from '@/hooks/useAnalytics';
 
 export default function PrivacyPolicyScreen() {

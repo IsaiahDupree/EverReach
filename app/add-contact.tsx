@@ -53,7 +53,7 @@ export default function AddContactScreen() {
   const [interestInput, setInterestInput] = useState("");
   const [avatarUri, setAvatarUri] = useState<string | undefined>(undefined);
   const [uploadingImage, setUploadingImage] = useState<boolean>(false);
-  const [customFields, setCustomFields] = useState<Array<{key: string; value: string}>>([]);
+  const [customFields, setCustomFields] = useState<{key: string; value: string}[]>([]);
   const [customFieldKey, setCustomFieldKey] = useState("");
   const [customFieldValue, setCustomFieldValue] = useState("");
   const [warmthMode, setWarmthMode] = useState<WarmthMode | null>(null);
