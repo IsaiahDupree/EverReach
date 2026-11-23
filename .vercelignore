@@ -1,0 +1,8 @@
+# Deployments must receive configuration through the hosting environment,
+# not local environment files or test bearer-token files.
+.env*
+**/.env*
+*.env
+**/*.env
+test-token*.txt
+**/test-token*.txt
