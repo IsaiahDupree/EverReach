@@ -1,47 +1,144 @@
 /**
- * APP-KIT: Data Models
- * 
- * 🔧 REPLACE THESE WITH YOUR OWN DATA STRUCTURES
- * 
- * These are placeholder models. Replace them with your business entities.
- * 
- * Examples:
- * - E-commerce: Product, Order, Cart, Review
- * - Social: Post, Comment, User, Follow
- * - Fitness: Workout, Exercise, Progress
- * - Task Manager: Task, Project, Label
+ * PulseLense - Data Models
+ *
+ * Core entities: Dashboard, Metric, Alert
+ * Shared infrastructure: User, Subscription, Entitlement, SubscriptionEvent
  */
 
 // ============================================
-// 🔧 REPLACE: Your main data entity
+// PULSELENSE: Dashboard entity
 // ============================================
-export interface Item {
+export interface Dashboard {
   id: string;
   user_id: string;
-  
-  // TODO: Replace with your fields
   name: string;
   description?: string;
-  category?: string;
-  status: 'active' | 'archived' | 'deleted';
-  
-  // Common fields (usually keep these)
+  layout: DashboardLayout;
+  is_default: boolean;
+  status: 'active' | 'archived';
   created_at: string;
   updated_at: string;
 }
 
-// ============================================
-// 🔧 REPLACE: Your secondary entities
-// ============================================
-export interface Category {
-  id: string;
+export type DashboardLayout = 'grid' | 'list' | 'compact';
+
+export interface CreateDashboardInput {
   name: string;
-  color: string;
-  icon?: string;
+  description?: string;
+  layout?: DashboardLayout;
+  is_default?: boolean;
+}
+
+export interface UpdateDashboardInput {
+  name?: string;
+  description?: string;
+  layout?: DashboardLayout;
+  is_default?: boolean;
+  status?: 'active' | 'archived';
 }
 
 // ============================================
-// ✅ KEEP: User model (works with Supabase Auth)
+// PULSELENSE: Metric entity
+// ============================================
+export type MetricType = 'count' | 'sum' | 'average' | 'rate' | 'gauge' | 'percentage';
+export type MetricPeriod = '1h' | '6h' | '24h' | '7d' | '30d' | '90d';
+
+export interface Metric {
+  id: string;
+  user_id: string;
+  dashboard_id: string;
+  name: string;
+  description?: string;
+  metric_type: MetricType;
+  source: string;
+  value: number;
+  previous_value?: number;
+  unit?: string;
+  period: MetricPeriod;
+  threshold_warning?: number;
+  threshold_critical?: number;
+  is_visible: boolean;
+  sort_order: number;
+  last_synced_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateMetricInput {
+  dashboard_id: string;
+  name: string;
+  description?: string;
+  metric_type: MetricType;
+  source: string;
+  unit?: string;
+  period?: MetricPeriod;
+  threshold_warning?: number;
+  threshold_critical?: number;
+}
+
+export interface UpdateMetricInput {
+  name?: string;
+  description?: string;
+  metric_type?: MetricType;
+  source?: string;
+  unit?: string;
+  period?: MetricPeriod;
+  threshold_warning?: number;
+  threshold_critical?: number;
+  is_visible?: boolean;
+  sort_order?: number;
+}
+
+// ============================================
+// PULSELENSE: Alert entity
+// ============================================
+export type AlertSeverity = 'info' | 'warning' | 'critical';
+export type AlertStatus = 'active' | 'acknowledged' | 'resolved' | 'dismissed';
+export type AlertCondition = 'above' | 'below' | 'equals' | 'change_pct';
+
+export interface Alert {
+  id: string;
+  user_id: string;
+  metric_id: string;
+  dashboard_id: string;
+  name: string;
+  description?: string;
+  condition: AlertCondition;
+  threshold: number;
+  severity: AlertSeverity;
+  status: AlertStatus;
+  triggered_at?: string;
+  acknowledged_at?: string;
+  resolved_at?: string;
+  notification_channels: NotificationChannel[];
+  created_at: string;
+  updated_at: string;
+}
+
+export type NotificationChannel = 'push' | 'email' | 'sms' | 'webhook';
+
+export interface CreateAlertInput {
+  metric_id: string;
+  dashboard_id: string;
+  name: string;
+  description?: string;
+  condition: AlertCondition;
+  threshold: number;
+  severity: AlertSeverity;
+  notification_channels?: NotificationChannel[];
+}
+
+export interface UpdateAlertInput {
+  name?: string;
+  description?: string;
+  condition?: AlertCondition;
+  threshold?: number;
+  severity?: AlertSeverity;
+  notification_channels?: NotificationChannel[];
+}
+
+// ============================================
+// KEEP: User model (works with Supabase Auth)
 // ============================================
 export interface User {
   id: string;
@@ -54,7 +151,7 @@ export interface User {
 }
 
 // ============================================
-// ✅ KEEP: Subscription model
+// KEEP: Subscription model
 // ============================================
 export interface Subscription {
   id: string;
@@ -71,7 +168,7 @@ export interface Subscription {
 }
 
 // ============================================
-// ✅ KEEP: Entitlements model (derived from subscriptions)
+// KEEP: Entitlements model (derived from subscriptions)
 // ============================================
 export interface Entitlement {
   user_id: string;
@@ -83,7 +180,7 @@ export interface Entitlement {
 }
 
 // ============================================
-// ✅ KEEP: Subscription events audit log
+// KEEP: Subscription events audit log
 // ============================================
 export interface SubscriptionEvent {
   id: string;
@@ -106,7 +203,7 @@ export interface SubscriptionEvent {
 }
 
 // ============================================
-// 🔧 CUSTOMIZE: API Response types
+// KEEP: API Response types
 // ============================================
 export interface ApiResponse<T> {
   data: T | null;
@@ -120,20 +217,4 @@ export interface PaginatedResponse<T> {
   page: number;
   per_page: number;
   has_more: boolean;
-}
-
-// ============================================
-// 🔧 CUSTOMIZE: Form input types
-// ============================================
-export interface CreateItemInput {
-  name: string;
-  description?: string;
-  category?: string;
-}
-
-export interface UpdateItemInput {
-  name?: string;
-  description?: string;
-  category?: string;
-  status?: 'active' | 'archived';
 }
