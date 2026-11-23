@@ -1,0 +1,5 @@
+# Local environment files and test bearer tokens are never deployment inputs.
+.env*
+**/.env*
+test-token*.txt
+**/test-token*.txt

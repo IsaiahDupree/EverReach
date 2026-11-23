@@ -1,0 +1,5 @@
+# Apply the same exclusions when backend-vercel is the deployment root.
+.env*
+**/.env*
+test-token*.txt
+**/test-token*.txt
