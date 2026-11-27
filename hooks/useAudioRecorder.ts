@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Audio } from 'expo-av';
-// Using legacy import for expo-file-system (SDK 54+ deprecated many methods)
-import * as FileSystem from 'expo-file-system/legacy';
+import * as FileSystem from 'expo-file-system';
 import { Platform } from 'react-native';
 
 type RecState = 'idle' | 'recording' | 'stopped' | 'permission-denied';
@@ -21,7 +20,7 @@ export function useAudioRecorder() {
   const recRef = useRef<Audio.Recording | null>(null);
   const meterTimer = useRef<number | null>(null);
   const durationTimer = useRef<number | null>(null);
-  // Removed Audio.usePermissions() - we request permissions manually when needed
+  const [permissionResponse, requestPermission] = Audio.usePermissions();
 
   const webRef = useRef<WebRecorderRefs>({ stream: null, recorder: null, chunks: [], durationTimer: null });
 
@@ -62,10 +61,12 @@ export function useAudioRecorder() {
       }
     }
 
-    const { granted } = await Audio.requestPermissionsAsync();
-    if (!granted) {
-      setState('permission-denied');
-      return false;
+    if (permissionResponse?.status !== 'granted') {
+      const newPermission = await requestPermission();
+      if (newPermission.status !== 'granted') {
+        setState('permission-denied');
+        return false;
+      }
     }
 
     await Audio.setAudioModeAsync({
@@ -75,7 +76,7 @@ export function useAudioRecorder() {
       shouldDuckAndroid: true,
     });
     return true;
-  }, []);
+  }, [permissionResponse, requestPermission]);
 
   const start = useCallback(async () => {
     try {
@@ -240,6 +241,6 @@ export function useAudioRecorder() {
     reset,
     isRecording: state === 'recording',
     hasRecording: !!uri,
-    permissionGranted: true, // Permission is requested when user starts recording
+    permissionGranted: (permissionResponse?.granted ?? false) || Platform.OS === 'web',
   };
 }

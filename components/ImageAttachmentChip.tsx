@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, Pressable, Image, Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-// Using legacy import for expo-file-system (SDK 54+ deprecated many methods)
-import * as FileSystem from 'expo-file-system/legacy';
+import * as FileSystem from 'expo-file-system';
 // import { trpc } from '@/lib/trpc';
 
 type MediaAsset = {

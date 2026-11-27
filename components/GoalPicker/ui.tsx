@@ -1,65 +1,27 @@
 import React, { PropsWithChildren } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { useAppSettings } from '@/providers/AppSettingsProvider';
 
-export const Bubble = ({ children, muted, testID }: PropsWithChildren<{ muted?: boolean; testID?: string }>) => {
-  const { theme } = useAppSettings();
-  return (
-    <View
-      style={[
-        styles.bubble,
-        {
-          backgroundColor: theme.colors.surface,
-          borderColor: theme.colors.border,
-          shadowColor: '#000',
-        },
-        muted ? { backgroundColor: theme.colors.background } : null,
-      ]}
-      testID={testID}
-    >
-      {children}
-    </View>
-  );
-};
+export const Bubble = ({ children, muted, testID }: PropsWithChildren<{ muted?: boolean; testID?: string }>) => (
+  <View style={[styles.bubble, muted ? styles.bubbleMuted : null]} testID={testID}>{children}</View>
+);
 
-export const Pill = ({ label, active }: { label: string; active?: boolean }) => {
-  const { theme } = useAppSettings();
-  return (
-    <View
-      style={[
-        styles.pill,
-        { borderColor: theme.colors.border, backgroundColor: theme.colors.background },
-        active ? { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary } : null,
-      ]}
-    >
-      <Text
-        style={[
-          styles.pillText,
-          { color: theme.colors.text },
-          active ? { color: theme.colors.surface, fontWeight: '600' } : null,
-        ]}
-      >
-        {label}
-      </Text>
-    </View>
-  );
-};
+export const Pill = ({ label, active }: { label: string; active?: boolean }) => (
+  <View style={[styles.pill, active ? styles.pillActive : null]}>
+    <Text style={[styles.pillText, active ? styles.pillTextActive : null]}>{label}</Text>
+  </View>
+);
 
-export const SectionTitle = ({ children }: PropsWithChildren) => {
-  const { theme } = useAppSettings();
-  return <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>{children}</Text>;
-};
+export const SectionTitle = ({ children }: PropsWithChildren) => (
+  <Text style={styles.sectionTitle}>{children}</Text>
+);
 
-export const OrDivider = () => {
-  const { theme } = useAppSettings();
-  return (
-    <View style={styles.orWrap}>
-      <View style={[styles.hr, { backgroundColor: theme.colors.border }]} />
-      <Text style={[styles.or, { color: theme.colors.textSecondary }]}>OR</Text>
-      <View style={[styles.hr, { backgroundColor: theme.colors.border }]} />
-    </View>
-  );
-};
+export const OrDivider = () => (
+  <View style={styles.orWrap}>
+    <View style={styles.hr} />
+    <Text style={styles.or}>OR</Text>
+    <View style={styles.hr} />
+  </View>
+);
 
 const styles = StyleSheet.create({
   bubble: {

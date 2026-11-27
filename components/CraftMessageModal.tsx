@@ -10,7 +10,6 @@ import {
   Alert,
   Keyboard,
   PanResponder,
-  ActivityIndicator,
 } from 'react-native';
 import { X, MessageCircle, Mail, Smartphone, Sparkles, Heart, Briefcase, Camera, ArrowRight, ArrowLeft } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
@@ -20,9 +19,6 @@ import { Channel, ToneStyle } from '@/types/message';
 import * as ImagePicker from 'expo-image-picker';
 import { useMessages } from '@/providers/MessageProvider';
 import { getGoalById } from '@/constants/messageGoals';
-import { composeMessage } from '@/lib/agent-api';
-import { useSubscription } from '@/providers/SubscriptionProvider';
-import PremiumGate from '@/components/PremiumGate';
 
 interface Person {
   id: string;
@@ -49,18 +45,15 @@ interface CraftMessageModalProps {
   visible: boolean;
   onClose: () => void;
   person: Person;
-  initialAdditionalContext?: string;
 }
 
 type WizardStep = 'goal' | 'channel' | 'tone' | 'preview';
 
-export default function CraftMessageModal({ visible, onClose, person, initialAdditionalContext }: CraftMessageModalProps) {
+export default function CraftMessageModal({ visible, onClose, person }: CraftMessageModalProps) {
   const router = useRouter();
   const { voiceNotes } = useVoiceNotes();
   const { getAllGoals } = useMessages();
   const { theme } = useAppSettings();
-  const { isPaid, isTrialExpired } = useSubscription();
-  const gated = isTrialExpired && !isPaid;
   const [currentStep, setCurrentStep] = useState<WizardStep>('goal');
   const [selectedGoal, setSelectedGoal] = useState<string>('check_in');
   const [customGoal, setCustomGoal] = useState<string>('');
@@ -69,7 +62,6 @@ export default function CraftMessageModal({ visible, onClose, person, initialAdd
   const [selectedTone, setSelectedTone] = useState<ToneStyle>('casual');
   const [contextSummary, setContextSummary] = useState<string>('');
   const [additionalContext, setAdditionalContext] = useState<string>('');
-  const [isGenerating, setIsGenerating] = useState<boolean>(false);
 
   const panResponder = PanResponder.create({
     onMoveShouldSetPanResponder: (evt, gestureState) => {
@@ -104,7 +96,7 @@ export default function CraftMessageModal({ visible, onClose, person, initialAdd
     }
     
     if (recentNotes.length > 0) {
-      summary += `\n\nRecent notes: ${recentNotes.map(n => n.transcription?.slice(0, 50) + '...').join(' • ')}`;
+      summary += `\n\nRecent notes: ${recentNotes.map(n => n.transcript?.slice(0, 50) + '...').join(' • ')}`;
     }
     
     setContextSummary(summary);
@@ -149,8 +141,8 @@ export default function CraftMessageModal({ visible, onClose, person, initialAdd
     // Generate goals based on recent notes
     if (recentNotes.length > 0) {
       const recentNote = recentNotes[0];
-      if (recentNote.transcription && recentNote.transcription.length > 20) {
-        const notePreview = recentNote.transcription.slice(0, 50);
+      if (recentNote.transcript && recentNote.transcript.length > 20) {
+        const notePreview = recentNote.transcript.slice(0, 50);
         goals.push({
           id: 'follow_up_note',
           name: 'Follow up on recent note',
@@ -183,9 +175,6 @@ export default function CraftMessageModal({ visible, onClose, person, initialAdd
       generateContextAwareGoals();
       setCurrentStep('goal');
       setCustomGoal('');
-      if (initialAdditionalContext) {
-        setAdditionalContext(initialAdditionalContext);
-      }
       // Set default channel based on person's preferences
       const preferredChannel = person.comms?.channelsPreferred?.[0] as Channel;
       if (preferredChannel && ['sms', 'email', 'dm'].includes(preferredChannel)) {
@@ -197,7 +186,7 @@ export default function CraftMessageModal({ visible, onClose, person, initialAdd
         setSelectedTone(preferredTone as ToneStyle);
       }
     }
-  }, [visible, person, generateContextSummary, generateContextAwareGoals, initialAdditionalContext]);
+  }, [visible, person, generateContextSummary, generateContextAwareGoals]);
 
   // Quick-generate: tap a suggested goal to jump straight to results
   const quickGenerateFromSuggestion = useCallback((goal: { id: string; name: string }) => {
@@ -214,11 +203,6 @@ export default function CraftMessageModal({ visible, onClose, person, initialAdd
       }
     }
 
-    if (gated) {
-      setCurrentStep('preview');
-      return;
-    }
-
     onClose();
     router.push({
       pathname: '/message-results',
@@ -231,55 +215,38 @@ export default function CraftMessageModal({ visible, onClose, person, initialAdd
         additionalContext: additionalContext || undefined,
       },
     });
-  }, [additionalContext, getAllGoals, onClose, person.id, router, selectedChannel, selectedTone, gated]);
+  }, [additionalContext, getAllGoals, onClose, person.id, router, selectedChannel, selectedTone]);
 
-  const generateMessage = async () => {
-    if (gated) {
-      return;
-    }
-    setIsGenerating(true);
-    
-    try {
-      const suggestion = contextAwareGoals.find(g => g.id === selectedGoal);
-      const isKnown = !!getGoalById(selectedGoal, getAllGoals());
-      let goalText = customGoal.trim();
+  const generateMessage = () => {
+    // Normalize goal: unknown suggestions -> 'custom', contextual -> 'check_in'
+    const suggestion = contextAwareGoals.find(g => g.id === selectedGoal);
+    const isKnown = !!getGoalById(selectedGoal, getAllGoals());
+    let finalGoalId = selectedGoal;
+    let customGoalValue = customGoal.trim();
 
-      if (!goalText) {
-        if (!isKnown) {
-          if (selectedGoal === 'check_in_contextual') {
-            goalText = 'Check in and reconnect';
-          } else if (suggestion) {
-            goalText = suggestion.name;
-          }
-        } else {
-          const knownGoal = getGoalById(selectedGoal, getAllGoals());
-          goalText = knownGoal?.name || 'General message';
+    if (!customGoalValue) {
+      if (!isKnown) {
+        if (selectedGoal === 'check_in_contextual') {
+          finalGoalId = 'check_in';
+        } else if (suggestion) {
+          finalGoalId = 'custom';
+          customGoalValue = suggestion.name;
         }
       }
-
-      // Do not compose here. Route to results screen; it will compose as single source of truth.
-      onClose();
-      router.push({
-        pathname: '/message-results',
-        params: {
-          personId: person.id,
-          goalId: customGoal.trim() ? 'custom' : selectedGoal,
-          customGoal: customGoal.trim() || undefined,
-          channel: selectedChannel,
-          tone: selectedTone,
-          additionalContext: additionalContext || undefined,
-        },
-      });
-    } catch (error) {
-      console.error('[CraftMessage] Error generating message:', error);
-      Alert.alert(
-        'Generation Failed',
-        error instanceof Error ? error.message : 'Failed to generate message. Please try again.',
-        [{ text: 'OK' }]
-      );
-    } finally {
-      setIsGenerating(false);
     }
+
+    onClose();
+    router.push({
+      pathname: '/message-results',
+      params: {
+        personId: person.id,
+        goalId: customGoalValue ? 'custom' : finalGoalId,
+        customGoal: customGoalValue || undefined,
+        channel: selectedChannel,
+        tone: selectedTone,
+        additionalContext: additionalContext || undefined,
+      },
+    });
   };
 
   const handleScreenshotUpload = async () => {
@@ -607,33 +574,29 @@ export default function CraftMessageModal({ visible, onClose, person, initialAdd
 
           {currentStep === 'preview' && (
             <View style={styles.section}>
-              {gated ? (
-                <PremiumGate />
-              ) : (
-                <View style={styles.previewCard}>
-                  <Text style={styles.previewTitle}>Ready to Generate</Text>
-                  <View style={styles.previewItem}>
-                    <Text style={styles.previewLabel}>Goal:</Text>
-                    <Text style={styles.previewValue}>
-                      {customGoal.trim() || contextAwareGoals.find(g => g.id === selectedGoal)?.name || 'Check In'}
-                    </Text>
-                  </View>
-                  <View style={styles.previewItem}>
-                    <Text style={styles.previewLabel}>Channel:</Text>
-                    <Text style={styles.previewValue}>{getChannelLabel(selectedChannel)}</Text>
-                  </View>
-                  <View style={styles.previewItem}>
-                    <Text style={styles.previewLabel}>Tone:</Text>
-                    <Text style={styles.previewValue}>{selectedTone}</Text>
-                  </View>
-                  {additionalContext && (
-                    <View style={styles.previewItem}>
-                      <Text style={styles.previewLabel}>Context:</Text>
-                      <Text style={styles.previewValue}>{additionalContext.slice(0, 100)}...</Text>
-                    </View>
-                  )}
+              <View style={styles.previewCard}>
+                <Text style={styles.previewTitle}>Ready to Generate</Text>
+                <View style={styles.previewItem}>
+                  <Text style={styles.previewLabel}>Goal:</Text>
+                  <Text style={styles.previewValue}>
+                    {customGoal.trim() || contextAwareGoals.find(g => g.id === selectedGoal)?.name || 'Check In'}
+                  </Text>
                 </View>
-              )}
+                <View style={styles.previewItem}>
+                  <Text style={styles.previewLabel}>Channel:</Text>
+                  <Text style={styles.previewValue}>{getChannelLabel(selectedChannel)}</Text>
+                </View>
+                <View style={styles.previewItem}>
+                  <Text style={styles.previewLabel}>Tone:</Text>
+                  <Text style={styles.previewValue}>{selectedTone}</Text>
+                </View>
+                {additionalContext && (
+                  <View style={styles.previewItem}>
+                    <Text style={styles.previewLabel}>Context:</Text>
+                    <Text style={styles.previewValue}>{additionalContext.slice(0, 100)}...</Text>
+                  </View>
+                )}
+              </View>
             </View>
           )}
         </ScrollView>
@@ -655,27 +618,21 @@ export default function CraftMessageModal({ visible, onClose, person, initialAdd
           <TouchableOpacity
             style={[
               styles.nextButton,
-              (!canProceed() || isGenerating || (gated && currentStep === 'preview')) && styles.nextButtonDisabled
+              !canProceed() && styles.nextButtonDisabled
             ]}
             onPress={nextStep}
-            disabled={!canProceed() || isGenerating || (gated && currentStep === 'preview')}
+            disabled={!canProceed()}
           >
-            {isGenerating && currentStep === 'preview' ? (
-              <ActivityIndicator size="small" color={theme.colors.surface} />
+            <Text style={[
+              styles.nextButtonText,
+              !canProceed() && styles.nextButtonTextDisabled
+            ]}>
+              {currentStep === 'preview' ? 'Generate Messages' : 'Next'}
+            </Text>
+            {currentStep === 'preview' ? (
+              <Sparkles size={20} color={theme.colors.surface} />
             ) : (
-              <>
-                <Text style={[
-                  styles.nextButtonText,
-                  (!canProceed() || isGenerating) && styles.nextButtonTextDisabled
-                ]}>
-                  {currentStep === 'preview' ? 'Generate Messages' : 'Next'}
-                </Text>
-                {currentStep === 'preview' ? (
-                  <Sparkles size={20} color={theme.colors.surface} />
-                ) : (
-                  <ArrowRight size={20} color={theme.colors.surface} />
-                )}
-              </>
+              <ArrowRight size={20} color={theme.colors.surface} />
             )}
           </TouchableOpacity>
         </View>

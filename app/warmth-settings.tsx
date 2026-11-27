@@ -1,24 +1,20 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import {
   StyleSheet,
   Text,
   View,
   ScrollView,
   TouchableOpacity,
+
+  TextInput,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import CrossPlatformTextInput from '@/components/CrossPlatformTextInput';
 import { Stack, router } from 'expo-router';
 import { RotateCcw, Save } from 'lucide-react-native';
 import { useWarmthSettings } from '@/providers/WarmthSettingsProvider';
-import { useTheme } from '@/providers/ThemeProvider';
-import { createCommonStyles } from '@/constants/themedStyles';
 
 export default function WarmthSettingsScreen() {
   const insets = useSafeAreaInsets();
-  const { theme } = useTheme();
-  const common = createCommonStyles(theme);
-  const styles = useMemo(() => createThemedStyles(theme), [theme]);
   const { settings, updateSettings, resetToDefaults } = useWarmthSettings();
   
   const [hotThreshold, setHotThreshold] = useState(settings.hotThreshold.toString());
@@ -81,13 +77,13 @@ export default function WarmthSettingsScreen() {
   };
 
   return (
-    <View style={[common.container, { paddingTop: insets.top }]}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <Stack.Screen
         options={{
           title: 'Warmth Settings',
           headerRight: () => (
             <TouchableOpacity onPress={handleSave} style={styles.saveButton}>
-              <Save size={20} color={theme.colors.primary} />
+              <Save size={20} color="#007AFF" />
             </TouchableOpacity>
           ),
         }}
@@ -106,7 +102,7 @@ export default function WarmthSettingsScreen() {
                 <View style={[styles.statusDot, { backgroundColor: '#FF6B6B' }]} />
                 <Text style={styles.thresholdLabel}>Hot Threshold</Text>
               </View>
-              <CrossPlatformTextInput
+              <TextInput
                 style={styles.thresholdInput}
                 value={hotThreshold}
                 onChangeText={setHotThreshold}
@@ -120,7 +116,7 @@ export default function WarmthSettingsScreen() {
                 <View style={[styles.statusDot, { backgroundColor: '#FFB366' }]} />
                 <Text style={styles.thresholdLabel}>Warm Threshold</Text>
               </View>
-              <CrossPlatformTextInput
+              <TextInput
                 style={styles.thresholdInput}
                 value={warmThreshold}
                 onChangeText={setWarmThreshold}
@@ -134,7 +130,7 @@ export default function WarmthSettingsScreen() {
                 <View style={[styles.statusDot, { backgroundColor: '#4ECDC4' }]} />
                 <Text style={styles.thresholdLabel}>Cool Threshold</Text>
               </View>
-              <CrossPlatformTextInput
+              <TextInput
                 style={styles.thresholdInput}
                 value={coolThreshold}
                 onChangeText={setCoolThreshold}
@@ -157,7 +153,7 @@ export default function WarmthSettingsScreen() {
                 <View style={[styles.statusDot, { backgroundColor: getStatusColor(parseInt(defaultWarmth) || 50) }]} />
                 <Text style={styles.thresholdLabel}>Default Warmth for New Leads</Text>
               </View>
-              <CrossPlatformTextInput
+              <TextInput
                 style={styles.thresholdInput}
                 value={defaultWarmth}
                 onChangeText={setDefaultWarmth}
@@ -197,7 +193,7 @@ export default function WarmthSettingsScreen() {
         </View>
 
         <TouchableOpacity style={styles.resetButton} onPress={handleReset}>
-          <RotateCcw size={20} color={theme.colors.error} />
+          <RotateCcw size={20} color="#FF6B6B" />
           <Text style={styles.resetText}>Reset to Defaults</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -205,7 +201,11 @@ export default function WarmthSettingsScreen() {
   );
 }
 
-const createThemedStyles = (theme: any) => StyleSheet.create({
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F8F9FA',
+  },
   scrollView: {
     flex: 1,
   },
@@ -213,91 +213,91 @@ const createThemedStyles = (theme: any) => StyleSheet.create({
     padding: 4,
   },
   section: {
-    marginBottom: theme.spacing.xxl,
+    marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: theme.typography.fontSizes.sm,
-    fontWeight: theme.typography.fontWeights.semibold,
-    color: theme.colors.textSecondary,
-    textTransform: 'uppercase' as const,
-    marginHorizontal: theme.spacing.lg,
-    marginBottom: theme.spacing.xs,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#999999',
+    textTransform: 'uppercase',
+    marginHorizontal: 16,
+    marginBottom: 4,
   },
   sectionDescription: {
-    fontSize: theme.typography.fontSizes.sm,
-    color: theme.colors.textSecondary,
-    marginHorizontal: theme.spacing.lg,
-    marginBottom: theme.spacing.sm,
+    fontSize: 14,
+    color: '#666666',
+    marginHorizontal: 16,
+    marginBottom: 8,
     lineHeight: 20,
   },
   sectionContent: {
-    backgroundColor: theme.colors.surface,
-    marginHorizontal: theme.spacing.lg,
-    borderRadius: theme.borderRadius.lg,
-    overflow: 'hidden' as const,
+    backgroundColor: '#FFFFFF',
+    marginHorizontal: 16,
+    borderRadius: 12,
+    overflow: 'hidden',
   },
   thresholdItem: {
-    flexDirection: 'row' as const,
-    justifyContent: 'space-between' as const,
-    alignItems: 'center' as const,
-    padding: theme.spacing.lg,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
   },
   thresholdItemBorder: {
     borderTopWidth: 0.5,
-    borderTopColor: theme.colors.border,
+    borderTopColor: '#E5E5E5',
   },
   thresholdLeft: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
+    flexDirection: 'row',
+    alignItems: 'center',
     flex: 1,
   },
   statusDot: {
     width: 12,
     height: 12,
     borderRadius: 6,
-    marginRight: theme.spacing.md,
+    marginRight: 12,
   },
   thresholdLabel: {
-    fontSize: theme.typography.fontSizes.md,
-    color: theme.colors.text,
+    fontSize: 16,
+    color: '#000000',
     flex: 1,
   },
   thresholdInput: {
-    fontSize: theme.typography.fontSizes.md,
-    color: theme.colors.text,
-    textAlign: 'right' as const,
+    fontSize: 16,
+    color: '#000000',
+    textAlign: 'right',
     minWidth: 60,
-    paddingVertical: theme.spacing.xs,
-    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
     borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: theme.borderRadius.md,
-    backgroundColor: theme.colors.surfaceSecondary,
+    borderColor: '#E5E5E5',
+    borderRadius: 6,
+    backgroundColor: '#F8F9FA',
   },
   helpText: {
-    fontSize: theme.typography.fontSizes.sm,
-    color: theme.colors.textSecondary,
+    fontSize: 14,
+    color: '#666666',
     lineHeight: 20,
-    padding: theme.spacing.lg,
+    padding: 16,
   },
   resetButton: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
-    backgroundColor: theme.colors.surface,
-    marginHorizontal: theme.spacing.lg,
-    marginVertical: theme.spacing.xxl,
-    padding: theme.spacing.lg,
-    borderRadius: theme.borderRadius.lg,
-    gap: theme.spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+    marginHorizontal: 16,
+    marginVertical: 24,
+    padding: 16,
+    borderRadius: 12,
+    gap: 8,
   },
   resetText: {
-    fontSize: theme.typography.fontSizes.md,
-    fontWeight: theme.typography.fontWeights.semibold,
-    color: theme.colors.error,
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FF6B6B',
   },
   boldText: {
-    fontWeight: theme.typography.fontWeights.semibold,
-    color: theme.colors.text,
+    fontWeight: '600',
+    color: '#333333',
   },
 });

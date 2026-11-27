@@ -1,1436 +1,1058 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   StyleSheet,
   Text,
   View,
   TouchableOpacity,
   ScrollView,
-  ActivityIndicator,
-  Alert,
   TextInput,
-  Platform,
+  Alert,
+  Linking,
+  Share
 } from 'react-native';
-
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { go } from '@/lib/navigation';
-import { ArrowLeft, RefreshCw, Check, Mail, MessageSquare, Copy, Send, ChevronDown, ChevronRight } from 'lucide-react-native';
-import { useAppSettings, type Theme } from '@/providers/AppSettingsProvider';
-import { usePeople } from '@/providers/PeopleProvider';
-import { useWarmth } from '@/providers/WarmthProvider';
-import { useMessages } from '@/providers/MessageProvider';
-import { useTemplates } from '@/providers/TemplatesProvider';
-import { composeMessage, type ComposeResponse } from '@/lib/agent-api';
-import { apiFetch } from '@/lib/api';
-import SupabaseVoiceNotesRepo from '@/repos/SupabaseVoiceNotesRepo';
-import SupabaseTextNotesRepo from '@/repos/SupabaseTextNotesRepo';
-import { VoiceNote, TextNote } from '@/storage/types';
-import { Channel, ToneStyle } from '@/types/message';
 import * as Clipboard from 'expo-clipboard';
-import * as SMS from 'expo-sms';
-import { Linking } from 'react-native';
-import { useAnalytics } from '@/hooks/useAnalytics';
-import analytics from '@/lib/analytics';
-import { parseMessageResultsParams } from '@/lib/params';
-import { useSubscription } from '@/providers/SubscriptionProvider';
-import { usePaywallGate } from '@/hooks/usePaywallGate';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { Copy, Send, Edit3, Check, Sparkles, Wand2, Mail, MessageSquare, AtSign } from 'lucide-react-native';
+import { usePeople } from '@/providers/PeopleProvider';
+import { useMessages } from '@/providers/MessageProvider';
+import { AnalyticsService } from '@/services/analytics';
+import { useCopyInference } from '@/hooks/useCopyInference';
 
-// Short-lived local cache to prevent duplicate compose calls across quick remounts
-type LocalCacheEntry = { ts: number; data: ComposeResponse };
-const LOCAL_COMPOSE_CACHE = new Map<string, LocalCacheEntry>();
-const LOCAL_CACHE_TTL_MS = 3000;
-
-// Module-level init guard to survive remounts (keyed by sessionKey)
-const INITIALIZED_SESSIONS = new Map<string, boolean>();
+import { analytics } from '@/utils/analytics';
+import { Channel, ToneStyle, GeneratedVariant, MessageGoal } from '@/types/message';
+import { getGoalById } from '@/constants/messageGoals';
+import { trpc } from '@/lib/trpc';
+import { generateMessages } from '@/services/messageGeneration';
+import { FLAGS } from '@/constants/flags';
 
 export default function MessageResultsScreen() {
   const router = useRouter();
-  const rawParams = useLocalSearchParams();
-  const params = parseMessageResultsParams(rawParams as any);
+  const params = useLocalSearchParams();
+  const insets = useSafeAreaInsets();
+  const { people, updatePerson } = usePeople();
+
+  const { updateMessage, addMessage, getAllGoals } = useMessages();
   
-  const { theme } = useAppSettings();
-  const { people, isLoading: isPeopleLoading } = usePeople();
-  const { refreshWarmth } = useWarmth();
-  const { addMessage } = useMessages();
-  const { templates } = useTemplates();
-  const { isPaid, isTrialExpired, trialDaysRemaining, trialGateStrategy, trialUsageSeconds, trialUsageSecondsLimit } = useSubscription();
-  const gated = isTrialExpired && !isPaid;
+  // Parse params
+  const personId = params.personId as string;
+  const goalId = params.goalId as string;
+  const customGoal = params.customGoal as string | undefined;
+  const channel = params.channel as Channel;
   
-  // Analytics tracking
-  const screenAnalytics = useAnalytics('MessageResults');
-  const [generationStartTime, setGenerationStartTime] = useState<number>(0);
+  const [variants, setVariants] = useState<GeneratedVariant[]>([]);
+  const [selectedTone, setSelectedTone] = useState<ToneStyle>('casual');
+  const [selectedChannel, setSelectedChannel] = useState<Channel>(channel);
+  const [messageId, setMessageId] = useState<string>('');
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [tempText, setTempText] = useState<string>('');
+
+  const [isGenerating, setIsGenerating] = useState(false);
   
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [isSaving, setIsSaving] = useState<boolean>(false);
-  const [composeResponse, setComposeResponse] = useState<ComposeResponse | null>(null);
-  const [editedSubject, setEditedSubject] = useState<string>('');
-  const [editedBody, setEditedBody] = useState<string>('');
-  const [isEditing, setIsEditing] = useState<boolean>(false);
-  const [selectedChannel, setSelectedChannel] = useState<Channel>(params.channel || 'sms');
-  const [selectedTone, setSelectedTone] = useState<ToneStyle>((params.tone as ToneStyle) || 'casual');
-  const [voiceNotes, setVoiceNotes] = useState<VoiceNote[]>([]);
-  const [textNotes, setTextNotes] = useState<TextNote[]>([]);
-  const [isLoadingNotes, setIsLoadingNotes] = useState<boolean>(false);
-  const [copied, setCopied] = useState<boolean>(false);
-  const [contextExpanded, setContextExpanded] = useState<boolean>(false);
-  const [expandedNoteIds, setExpandedNoteIds] = useState<Record<string, boolean>>({});
-  const [hasAutoGenerated, setHasAutoGenerated] = useState<boolean>(false);
-  const previousTone = React.useRef<ToneStyle>(selectedTone);
-  const isGenerating = React.useRef<boolean>(false);
-  const latestRequestId = React.useRef<number>(0);
-  const lastGeneration = React.useRef<{ key: string; ts: number }>({ key: '', ts: 0 });
-  const lastLoadedNoteIds = React.useRef<string[]>([]);
-  const [webSuccessOpen, setWebSuccessOpen] = useState<boolean>(false);
-
-  const person = people.find(p => p.id === params.personId);
-  const channel = selectedChannel;
-
-  // Stable session key for this compose request (aligns with agent-api dedupe fields)
-  const sessionKey = React.useMemo(() => {
-    const contactId = person?.id || '';
-    const goal = (params.customGoal || params.goalId || '') as string;
-    const vars = { tone: selectedTone } as Record<string, any>;
-    const sorted = Object.keys(vars).sort().reduce((acc, k) => { (acc as any)[k] = (vars as any)[k]; return acc; }, {} as Record<string, any>);
-    return [contactId, goal, channel, JSON.stringify(sorted)].join('|');
-  }, [person?.id, params.customGoal, params.goalId, channel, selectedTone]);
-
-  // Use unified dashboard bottom navigation utility
-
-  // (Auto-generate handled by initializeMessage/useEffect below to avoid use-before-define)
-
-  const loadNotesForContext = useCallback(async (noteIds: string[]) => {
-    if (!person || noteIds.length === 0) return;
-    
-    setIsLoadingNotes(true);
-    try {
-      console.log('[MessageResults] Loading notes for IDs:', noteIds);
-      
-      const [allVoiceNotes, allTextNotes] = await Promise.all([
-        SupabaseVoiceNotesRepo.byPerson(person.id),
-        SupabaseTextNotesRepo.byPerson(person.id),
-      ]);
-      
-      const relevantVoiceNotes = allVoiceNotes.filter(note => noteIds.includes(note.id));
-      const relevantTextNotes = allTextNotes.filter(note => noteIds.includes(note.id));
-      
-      console.log('[MessageResults] Found voice notes:', relevantVoiceNotes.length);
-      console.log('[MessageResults] Found text notes:', relevantTextNotes.length);
-      
-      setVoiceNotes(relevantVoiceNotes);
-      setTextNotes(relevantTextNotes);
-    } catch (error) {
-      console.error('[MessageResults] Error loading notes:', error);
-    } finally {
-      setIsLoadingNotes(false);
+  const generateMessageMutation = trpc.messages.generate.useMutation();
+  const additionalContext = params.additionalContext as string | undefined;
+  const screenshotAssetId = params.screenshotAssetId as string | undefined;
+  const screenshotContext = params.screenshotContext as string | undefined;
+  const screenshotText = params.screenshotText as string | undefined;
+  
+  const person = people.find(p => p.id === personId);
+  
+  const goal = useMemo((): MessageGoal | undefined => {
+    if (goalId === 'custom' && customGoal) {
+      return {
+        id: 'custom',
+        name: customGoal,
+        template: `Write a ${channel} message to {contact_first} about: ${customGoal}. Keep it {tone} and {length}.`,
+        defaultChannels: [channel],
+        styleTags: ['custom']
+      };
     }
-  }, [person]);
-
-  const generateMessage = useCallback(async () => {
-    if (!person) {
-      Alert.alert('Error', 'Contact not found');
-      return;
+    if (goalId === 'screenshot_response' && screenshotContext) {
+      return {
+        id: 'screenshot_response',
+        name: 'Respond to Screenshot',
+        template: `Write a ${channel} message to {contact_first} responding to this screenshot: ${screenshotContext}${screenshotText ? `. Text in image: ${screenshotText}` : ''}. Keep it {tone} and {length}.`,
+        defaultChannels: [channel],
+        styleTags: ['screenshot']
+      };
     }
+    return getGoalById(goalId, getAllGoals());
+  }, [goalId, customGoal, channel, getAllGoals, screenshotContext, screenshotText]);
 
-    // Gate: require active trial or paid subscription
-    if (gated) {
-      return;
+  // Track screen view
+  useEffect(() => {
+    AnalyticsService.trackScreenViewed({ screenName: 'message_results' });
+  }, []);
+
+  // If a tone was provided via route param, initialize the selector
+  useEffect(() => {
+    const toneParam = params.tone as ToneStyle | undefined;
+    if (toneParam && (['casual','professional','warm','direct'] as ToneStyle[]).includes(toneParam)) {
+      setSelectedTone(toneParam);
     }
+  }, [params.tone]);
 
-    // Prevent duplicate concurrent calls
-    if (isGenerating.current) {
-      console.log('[MessageResults] Already generating, skipping duplicate call');
-      return;
-    }
-
-    // Throttle repeated calls with same session key in a short window
-    const nowTs = Date.now();
-    if (lastGeneration.current.key === sessionKey && nowTs - lastGeneration.current.ts < 2000) {
-      console.log('[MessageResults] Throttling duplicate generation for same key');
-      return;
-    }
-
-    // Sequence id to ignore stale responses
-    const requestId = ++latestRequestId.current;
-    isGenerating.current = true;
-    lastGeneration.current = { key: sessionKey, ts: nowTs };
-    console.log('[MessageResults] Starting generation (reqId=', requestId, ') ...');
-    setIsLoading(true);
-    const startTime = Date.now();
-    setGenerationStartTime(startTime);
-    
-    try {
-      const goal = params.customGoal || params.goalId;
-      
-      console.log('[MessageResults] Generating message with:', {
-        contact_id: person.id,
-        goal,
-        channel,
-        tone: selectedTone,
-      });
-
-      const variables: Record<string, any> = { tone: selectedTone };
-      
-      // Add voice context from templates if available
-      if (templates.voiceContext) {
-        variables.voice_context = templates.voiceContext;
-        console.log('[MessageResults] Including voice context:', templates.voiceContext);
-      }
-      
-      if (params.aiSuggestionGoal) {
-        variables.ai_suggestion = {
-          goal: params.aiSuggestionGoal,
-          reason: params.aiSuggestionReason,
-          category: params.aiSuggestionCategory,
-        };
-        variables.ai_suggestion_goal = params.aiSuggestionGoal;
-        if (params.aiSuggestionReason) variables.ai_suggestion_reason = params.aiSuggestionReason;
-        if (params.aiSuggestionCategory) variables.ai_suggestion_category = params.aiSuggestionCategory;
-      }
-      if (params.additionalContext) {
-        variables.additional_context = params.additionalContext;
-      }
-
-      const response = await composeMessage({
-        contact_id: person.id,
-        goal,
-        channel,
-        variables,
-        include: {
-          persona_notes: true,
-          interactions: true,
-          voice_notes: true,
-        },
-      });
-
-      console.log('[MessageResults] Compose response:', response);
-
-      const generationTime = Date.now() - startTime;
-
-      // Ignore if a newer request has started (before side-effects)
-      if (requestId !== latestRequestId.current) {
-        console.log('[MessageResults] Stale response ignored before tracking (reqId=', requestId, ')');
-        return;
-      }
-
-      // Track successful message generation
-      screenAnalytics.track('Message Generated', {
-        contactId: person.id,
-        goal: goal,
-        goalId: params.goalId || 'custom',
-        channel: channel,
-        tone: selectedTone,
-        messageLength: response.draft[channel]?.body?.length || 0,
-        generationTime: generationTime,
-        hasSubject: 'subject' in (response.draft[channel] || {}),
-        fromAISuggestion: !!params.aiSuggestionGoal,
-        // trial AB metadata
-        trial_gate_strategy: trialGateStrategy,
-        trial_usage_seconds: trialUsageSeconds,
-        trial_usage_seconds_limit: trialUsageSecondsLimit,
-        trial_days_remaining: trialDaysRemaining,
-        is_paid: isPaid,
-      });
-
-      setComposeResponse(response);
-      // Save to local cache to avoid re-fetch on quick remounts
-      LOCAL_COMPOSE_CACHE.set(sessionKey, { ts: Date.now(), data: response });
-
-      const draft = response.draft[channel];
-      if (draft) {
-        if ('subject' in draft) {
-          setEditedSubject(draft.subject || '');
-        }
-        if ('body' in draft) {
-          setEditedBody(draft.body || '');
-        }
-      }
-    } catch (error) {
-      console.error('[MessageResults] Error generating message:', error);
+  const { markAsSent: trackMarkAsSent } = useCopyInference({
+    onSentInferred: (msgId: string) => {
+      updateMessage(msgId, { status: 'sent_inferred' });
       Alert.alert(
-        'Generation Failed',
-        error instanceof Error ? error.message : 'Failed to generate message. Please try again.',
+        'Message Sent?',
+        'It looks like you may have sent this message. Would you like to mark it as sent?',
         [
-          { text: 'Go Back', onPress: () => router.back() },
-          { text: 'Retry', onPress: () => generateMessage() },
+          { text: 'No', style: 'cancel' },
+          { text: 'Yes', onPress: () => handleMarkAsSent(msgId) }
         ]
       );
-    } finally {
-      // Only clear flags if this is the latest request
-      if (requestId === latestRequestId.current) {
-        isGenerating.current = false;
-        setIsLoading(false);
-        console.log('[MessageResults] Generation complete (reqId=', requestId, ')');
-      } else {
-        console.log('[MessageResults] Skipping completion cleanup for stale reqId=', requestId);
-      }
     }
-  }, [person, params.customGoal, params.goalId, channel, selectedTone, templates.voiceContext, router, loadNotesForContext, gated, trialGateStrategy, trialUsageSeconds, trialUsageSecondsLimit, trialDaysRemaining, isPaid, sessionKey]);
+  });
 
-  const initializeMessage = useCallback(() => {
-    console.log('[MessageResults] initializeMessage called');
-    if (gated) {
-      return;
-    }
-    if (params.generatedSubject || params.generatedBody) {
-      setEditedSubject(params.generatedSubject || '');
-      setEditedBody(params.generatedBody || '');
-      
-      const mockResponse: ComposeResponse = {
-        compose_session_id: params.composeSessionId || null,
-        draft: {
-          [channel]: channel === 'email' 
-            ? { subject: params.generatedSubject || '', body: params.generatedBody || '', closing: '' }
-            : { body: params.generatedBody || '' }
-        },
-        sources: {
-          persona_note_ids: [],
-          contact_context: null,
-          template_id: null,
-        },
-        alternatives: [],
-        safety: {
-          pii_flags: [],
-          spam_risk: 'low',
-        },
-      };
-      setComposeResponse(mockResponse);
-    } else {
-      console.log('[MessageResults] Calling generateMessage from initializeMessage');
-      generateMessage();
-    }
-  }, [params.generatedSubject, params.generatedBody, params.composeSessionId, channel, generateMessage, gated]);
-
-  useEffect(() => {
-    const isInitialized = INITIALIZED_SESSIONS.get(sessionKey) || false;
-    console.log('[MessageResults] Initialization useEffect running, initialized for session:', isInitialized);
-    if (isInitialized) {
-      console.log('[MessageResults] Already initialized for this session, skipping');
-      return;
-    }
-    INITIALIZED_SESSIONS.set(sessionKey, true);
+  const handleMarkAsSent = useCallback(async (msgId?: string) => {
+    const finalMessageId = msgId || messageId;
     
-    // Call directly to avoid dependency issues
-    if (gated) {
-      return;
-    }
-    // Serve from local cache if recent
-    const cached = LOCAL_COMPOSE_CACHE.get(sessionKey);
-    if (cached && Date.now() - cached.ts < LOCAL_CACHE_TTL_MS) {
-      console.log('[MessageResults] Using local cache for compose');
-      const response = cached.data;
-      setComposeResponse(response);
-      const draft = response.draft[channel as keyof ComposeResponse['draft']];
-      if (draft && typeof (draft as any).body === 'string') setEditedBody((draft as any).body || '');
-      if (draft && typeof (draft as any).subject === 'string') setEditedSubject((draft as any).subject || '');
-      return;
-    }
-    if (params.generatedSubject || params.generatedBody) {
-      setEditedSubject(params.generatedSubject || '');
-      setEditedBody(params.generatedBody || '');
-      
-      const mockResponse: ComposeResponse = {
-        compose_session_id: params.composeSessionId || null,
-        draft: {
-          [channel]: channel === 'email' 
-            ? { subject: params.generatedSubject || '', body: params.generatedBody || '', closing: '' }
-            : { body: params.generatedBody || '' }
-        },
-        sources: {
-          persona_note_ids: [],
-          contact_context: null,
-          template_id: null,
-        },
-        alternatives: [],
-        safety: {
-          pii_flags: [],
-          spam_risk: 'low',
-        },
-      };
-      setComposeResponse(mockResponse);
-    } else {
-      console.log('[MessageResults] Calling generateMessage from init effect');
-      generateMessage();
-    }
-    
-    // Cleanup: Remove session from map on unmount so subsequent visits can generate
-    return () => {
-      console.log('[MessageResults] Cleaning up, removing session from INITIALIZED_SESSIONS');
-      INITIALIZED_SESSIONS.delete(sessionKey);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty array - only run once on mount
-
-  useEffect(() => {
-    // Don't regenerate on initial mount, only when user actually changes tone
-    const isInitialized = INITIALIZED_SESSIONS.get(sessionKey) || false;
-    if (!isInitialized || !composeResponse) return;
-    if (previousTone.current === selectedTone) return; // No actual change
-    
-    console.log('[MessageResults] Tone changed from', previousTone.current, 'to', selectedTone, '- regenerating');
-    previousTone.current = selectedTone;
-    
-    // Reset for fresh generation
-    isGenerating.current = false;
-    setComposeResponse(null);
-    setEditedSubject('');
-    setEditedBody('');
-    generateMessage();
-  }, [selectedTone]);
-
-  const toggleNoteExpanded = useCallback((id: string) => {
-    setExpandedNoteIds(prev => ({ ...prev, [id]: !prev[id] }));
-  }, []);
-
-  // Lazy-load persona notes when user expands the context section, and dedupe by note IDs
-  useEffect(() => {
-    if (!contextExpanded) return;
-    if (!composeResponse || !person) return;
-    const ids = (composeResponse.sources?.persona_note_ids || []).slice().sort();
-    const last = lastLoadedNoteIds.current.slice().sort();
-    const same = ids.length === last.length && ids.every((v, i) => v === last[i]);
-    if (same || ids.length === 0) return;
-    console.log('[MessageResults] Context expanded, loading notes for:', ids);
-    lastLoadedNoteIds.current = ids;
-    void loadNotesForContext(ids);
-  }, [contextExpanded, composeResponse, person, loadNotesForContext]);
-
-  const formatTs = useCallback((ts: any) => {
     try {
-      const d = typeof ts === 'number' ? new Date(ts) : new Date(ts);
-      if (isNaN(d.getTime())) return '';
-      return d.toLocaleString();
-    } catch {
-      return '';
+      // Update message status in local database
+      updateMessage(finalMessageId, { 
+        status: 'sent_confirmed',
+        updatedAt: Date.now()
+      });
+      
+      // Update person's last interaction data
+      updatePerson(personId, {
+        lastInteraction: new Date().toISOString(),
+        lastInteractionSummary: `Sent ${goal?.name || 'custom'} message via ${selectedChannel}`
+      });
+      
+      // Track the event for analytics
+      trackMarkAsSent(finalMessageId, goalId, personId);
+      
+      console.log('✅ Message marked as sent and databases updated');
+      
+      // Dismiss modal and navigate to dashboard home
+      router.dismiss();
+      router.replace('/(tabs)/home');
+      
+    } catch (error) {
+      console.error('Failed to mark message as sent:', error);
+      Alert.alert('Error', 'Failed to update message status. Please try again.');
     }
-  }, []);
+  }, [messageId, goalId, personId, selectedChannel, goal, updateMessage, updatePerson, trackMarkAsSent, router]);
 
-  const handleRegenerateAll = async () => {
-    console.log('[MessageResults] Regenerate button pressed');
-    if (gated) {
-      return;
+  const generateInitialMessages = useCallback(async () => {
+    if (!person || !goal) return;
+    
+    const startTime = Date.now();
+    
+    try {
+      setIsGenerating(true);
+      
+      if (FLAGS.LOCAL_ONLY) {
+        console.log('🏠 Using local message generation');
+        // Use local message generation service
+        const generatedVariants = await generateMessages(goal, {
+          personId,
+          channel: selectedChannel,
+          contact_first: person.fullName?.split(' ')[0] || '',
+          contact_last: person.fullName?.split(' ').slice(1).join(' ') || '',
+          contact_role: person.title || '',
+          company: person.company || '',
+          recent_notes: person.lastInteractionSummary || '',
+          shared_interests: person.interests?.join(', ') || '',
+          tone: selectedTone,
+          length: 'medium',
+          goal_name: goal.name
+        });
+        
+        setVariants(generatedVariants);
+        const newMessageId = `local-${Date.now()}`;
+        setMessageId(newMessageId);
+        
+        // Save the generated message to the database
+        const messageRecord = {
+          contactId: personId,
+          goalId,
+          contextSnapshot: {
+            goal_name: goal.name,
+            contact_first: person.fullName?.split(' ')[0] || '',
+            contact_last: person.fullName?.split(' ').slice(1).join(' ') || '',
+            contact_role: person.title || '',
+            company: person.company || '',
+            recent_notes: person.lastInteractionSummary || '',
+            shared_interests: person.interests?.join(', ') || '',
+            tone: selectedTone,
+            length: 'medium' as const
+          },
+          variants: generatedVariants,
+          channelSelected: channel,
+          status: 'draft' as const
+        };
+        
+        const savedMessageId = addMessage(messageRecord);
+        setMessageId(savedMessageId);
+      } else {
+        console.log('☁️ Using backend message generation');
+        // Use backend tRPC service
+        const data = await generateMessageMutation.mutateAsync({
+          personId,
+          goalId,
+          channel: selectedChannel,
+          context: {
+            goal_name: goal.name,
+            contact_first: person.fullName?.split(' ')[0] || '',
+            contact_last: person.fullName?.split(' ').slice(1).join(' ') || '',
+            contact_role: person.title || '',
+            company: person.company || '',
+            recent_notes: person.lastInteractionSummary || '',
+            shared_interests: person.interests?.join(', ') || '',
+            tone: selectedTone.charAt(0).toUpperCase() + selectedTone.slice(1) as 'Casual' | 'Professional' | 'Warm' | 'Direct',
+            length: 'medium'
+          },
+        });
+
+        console.log('Raw API response:', data);
+        
+        // Handle different response formats
+        let variants: any[] = [];
+        if (data && Array.isArray(data.variants)) {
+          variants = data.variants;
+        } else if (Array.isArray(data)) {
+          variants = data;
+        } else {
+          console.error('Unexpected API response format:', data);
+          throw new Error('Invalid API response format');
+        }
+
+        const generatedVariants: GeneratedVariant[] = variants.map((variant: any) => {
+          let text = variant.text || variant.message || 'No message generated';
+          let subject = variant.subject;
+          
+          // Add email-specific formatting if email is selected
+          if (selectedChannel === 'email') {
+            if (!subject) {
+              subject = generateEmailSubject(goal.name, person.fullName || '', selectedTone);
+            }
+            text = text + generateEmailClosing(selectedTone);
+          }
+          
+          return {
+            text,
+            subject,
+            edited: variant.edited || false,
+          };
+        });
+
+        setVariants(generatedVariants);
+        const newMessageId = data.id || `temp-${Date.now()}`;
+        setMessageId(newMessageId);
+        
+        // Save the generated message to the database
+        const messageRecord = {
+          contactId: personId,
+          goalId,
+          contextSnapshot: {
+            goal_name: goal.name,
+            contact_first: person.fullName?.split(' ')[0] || '',
+            contact_last: person.fullName?.split(' ').slice(1).join(' ') || '',
+            contact_role: person.title || '',
+            company: person.company || '',
+            recent_notes: person.lastInteractionSummary || '',
+            shared_interests: person.interests?.join(', ') || '',
+            tone: selectedTone,
+            length: 'medium' as const
+          },
+          variants: generatedVariants,
+          channelSelected: channel,
+          status: 'draft' as const
+        };
+        
+        const savedMessageId = addMessage(messageRecord);
+        setMessageId(savedMessageId);
+      }
+      
+      setIsGenerating(false);
+      
+      // Track AI message generation
+      AnalyticsService.trackMessageGenerated({
+        contactId: personId,
+        channel: selectedChannel as any,
+        goal: goalId,
+        tone: selectedTone as any,
+        fromScreenshot: !!screenshotAssetId,
+        fromVoiceNote: false,
+        latencyMs: Date.now() - startTime,
+        tokenCount: variants.reduce((sum, v) => sum + v.text.length, 0) / 4 // rough estimate
+      });
+      
+    } catch (error) {
+      console.error('Generation failed:', error);
+      setIsGenerating(false);
+      Alert.alert('Error', 'Failed to generate messages. Please try again.');
     }
     
-    // Track regeneration
-    screenAnalytics.track('message_regenerated', {
-      contactId: person?.id,
-      goal: params.customGoal || params.goalId,
-      channel: channel,
-      previousLength: editedBody.length,
-      // trial AB metadata
-      trial_gate_strategy: trialGateStrategy,
-      trial_usage_seconds: trialUsageSeconds,
-      trial_usage_seconds_limit: trialUsageSecondsLimit,
-      trial_days_remaining: trialDaysRemaining,
-      is_paid: isPaid,
+  }, [person, goal, goalId, personId, channel, selectedChannel, selectedTone, generateMessageMutation, addMessage, variants.length]);
+
+  // Guard: only generate once per unique combination of inputs.
+  const genKey = useMemo(
+    () => JSON.stringify({ personId, goalId, channel, selectedTone, additionalContext }),
+    [personId, goalId, channel, selectedTone, additionalContext]
+  );
+  const lastGenKeyRef = useRef<string | null>(null);
+  const isMountedRef = useRef(true);
+  const hasGeneratedRef = useRef(false);
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (person && goal && !hasGeneratedRef.current && isMountedRef.current) {
+      hasGeneratedRef.current = true;
+      generateInitialMessages();
+    }
+    // Only generate on initial load, not on tone changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [person?.id, goal?.id]);
+
+
+
+  const regenerateAll = async () => {
+    hasGeneratedRef.current = false; // Allow regeneration
+    await generateInitialMessages();
+  };
+
+  const regenerateForTone = async () => {
+    if (!person || !goal || isGenerating) return;
+    hasGeneratedRef.current = false; // Allow regeneration
+    await generateInitialMessages();
+  };
+
+  // Regenerate when tone or channel changes
+  useEffect(() => {
+    if (variants.length > 0) {
+      regenerateForTone();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTone, selectedChannel]);
+
+  const regenerateOne = async (index: number) => {
+    if (!person || !goal) return;
+    
+    try {
+      setIsGenerating(true);
+      
+      if (FLAGS.LOCAL_ONLY) {
+        console.log('🏠 Using local message regeneration');
+        // Use local message generation service
+        const generatedVariants = await generateMessages(goal, {
+          personId,
+          channel: selectedChannel,
+          contact_first: person.fullName?.split(' ')[0] || '',
+          contact_last: person.fullName?.split(' ').slice(1).join(' ') || '',
+          contact_role: person.title || '',
+          company: person.company || '',
+          recent_notes: person.lastInteractionSummary || '',
+          shared_interests: person.interests?.join(', ') || '',
+          tone: selectedTone,
+          length: 'medium',
+          goal_name: goal.name
+        });
+        
+        const updatedVariants = [...variants];
+        updatedVariants[index] = generatedVariants[0]; // Use first variant as replacement
+        
+        setVariants(updatedVariants);
+        if (updateMessage) {
+          updateMessage(messageId, { variants: updatedVariants });
+        }
+      } else {
+        console.log('☁️ Using backend message regeneration');
+        // Use backend tRPC service
+        const data = await generateMessageMutation.mutateAsync({
+          personId,
+          goalId,
+          channel: selectedChannel,
+          context: {
+            goal_name: goal.name,
+            contact_first: person.fullName?.split(' ')[0] || '',
+            contact_last: person.fullName?.split(' ').slice(1).join(' ') || '',
+            contact_role: person.title || '',
+            company: person.company || '',
+            recent_notes: person.lastInteractionSummary || '',
+            shared_interests: person.interests?.join(', ') || '',
+            tone: selectedTone.charAt(0).toUpperCase() + selectedTone.slice(1) as 'Casual' | 'Professional' | 'Warm' | 'Direct',
+            length: 'medium'
+          },
+        });
+
+        console.log('Raw regeneration response:', data);
+        
+        // Handle different response formats
+        let variants: any[] = [];
+        if (data && Array.isArray(data.variants)) {
+          variants = data.variants;
+        } else if (Array.isArray(data)) {
+          variants = data;
+        } else {
+          console.error('Unexpected regeneration response format:', data);
+          throw new Error('Invalid regeneration response format');
+        }
+
+        const newVariants: GeneratedVariant[] = variants.map((variant: any) => {
+          let text = variant.text || variant.message || 'No message generated';
+          let subject = variant.subject;
+          
+          // Add email-specific formatting if email is selected
+          if (selectedChannel === 'email') {
+            if (!subject) {
+              subject = generateEmailSubject(goal.name, person.fullName || '', selectedTone);
+            }
+            text = text + generateEmailClosing(selectedTone);
+          }
+          
+          return {
+            text,
+            subject,
+            edited: variant.edited || false,
+          };
+        });
+
+        const updatedVariants = [...variants];
+        updatedVariants[index] = newVariants[0]; // Use first variant as replacement
+        
+        setVariants(updatedVariants);
+        if (updateMessage) {
+          updateMessage(messageId, { variants: updatedVariants });
+        }
+      }
+      
+      setIsGenerating(false);
+      
+    } catch (error) {
+      console.error('Regeneration failed:', error);
+      setIsGenerating(false);
+      Alert.alert('Error', 'Failed to regenerate message.');
+    }
+  };
+
+  const handleCopy = async (variant: GeneratedVariant, index: number) => {
+    const fullText = variant.subject ? `${variant.subject}\n\n${variant.text}` : variant.text;
+    
+    try {
+      await Clipboard.setStringAsync(fullText);
+      
+      updateMessage(messageId, { status: 'copied', chosenIndex: index });
+      updatePerson(personId, {
+        lastSuggestCopyAt: new Date().toISOString(),
+        lastInteraction: new Date().toISOString(),
+        lastInteractionSummary: `Copied ${goal?.name || 'custom'} message`
+      });
+      
+      // Track message copy (implicit acceptance)
+      AnalyticsService.trackAiMessageAccepted({
+        messageId,
+        contactId: personId,
+        method: 'copy'
+      });
+      
+      Alert.alert('Copied!', 'Message copied to clipboard');
+    } catch (error) {
+      console.error('Copy failed:', error);
+      Alert.alert('Error', 'Failed to copy message to clipboard');
+    }
+  };
+
+  const handleSend = async (variant: GeneratedVariant, index: number) => {
+    if (!person) return;
+    
+    const fullText = variant.subject ? `${variant.subject}\n\n${variant.text}` : variant.text;
+    
+    try {
+      let intent: 'mailto' | 'sms' | 'share' = 'share';
+      
+      if (selectedChannel === 'sms' && person.phones?.[0]) {
+        intent = 'sms';
+        await Linking.openURL(`sms:${person.phones[0]}&body=${encodeURIComponent(variant.text)}`);
+      } else if (selectedChannel === 'email' && person.emails?.[0]) {
+        intent = 'mailto';
+        const subject = variant.subject || 'Following up';
+        await Linking.openURL(`mailto:${person.emails[0]}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(variant.text)}`);
+      } else {
+        intent = 'share';
+        await Share.share({ message: fullText });
+      }
+      
+      // Track message sent
+      AnalyticsService.trackMessageSent({
+        messageId,
+        contactId: personId,
+        channel: selectedChannel as any,
+        wasAiGenerated: true,
+        wasEdited: variant.edited || false
+      });
+      
+      updateMessage(messageId, { status: 'sent_confirmed', chosenIndex: index });
+      updatePerson(personId, {
+        lastInteraction: new Date().toISOString(),
+        lastInteractionSummary: `Sent ${goal?.name || 'custom'} message via ${selectedChannel}`
+      });
+      
+    } catch (error) {
+      console.error('Send failed:', error);
+      Alert.alert('Error', 'Failed to open messaging app');
+    }
+  };
+
+  const startEditing = (index: number, text: string) => {
+    setEditingIndex(index);
+    setTempText(text);
+  };
+
+  const saveEdit = () => {
+    if (editingIndex === null) return;
+    
+    const updatedVariants = [...variants];
+    updatedVariants[editingIndex] = {
+      ...updatedVariants[editingIndex],
+      text: tempText,
+      edited: true
+    };
+    
+    setVariants(updatedVariants);
+    updateMessage(messageId, { variants: updatedVariants });
+    
+    // Track message edited
+    AnalyticsService.trackAiMessageEdited({
+      messageId,
+      contactId: personId,
+      editType: 'text',
+      charsDelta: tempText.length - updatedVariants[editingIndex].text.length
     });
     
-    // Reset state for fresh generation
-    latestRequestId.current++; // invalidate any previous in-flight results
-    isGenerating.current = false; // Allow new generation
-    lastGeneration.current = { key: '', ts: 0 }; // reset throttle
-    setComposeResponse(null);
-    setEditedSubject('');
-    setEditedBody('');
-    await generateMessage();
+    setEditingIndex(null);
+    setTempText('');
   };
 
-  const handleMarkAsSent = async () => {
-    if (!person || !composeResponse || isSaving) return;
+  const cancelEdit = () => {
+    setEditingIndex(null);
+    setTempText('');
+  };
 
-    setIsSaving(true);
-    console.log('[MessageResults] Starting to save message (optimistic navigation)...');
-
-    try {
-      const draft = composeResponse.draft[channel];
-      if (!draft) {
-        throw new Error('No draft available');
-      }
-
-      const variant = {
-        text: editedBody,
-        subject: 'subject' in draft ? editedSubject : undefined,
-        edited: editedBody !== ('body' in draft ? draft.body : '') || 
-                (channel === 'email' && editedSubject !== ('subject' in draft ? draft.subject : '')),
-      };
-
-      // Show loading state for 500ms to give user feedback
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Web: show in-app confirmation (not OS notification) with action to go back
-      if (Platform.OS === 'web') {
-        setWebSuccessOpen(true);
-        setIsSaving(false);
-      } else {
-        // Native: keep Alert flow
-        Alert.alert(
-          'Message Sent! 🎉',
-          `Great! Your message to ${person.fullName} has been recorded. Keep up the great communication!`,
-          [{ 
-            text: 'Back to Dashboard', 
-            onPress: () => {
-              try { router.dismissAll(); } catch (e) { console.log('[MessageResults] dismissAll not available, using navigate'); }
-              router.navigate('/(tabs)/home' as any);
-            }
-          }],
-          { cancelable: false }
-        );
-        // Reset saving state after navigation
-        setIsSaving(false);
-      }
-
-      // Persist locally in the background (non-blocking)
-      void (async () => {
-        try {
-          await addMessage({
-            contactId: person.id,
-            goalId: params.goalId || 'custom',
-            contextSnapshot: {
-              goal: params.customGoal || params.goalId,
-              channel,
-              tone: params.tone || 'casual',
-              composeSessionId: composeResponse.compose_session_id,
-            },
-            variants: [variant],
-            chosenIndex: 0,
-            channelSelected: channel,
-            status: 'sent_confirmed' as const,
-          });
-          console.log('[MessageResults] Message persisted in background');
-        } catch (persistError) {
-          console.error('[MessageResults] Failed to persist message (background):', persistError);
-        }
-      })();
-
-      // Track and run backend side-effects in the background
-      screenAnalytics.track('Message Sent', {
-        contactId: person.id,
-        goal: params.customGoal || params.goalId,
-        goalId: params.goalId || 'custom',
-        channel: channel,
-        messageLength: variant.text.length,
-        wasEdited: variant.edited,
-        method: 'mark_as_sent',
-      });
-
-      void (async () => {
-        try {
-          const interactionResponse = await apiFetch('/api/v1/interactions', {
-            method: 'POST',
-            requireAuth: true,
-            body: JSON.stringify({
-              contact_id: person.id,
-              kind: channel === 'sms' ? 'sms' : channel === 'email' ? 'email' : 'dm',
-              channel: channel,
-              direction: 'outbound',
-              content: variant.text,
-              occurred_at: new Date().toISOString(),
-            }),
-          });
-          if (!interactionResponse.ok) {
-            console.warn('[MessageResults] Failed to create interaction:', interactionResponse.status);
-          }
-        } catch (interactionError) {
-          console.error('[MessageResults] Error creating interaction (background):', interactionError);
-        }
-
-        try {
-          const warmthResponse = await apiFetch(
-            `/api/v1/contacts/${person.id}/warmth/recompute`,
-            {
-              method: 'POST',
-              requireAuth: true,
-            }
-          );
-          if (warmthResponse.ok) {
-            await refreshWarmth(person.id);
-          } else {
-            console.warn('[MessageResults] Warmth recalculation failed:', warmthResponse.status);
-          }
-        } catch (warmthError) {
-          console.error('[MessageResults] Error recalculating warmth (background):', warmthError);
-        }
-      })();
-    } catch (error) {
-      console.error('[MessageResults] Error preparing navigation:', error);
-      try { setIsSaving(false); } catch {}
-      // Navigate anyway to preserve flow
-      const qp = new URLSearchParams({
-        personId: person?.id || '',
-        personName: person?.fullName || 'Contact',
-      }).toString();
-      go.replaceTo(`/message-sent-success?${qp}`);
+  const getChannelIcon = (ch: Channel) => {
+    switch (ch) {
+      case 'sms': return MessageSquare;
+      case 'email': return Mail;
+      case 'dm': return AtSign;
+      default: return MessageSquare;
     }
   };
 
-  const handleCopy = useCallback(async () => {
-    try {
-      const text = channel === 'email'
-        ? (editedSubject ? editedSubject + '\n\n' : '') + editedBody
-        : editedBody;
-      console.log('[MessageResults] Copying to clipboard. Length:', text.length);
-      await Clipboard.setStringAsync(text);
-      
-      // Track copy action
-      screenAnalytics.track('message_copied', {
-        contactId: person?.id,
-        goal: params.customGoal || params.goalId,
-        channel: channel,
-        messageLength: text.length,
-      });
-      
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    } catch (e) {
-      console.error('[MessageResults] Copy failed:', e);
-      analytics.errors.occurred(e as Error, 'MessageResults');
-      Alert.alert('Copy failed', 'Unable to copy message. Please try again.');
+  const getChannelLabel = (ch: Channel) => {
+    switch (ch) {
+      case 'sms': return 'SMS';
+      case 'email': return 'Email';
+      case 'dm': return 'DM';
+      default: return 'SMS';
     }
-  }, [channel, editedSubject, editedBody, person, params, screenAnalytics]);
+  };
 
-  const handleSendViaNative = useCallback(async () => {
-    if (!person) return;
-
-    try {
-      if (channel === 'sms') {
-        const phoneNumber = person.phones?.[0];
-        if (!phoneNumber) {
-          Alert.alert('No Phone Number', 'This contact does not have a phone number.');
-          return;
-        }
-
-        console.log('[MessageResults] Opening SMS with phone:', phoneNumber);
-        const isAvailable = await SMS.isAvailableAsync();
-        
-        if (isAvailable) {
-          await SMS.sendSMSAsync([phoneNumber], editedBody);
-        } else {
-          Alert.alert('SMS Not Available', 'SMS is not available on this device.');
-        }
-      } else if (channel === 'email') {
-        const email = person.emails?.[0];
-        if (!email) {
-          Alert.alert('No Email', 'This contact does not have an email address.');
-          return;
-        }
-
-        console.log('[MessageResults] Opening email client for:', email);
-        const emailUrl = `mailto:${email}?subject=${encodeURIComponent(editedSubject)}&body=${encodeURIComponent(editedBody)}`;
-        const canOpen = await Linking.canOpenURL(emailUrl);
-        
-        if (canOpen) {
-          await Linking.openURL(emailUrl);
-        } else {
-          Alert.alert('Email Not Available', 'Unable to open email client.');
-        }
-      } else {
-        await Clipboard.setStringAsync(editedBody);
-        Alert.alert(
-          'Message Copied',
-          'The message has been copied to your clipboard. You can paste it in your preferred messaging app.',
-          [{ text: 'OK' }]
-        );
-      }
-    } catch (error) {
-      console.error('[MessageResults] Error opening native app:', error);
-      Alert.alert('Error', 'Failed to open native app. The message has been copied to your clipboard.');
-      await Clipboard.setStringAsync(editedBody);
+  const generateEmailClosing = (tone: ToneStyle): string => {
+    switch (tone) {
+      case 'professional':
+        return '\n\nBest regards,\n[Your name]';
+      case 'warm':
+        return '\n\nWarm regards,\n[Your name]';
+      case 'casual':
+        return '\n\nThanks,\n[Your name]';
+      case 'direct':
+        return '\n\nBest,\n[Your name]';
+      default:
+        return '\n\nBest,\n[Your name]';
     }
-  }, [person, channel, editedBody, editedSubject]);
+  };
 
-  const styles = createStyles(theme);
+  const generateEmailSubject = (goalName: string, contactName: string, tone: ToneStyle): string => {
+    const firstName = contactName.split(' ')[0];
+    
+    switch (tone) {
+      case 'professional':
+        return `Following up - ${firstName}`;
+      case 'warm':
+        return `Hope you're doing well, ${firstName}!`;
+      case 'casual':
+        return `Hey ${firstName}!`;
+      case 'direct':
+        return `Quick follow-up`;
+      default:
+        return `Following up - ${firstName}`;
+    }
+  };
 
-  // Show loading while people are being fetched
-  if (isPeopleLoading) {
+  if (!person || !goal) {
     return (
-      <View style={styles.container}>
-        <Stack.Screen 
-          options={{
-            headerShown: true,
-            headerTitle: 'Generated Messages',
-            headerLeft: () => (
-              <TouchableOpacity
-                onPress={() => router.back()}
-                style={{ paddingLeft: 16 }}
-              >
-                <ArrowLeft size={24} color={theme.colors.text} />
-              </TouchableOpacity>
-            ),
-          }}
-        />
-        <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
-          <Text style={styles.loadingText}>Loading contact...</Text>
-          {/* Bottom Navigation removed on this screen */}
-    </View>
-      </View>
-    );
-  }
-
-  // Show error if contact not found after people loaded
-  if (!person) {
-    return (
-      <View style={styles.container}>
-        <Stack.Screen 
-          options={{
-            headerShown: true,
-            headerTitle: 'Generated Messages',
-            headerLeft: () => (
-              <TouchableOpacity
-                onPress={() => router.back()}
-                style={{ paddingLeft: 16 }}
-              >
-                <ArrowLeft size={24} color={theme.colors.text} />
-              </TouchableOpacity>
-            ),
-          }}
-        />
-        <View style={styles.centerContainer}>
-          <Text style={styles.errorText}>Contact not found</Text>
-          <Text style={styles.errorSubtext}>
-            Contact ID: {params.personId}
-          </Text>
-          <TouchableOpacity style={styles.button} onPress={() => router.back()}>
-            <Text style={styles.buttonText}>Go Back</Text>
-          </TouchableOpacity>
-        </View>
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        <Text>Error: Missing person or goal data</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container} testID="messageResultsRoot">
-      <Stack.Screen 
-        options={{
-          headerShown: true,
-          headerTitle: 'Generated Messages',
-          headerLeft: () => (
+    <View style={styles.container}>
+      {/* Context Info */}
+      <View style={styles.contextInfo}>
+        <Text style={styles.contextSubtitle}>{person.fullName}</Text>
+      </View>
+      
+      {/* Channel Selector */}
+      <View style={styles.channelSelector}>
+        {(['email', 'sms', 'dm'] as Channel[]).map(ch => {
+          const IconComponent = getChannelIcon(ch);
+          return (
             <TouchableOpacity
-              onPress={() => router.back()}
-              style={{ paddingLeft: 16 }}
+              key={ch}
+              style={[styles.channelChip, selectedChannel === ch && styles.channelChipSelected]}
+              onPress={() => setSelectedChannel(ch)}
             >
-              <ArrowLeft size={24} color={theme.colors.text} />
+              <IconComponent 
+                size={16} 
+                color={selectedChannel === ch ? '#FFFFFF' : '#666666'} 
+              />
+              <Text style={[styles.channelText, selectedChannel === ch && styles.channelTextSelected]}>
+                {getChannelLabel(ch)}
+              </Text>
             </TouchableOpacity>
-          ),
-        }}
-      />
+          );
+        })}
+      </View>
 
-      {webSuccessOpen && (
-        <View style={styles.webSuccessOverlay}>
-          <View style={styles.webSuccessCard}>
-            <Text style={styles.webSuccessTitle}>Message Sent! 🎉</Text>
-            <Text style={styles.webSuccessText}>Your message to {person.fullName} has been recorded.</Text>
-            <TouchableOpacity
-              style={styles.webSuccessPrimary}
-              onPress={() => {
-                try { router.dismissAll(); } catch (e) {}
-                router.navigate('/(tabs)/home' as any);
-                setWebSuccessOpen(false);
-              }}
-            >
-              <Text style={styles.webSuccessPrimaryText}>Back to Dashboard</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
+      {/* Tone Selector */}
+      <View style={styles.toneSelector}>
+        {(['casual', 'professional', 'warm', 'direct'] as ToneStyle[]).map(tone => (
+          <TouchableOpacity
+            key={tone}
+            style={[styles.toneChip, selectedTone === tone && styles.toneChipSelected]}
+            onPress={() => setSelectedTone(tone)}
+          >
+            <Text style={[styles.toneText, selectedTone === tone && styles.toneTextSelected]}>
+              {tone}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
 
-      {isLoading ? (
-        <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
-          <Text style={styles.loadingText}>Generating your message...</Text>
-        </View>
-      ) : composeResponse ? (
-        <ScrollView 
-          style={styles.content} 
-          contentContainerStyle={styles.contentContainer}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Header Info */}
-          <View style={styles.header}>
-            <Text style={styles.headerTitle}>Message for {person.fullName}</Text>
-          </View>
-
-          {/* Channel Selection */}
-          <View style={styles.optionsSection}>
-            <View style={styles.channelRow}>
-              <TouchableOpacity
-                accessibilityRole="tab"
-                accessibilityState={{ selected: selectedChannel === 'email' }}
-                accessibilityLabel={`Channel Email${selectedChannel === 'email' ? ' selected' : ''}`}
-                style={[
-                  styles.channelButton,
-                  selectedChannel === 'email' && styles.channelButtonSelected,
-                ]}
-                onPress={() => {
-                  console.log('[MessageResults] Channel changed to email');
-                  setSelectedChannel('email');
-                }}
-              >
-                <Mail size={18} color={selectedChannel === 'email' ? theme.colors.surface : theme.colors.textSecondary} />
-                <Text style={[
-                  styles.channelButtonText,
-                  selectedChannel === 'email' && styles.channelButtonTextSelected,
-                ]}>Email</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                accessibilityRole="tab"
-                accessibilityState={{ selected: selectedChannel === 'sms' }}
-                accessibilityLabel={`Channel SMS${selectedChannel === 'sms' ? ' selected' : ''}`}
-                style={[
-                  styles.channelButton,
-                  selectedChannel === 'sms' && styles.channelButtonSelected,
-                ]}
-                onPress={() => {
-                  console.log('[MessageResults] Channel changed to sms');
-                  setSelectedChannel('sms');
-                }}
-              >
-                <MessageSquare size={18} color={selectedChannel === 'sms' ? theme.colors.surface : theme.colors.textSecondary} />
-                <Text style={[
-                  styles.channelButtonText,
-                  selectedChannel === 'sms' && styles.channelButtonTextSelected,
-                ]}>SMS</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                accessibilityRole="tab"
-                accessibilityState={{ selected: selectedChannel === 'dm' }}
-                accessibilityLabel={`Channel DM${selectedChannel === 'dm' ? ' selected' : ''}`}
-                style={[
-                  styles.channelButton,
-                  selectedChannel === 'dm' && styles.channelButtonSelected,
-                ]}
-                onPress={() => {
-                  console.log('[MessageResults] Channel changed to dm');
-                  setSelectedChannel('dm');
-                }}
-              >
-                <MessageSquare size={18} color={selectedChannel === 'dm' ? theme.colors.surface : theme.colors.textSecondary} />
-                <Text style={[
-                  styles.channelButtonText,
-                  selectedChannel === 'dm' && styles.channelButtonTextSelected,
-                ]}>DM</Text>
-              </TouchableOpacity>
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {isGenerating ? (
+          <View style={styles.loadingContainer}>
+            <View style={styles.loadingIcon}>
+              <Sparkles size={32} color="#4ECDC4" />
             </View>
+            <Text style={styles.loadingText}>Crafting your messages...</Text>
+            <Text style={styles.loadingSubtext}>Using AI to personalize for {person.fullName}</Text>
           </View>
-
-          {/* Message Preview */}
-          <View style={styles.messageCard}>
-            {/* Toolbar: Edit | Copy */}
-            <View style={styles.cardToolbar}>
-              <TouchableOpacity
-                onPress={() => setIsEditing(!isEditing)}
-                style={styles.toolbarButton}
-                testID="editMessageButton"
-                accessibilityLabel={isEditing ? 'Done editing message' : 'Edit message'}
-              >
-                <Text style={styles.toolbarButtonText}>{isEditing ? 'Done' : 'Edit'}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={handleCopy}
-                style={styles.toolbarButton}
-                testID="copyMessageButton"
-                accessibilityLabel="Copy message to clipboard"
-              >
-                <Copy size={16} color={theme.colors.textSecondary} />
-                <Text style={styles.toolbarButtonText}>{copied ? 'Copied' : 'Copy'}</Text>
-              </TouchableOpacity>
-            </View>
-
-            {channel === 'email' && (
-              <View style={styles.subjectContainer}>
-                <Text style={styles.fieldLabel}>Subject</Text>
-                {isEditing ? (
-                  <TextInput
-                    style={styles.subjectInput}
-                    value={editedSubject}
-                    onChangeText={setEditedSubject}
-                    placeholder="Email subject"
-                    placeholderTextColor={theme.colors.textSecondary}
-                  />
-                ) : (
-                  <Text style={styles.subjectText}>{editedSubject}</Text>
-                )}
-              </View>
-            )}
-
-            <View style={styles.bodyContainer}>
-              <Text style={styles.fieldLabel}>Message</Text>
-              {isEditing ? (
-                <TextInput
-                  style={styles.bodyInput}
-                  value={editedBody}
-                  onChangeText={setEditedBody}
-                  placeholder="Message body"
-                  placeholderTextColor={theme.colors.textSecondary}
-                  multiline
-                  textAlignVertical="top"
-                />
-              ) : (
-                <Text style={styles.bodyText}>{editedBody}</Text>
-              )}
-            </View>
-          </View>
-
-          {/* Context Info (collapsed by default) */}
-          {composeResponse.sources.contact_context && (
-            <View style={styles.contextCard}>
-              <TouchableOpacity
-                style={styles.contextHeader}
-                onPress={() => setContextExpanded(!contextExpanded)}
-                accessibilityRole="button"
-                accessibilityLabel="Toggle context details"
-              >
-                <Text style={styles.contextTitle}>Context used</Text>
-                {contextExpanded ? (
-                  <ChevronDown size={16} color={theme.colors.textSecondary} />
-                ) : (
-                  <ChevronRight size={16} color={theme.colors.textSecondary} />
-                )}
-              </TouchableOpacity>
-
-              {contextExpanded && (
-                <>
-                  <Text style={styles.contextText}>
-                    Warmth: {composeResponse.sources.contact_context.warmth}/100
-                  </Text>
-                  {composeResponse.sources.persona_note_ids.length > 0 && (
-                    <View>
-                      <Text style={styles.contextText}>
-                        {composeResponse.sources.persona_note_ids.length} note(s) referenced
-                      </Text>
-                      {isLoadingNotes ? (
-                        <ActivityIndicator size="small" color={theme.colors.primary} style={{ marginTop: 8 }} />
-                      ) : (
-                        <View style={styles.notesContainer}>
-                          {voiceNotes.length > 0 && (
-                            <View style={styles.noteSection}>
-                              <Text style={styles.noteSectionTitle}>Voice Notes ({voiceNotes.length})</Text>
-                              {voiceNotes.map((note) => (
-                                <TouchableOpacity key={note.id} style={styles.noteItem} onPress={() => toggleNoteExpanded(note.id)}>
-                                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <Text style={styles.noteText} numberOfLines={expandedNoteIds[note.id] ? 0 : 2}>
-                                      {note.transcription || 'Processing...'}
-                                    </Text>
-                                    {expandedNoteIds[note.id] ? (
-                                      <ChevronDown size={16} color={theme.colors.textSecondary} />
-                                    ) : (
-                                      <ChevronRight size={16} color={theme.colors.textSecondary} />
-                                    )}
-                                  </View>
-                                  {expandedNoteIds[note.id] && (
-                                    <Text style={[styles.noteText, { marginTop: 6 }]}>
-                                      {formatTs((note as any).createdAt)}
-                                    </Text>
-                                  )}
-                                </TouchableOpacity>
-                              ))}
-                            </View>
-                          )}
-                          {textNotes.length > 0 && (
-                            <View style={styles.noteSection}>
-                              <Text style={styles.noteSectionTitle}>Text Notes ({textNotes.length})</Text>
-                              {textNotes.map((note) => (
-                                <TouchableOpacity key={note.id} style={styles.noteItem} onPress={() => toggleNoteExpanded(note.id)}>
-                                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <Text style={styles.noteText} numberOfLines={expandedNoteIds[note.id] ? 0 : 2}>
-                                      {note.content}
-                                    </Text>
-                                    {expandedNoteIds[note.id] ? (
-                                      <ChevronDown size={16} color={theme.colors.textSecondary} />
-                                    ) : (
-                                      <ChevronRight size={16} color={theme.colors.textSecondary} />
-                                    )}
-                                  </View>
-                                  {expandedNoteIds[note.id] && (
-                                    <Text style={[styles.noteText, { marginTop: 6 }]}>
-                                      {formatTs((note as any).createdAt)}
-                                    </Text>
-                                  )}
-                                </TouchableOpacity>
-                              ))}
-                            </View>
-                          )}
+        ) : (
+          <>
+            {variants.map((variant, index) => (
+              <View key={index} style={styles.messageCard}>
+                <View style={styles.messageContent}>
+                  <TouchableOpacity
+                    style={styles.copyIconButton}
+                    onPress={() => handleCopy(variant, index)}
+                  >
+                    <Copy size={20} color="#4ECDC4" />
+                  </TouchableOpacity>
+                  
+                  <View style={styles.messageTextContainer}>
+                    <View style={styles.messageHeader}>
+                      <View style={styles.variantBadge}>
+                        <Text style={styles.variantBadgeText}>Option {index + 1}</Text>
+                      </View>
+                      {variant.edited && (
+                        <View style={styles.editedBadge}>
+                          <Edit3 size={12} color="#4ECDC4" />
+                          <Text style={styles.editedBadgeText}>Edited</Text>
                         </View>
                       )}
                     </View>
-                  )}
-                </>
-              )}
-            </View>
-          )}
+                    
+                    {selectedChannel === 'email' && variant.subject && (
+                      <View style={styles.subjectContainer}>
+                        <Text style={styles.subjectLabel}>Subject:</Text>
+                        <Text style={styles.messageSubject}>{variant.subject}</Text>
+                      </View>
+                    )}
+                    
+                    {editingIndex === index ? (
+                      <View style={styles.editContainer}>
+                        <TextInput
+                          style={styles.editInput}
+                          value={tempText}
+                          onChangeText={setTempText}
+                          multiline
+                          autoFocus
+                          placeholder="Edit your message..."
+                        />
+                        <View style={styles.editActions}>
+                          <TouchableOpacity onPress={cancelEdit} style={styles.cancelButton}>
+                            <Text style={styles.cancelButtonText}>Cancel</Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity onPress={saveEdit} style={styles.saveButton}>
+                            <Check size={16} color="#FFFFFF" />
+                            <Text style={styles.saveButtonText}>Save</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    ) : (
+                      <View style={styles.messageBodyContainer}>
+                        <Text style={styles.messageBody}>{variant.text}</Text>
+                      </View>
+                    )}
+                    
+                    <View style={styles.messageActions}>
+                      <TouchableOpacity
+                        style={styles.actionButton}
+                        onPress={() => startEditing(index, variant.text)}
+                      >
+                        <Edit3 size={16} color="#666666" />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.actionButton}
+                        onPress={() => regenerateOne(index)}
+                      >
+                        <Wand2 size={16} color="#666666" />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.sendButton}
+                        onPress={() => handleSend(variant, index)}
+                      >
+                        <Send size={16} color="#FFFFFF" />
+                        <Text style={styles.sendButtonText}>Send</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </View>
+              </View>
+            ))}
+          </>
+        )}
+      </ScrollView>
 
-        </ScrollView>
-      ) : (
-        <View style={styles.centerContainer}>
-          <Text style={styles.emptyText}>No messages generated yet</Text>
-        </View>
-      )}
-
-      {/* Action Buttons */}
-      {!isLoading && composeResponse && (
-        <>
-          <View style={styles.footer}>
-            <TouchableOpacity
-              style={styles.regenerateButton}
-              onPress={handleRegenerateAll}
-              disabled={isLoading}
-              testID="regenerateButton"
-            >
-              <RefreshCw size={20} color={theme.colors.primary} />
-              <Text style={styles.regenerateButtonText}>{isLoading ? 'Regenerating…' : 'Regenerate'}</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.sendButton}
-              onPress={handleSendViaNative}
-              testID="sendButtonPrimary"
-            >
-              <Send size={20} color={theme.colors.surface} />
-              <Text style={styles.sendButtonText}>
-                {channel === 'sms' ? 'Send SMS' : channel === 'email' ? 'Send Email' : 'Copy & Send'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Prominent Mark as Sent Button */}
-          <TouchableOpacity
-            onPress={handleMarkAsSent}
-            disabled={isSaving}
-            style={[styles.markAsSentButton, isSaving && styles.markAsSentButtonDisabled]}
-            testID="markAsSentButton"
-            accessibilityRole="button"
-            accessibilityLabel="Mark this message as sent"
-          >
-            {isSaving ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : (
-              <>
-                <Check size={24} color="#FFFFFF" strokeWidth={3} />
-                <Text style={styles.markAsSentButtonText}>Mark as Sent</Text>
-              </>
-            )}
-          </TouchableOpacity>
-        </>
-      )}
-
-      {/* Bottom Navigation intentionally omitted on this screen */}
+      {/* Bottom Actions */}
+      <View style={styles.bottomActions}>
+        <TouchableOpacity
+          style={[styles.regenerateAllButton, isGenerating && styles.buttonDisabled]}
+          onPress={regenerateAll}
+          disabled={isGenerating}
+        >
+          <Wand2 size={18} color={isGenerating ? '#999999' : '#4ECDC4'} />
+          <Text style={[styles.regenerateAllText, isGenerating && styles.buttonTextDisabled]}>
+            {isGenerating ? 'Generating...' : 'Regenerate All'}
+          </Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          style={styles.markSentButton}
+          onPress={() => handleMarkAsSent()}
+        >
+          <Check size={16} color="#FFFFFF" />
+          <Text style={styles.markSentText}>Mark as Sent</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
 
-const createStyles = (theme: Theme) => StyleSheet.create({
+const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
-  },
-  webSuccessOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 1000,
-  },
-  webSuccessCard: {
-    width: '90%',
-    maxWidth: 520,
-    backgroundColor: theme.colors.surface,
-    borderRadius: 12,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  webSuccessTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: theme.colors.text,
-    marginBottom: 8,
-  },
-  webSuccessText: {
-    fontSize: 14,
-    color: theme.colors.textSecondary,
-    marginBottom: 16,
-  },
-  webSuccessActions: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  webSuccessPrimary: {
-    flex: 1,
-    backgroundColor: '#10B981',
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  webSuccessPrimaryText: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
-  webSuccessSecondary: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  webSuccessSecondaryText: {
-    color: theme.colors.text,
-    fontWeight: '600',
+    backgroundColor: '#F8F9FA',
   },
 
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
+  contextInfo: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#E5E5E5',
     alignItems: 'center',
-    padding: 20,
   },
-  headerButton: {
-    padding: 8,
+  contextSubtitle: {
+    fontSize: 14,
+    color: '#666666',
+  },
+  channelSelector: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#E5E5E5',
+    gap: 8,
+    justifyContent: 'center',
+  },
+  channelChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#F0F0F0',
+    gap: 6,
+  },
+  channelChipSelected: {
+    backgroundColor: '#000000',
+  },
+  channelText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#666666',
+  },
+  channelTextSelected: {
+    color: '#FFFFFF',
+  },
+  toneSelector: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#E5E5E5',
+    gap: 8,
+  },
+  toneChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: '#F0F0F0',
+  },
+  toneChipSelected: {
+    backgroundColor: '#000000',
+  },
+  toneText: {
+    fontSize: 14,
+    color: '#666666',
+    textTransform: 'capitalize',
+  },
+  toneTextSelected: {
+    color: '#FFFFFF',
   },
   content: {
     flex: 1,
-  },
-  contentContainer: {
-    paddingBottom: 100,
-  },
-  header: {
-    padding: 16,
-    paddingBottom: 12,
-    backgroundColor: theme.colors.surface,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: theme.colors.text,
-    textAlign: 'center',
-  },
-  optionsSection: {
-    padding: 16,
+    paddingHorizontal: 16,
     paddingTop: 8,
-    backgroundColor: theme.colors.surface,
-    borderBottomWidth: 0.5,
-    borderBottomColor: theme.colors.border,
-    gap: 12,
   },
-  channelRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  channelButton: {
-    flex: 1,
-    flexDirection: 'row',
+  loadingContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    backgroundColor: theme.colors.background,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+    paddingVertical: 40,
   },
-  channelButtonSelected: {
-    backgroundColor: theme.colors.primary,
-    borderColor: theme.colors.primary,
-  },
-  channelButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: theme.colors.textSecondary,
-  },
-  channelButtonTextSelected: {
-    color: '#FFFFFF',
-  },
-  toneRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  toneButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 16,
-    backgroundColor: theme.colors.background,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  toneButtonSelected: {
-    backgroundColor: theme.colors.primary,
-    borderColor: theme.colors.primary,
-  },
-  toneButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: theme.colors.textSecondary,
-  },
-  toneButtonTextSelected: {
-    color: '#FFFFFF',
-  },
-  messageCard: {
-    margin: 16,
-    backgroundColor: theme.colors.surface,
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  cardToolbar: {
-    flexDirection: 'row',
-    alignSelf: 'flex-end',
-    gap: 8,
-    marginBottom: 12,
-  },
-  toolbarButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 8,
-    backgroundColor: theme.colors.background,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    gap: 6,
-  },
-  toolbarButtonText: {
-    fontSize: 12,
-    color: theme.colors.textSecondary,
-    fontWeight: '600',
-  },
-  subjectContainer: {
-    marginBottom: 20,
-    paddingBottom: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-  },
-  bodyContainer: {
+  loadingIcon: {
     marginBottom: 16,
-  },
-  fieldLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: theme.colors.textSecondary,
-    textTransform: 'uppercase',
-    marginBottom: 8,
-  },
-  subjectText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: theme.colors.text,
-    lineHeight: 22,
-  },
-  subjectInput: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: theme.colors.text,
-    backgroundColor: theme.colors.background,
-    borderRadius: 8,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  bodyText: {
-    fontSize: 15,
-    color: theme.colors.text,
-    lineHeight: 22,
-  },
-  bodyInput: {
-    fontSize: 15,
-    color: theme.colors.text,
-    backgroundColor: theme.colors.background,
-    borderRadius: 8,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    minHeight: 200,
-  },
-  actionRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  editButton: {
-    alignSelf: 'flex-start',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    backgroundColor: theme.colors.primary + '20',
-  },
-  copyButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    backgroundColor: theme.colors.background,
-    borderWidth: 1,
-    borderColor: theme.colors.primary,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  copyButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: theme.colors.primary,
-  },
-  editButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: theme.colors.primary,
-  },
-  contextCard: {
-    margin: 16,
-    marginTop: 0,
-    backgroundColor: theme.colors.surface,
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  contextHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 4,
-  },
-  contextTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: theme.colors.text,
-    marginBottom: 8,
-  },
-  contextText: {
-    fontSize: 13,
-    color: theme.colors.textSecondary,
-    marginBottom: 4,
-  },
-  notesContainer: {
-    marginTop: 12,
-    gap: 12,
-  },
-  noteSection: {
-    gap: 8,
-  },
-  noteSectionTitle: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: theme.colors.text,
-    textTransform: 'uppercase',
-  },
-  noteItem: {
-    backgroundColor: theme.colors.background,
-    borderRadius: 8,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  noteText: {
-    fontSize: 13,
-    color: theme.colors.text,
-    lineHeight: 18,
-  },
-  footer: {
-    flexDirection: 'row',
-    padding: 16,
-    gap: 8,
-    backgroundColor: theme.colors.surface,
-    borderTopWidth: 0.5,
-    borderTopColor: theme.colors.border,
-  },
-  regenerateButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    backgroundColor: theme.colors.background,
-    borderWidth: 2,
-    borderColor: theme.colors.primary,
-  },
-  regenerateButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: theme.colors.primary,
-  },
-  sendButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 14,
-    borderRadius: 12,
-    backgroundColor: theme.colors.primary,
-  },
-  sendButtonDisabled: {
-    opacity: 0.6,
-  },
-  sendButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: theme.colors.surface,
-  },
-  markAsSentButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#10B981',
-    paddingVertical: 18,
-    paddingHorizontal: 24,
-    borderRadius: 16,
-    marginHorizontal: 16,
-    marginTop: 16,
-    marginBottom: 24,
-    gap: 10,
-    shadowColor: '#10B981',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  markAsSentButtonDisabled: {
-    backgroundColor: '#9CA3AF',
-    opacity: 0.6,
-  },
-  markAsSentButtonText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '700',
-    letterSpacing: 0.5,
   },
   loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: theme.colors.textSecondary,
-  },
-  errorText: {
-    fontSize: 16,
-    color: theme.colors.textSecondary,
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#000000',
     marginBottom: 8,
   },
-  errorSubtext: {
+  loadingSubtext: {
     fontSize: 14,
-    color: theme.colors.textSecondary,
-    marginBottom: 16,
-    opacity: 0.7,
+    color: '#666666',
+    textAlign: 'center',
   },
-  emptyText: {
-    fontSize: 16,
-    color: theme.colors.textSecondary,
+  messageCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  button: {
-    backgroundColor: theme.colors.primary,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
+  messageContent: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  copyIconButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: '#F0F8FF',
+    marginTop: 4,
+  },
+  messageTextContainer: {
+    flex: 1,
+  },
+  messageHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  variantBadge: {
+    backgroundColor: '#F0F8FF',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+  },
+  variantBadgeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#4ECDC4',
+  },
+  editedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F0FFF0',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    gap: 4,
+  },
+  editedBadgeText: {
+    fontSize: 10,
+    fontWeight: '500',
+    color: '#4ECDC4',
+  },
+  subjectContainer: {
+    marginBottom: 12,
+    padding: 12,
+    backgroundColor: '#F8F9FA',
     borderRadius: 8,
   },
-  buttonText: {
-    fontSize: 16,
+  subjectLabel: {
+    fontSize: 12,
     fontWeight: '600',
-    color: theme.colors.surface,
+    color: '#666666',
+    marginBottom: 4,
+  },
+  messageBodyContainer: {
+    marginBottom: 12,
+  },
+  messageSubject: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#000000',
+  },
+  messageBody: {
+    fontSize: 16,
+    color: '#000000',
+    lineHeight: 24,
+  },
+  editedLabel: {
+    fontSize: 12,
+    color: '#4ECDC4',
+    marginBottom: 8,
+  },
+  editContainer: {
+    marginBottom: 12,
+  },
+  editInput: {
+    borderWidth: 1,
+    borderColor: '#E5E5E5',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 15,
+    minHeight: 80,
+    textAlignVertical: 'top',
+  },
+  editActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 8,
+    marginTop: 8,
+  },
+  cancelButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 6,
+  },
+  cancelButtonText: {
+    color: '#666666',
+  },
+  saveButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#4ECDC4',
+    borderRadius: 6,
+    gap: 4,
+  },
+  saveButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '500',
+  },
+  messageActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  actionButton: {
+    padding: 8,
+    borderRadius: 6,
+    backgroundColor: '#F0F0F0',
+  },
+
+  sendButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#000000',
+    borderRadius: 6,
+    gap: 4,
+  },
+  sendButtonText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#FFFFFF',
+  },
+  bottomActions: {
+    flexDirection: 'row',
+    padding: 16,
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 0.5,
+    borderTopColor: '#E5E5E5',
+    gap: 12,
+  },
+  regenerateAllButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#4ECDC4',
+    backgroundColor: '#FFFFFF',
+    gap: 8,
+  },
+  regenerateAllText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#4ECDC4',
+  },
+  buttonDisabled: {
+    borderColor: '#E5E5E5',
+    backgroundColor: '#F8F9FA',
+  },
+  buttonTextDisabled: {
+    color: '#999999',
+  },
+  markSentButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderRadius: 12,
+    backgroundColor: '#4ECDC4',
+    gap: 6,
+  },
+  markSentText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
 });

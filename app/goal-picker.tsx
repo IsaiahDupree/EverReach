@@ -1,19 +1,12 @@
 import React, { useMemo, useState } from 'react';
-import { View, Alert, Platform, StyleSheet, KeyboardAvoidingView, Keyboard, PanResponder, TouchableOpacity } from 'react-native';
+import { View, Alert, Platform, StyleSheet, KeyboardAvoidingView, Keyboard, PanResponder } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import GoalPickerScreen from '@/components/GoalPicker/GoalPickerScreen';
 import { usePeople } from '@/providers/PeopleProvider';
 import type { ContactContext } from '@/components/GoalPicker/types';
+import { trpc } from '@/lib/trpc';
 import { FLAGS } from '@/constants/flags';
-import { useTheme } from '@/providers/ThemeProvider';
-import { useAnalytics } from '@/hooks/useAnalytics';
-import analytics from '@/lib/analytics';
-import { X } from 'lucide-react-native';
-import { useSubscription } from '@/providers/SubscriptionProvider';
-import { MediaRepo } from '@/repos/MediaRepo';
-import { usePaywallGate } from '@/hooks/usePaywallGate';
-import { apiFetch } from '@/lib/api';
 
 export default function GoalPickerRoute() {
   const router = useRouter();
@@ -21,12 +14,6 @@ export default function GoalPickerRoute() {
   const insets = useSafeAreaInsets();
   const { people } = usePeople();
   const [isProcessingScreenshot, setIsProcessingScreenshot] = useState(false);
-  const { theme } = useTheme();
-  const { isPaid, isTrialExpired } = useSubscription();
-  const gated = isTrialExpired && !isPaid;
-  
-  // Analytics tracking
-  const screenAnalytics = useAnalytics('GoalPicker');
   
   const panResponder = PanResponder.create({
     onMoveShouldSetPanResponder: (evt, gestureState) => {
@@ -39,20 +26,11 @@ export default function GoalPickerRoute() {
     },
   });
   
+  const uploadMediaMutation = trpc.media.upload.useMutation();
+  const analyzeMediaMutation = trpc.media.analyze.useMutation();
+
   const personId = typeof params.personId === 'string' ? params.personId : undefined;
   const channel = typeof params.channel === 'string' ? params.channel : 'sms';
-  const suggestionContextParam = typeof params.suggestionContext === 'string' ? params.suggestionContext : undefined;
-  
-  // Parse the suggestion context if provided
-  const suggestionContext = useMemo(() => {
-    if (!suggestionContextParam) return null;
-    try {
-      return JSON.parse(decodeURIComponent(suggestionContextParam));
-    } catch (e) {
-      console.error('Failed to parse suggestion context:', e);
-      return null;
-    }
-  }, [suggestionContextParam]);
 
   const ctx: ContactContext = useMemo(() => {
     const p = people.find(pp => pp.id === personId);
@@ -65,60 +43,10 @@ export default function GoalPickerRoute() {
       interests: ['cool stuff'],
     };
   }, [people, personId]);
-  
-  // Auto-navigate to message generation if we have suggestion context
-  React.useEffect(() => {
-    if (suggestionContext && personId) {
-      if (gated) {
-        // Redirect gated users to plans
-        setTimeout(() => {
-          router.replace('/subscription-plans');
-        }, 50);
-        return;
-      }
-      const navParams: Record<string, string> = {
-        personId,
-        channel,
-        goalId: 'custom',
-        customGoal: suggestionContext.goal,
-        aiSuggestionGoal: suggestionContext.goal,
-        aiSuggestionReason: suggestionContext.reason,
-        aiSuggestionCategory: suggestionContext.category,
-      };
-      
-      console.log('Auto-navigating to message-results with AI suggestion:', navParams);
-      const query = Object.entries(navParams)
-        .filter(([, v]) => typeof v === 'string' && v.length > 0)
-        .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
-        .join('&');
-      
-      // Use setTimeout to avoid navigation during render
-      setTimeout(() => {
-        router.replace(`/message-results?${query}`);
-      }, 100);
-    }
-  }, [suggestionContext, personId, channel, router, gated]);
-
-  // Auto-show paywall if user is not paid
-  usePaywallGate();
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <Stack.Screen 
-        options={{
-          headerShown: true,
-          headerBackVisible: true,
-          headerTitle: 'Pick Goal',
-          headerLeft: () => (
-            <TouchableOpacity
-              onPress={() => router.back()}
-              style={{ paddingLeft: 16 }}
-            >
-              <X size={24} color={theme.colors.text} />
-            </TouchableOpacity>
-          ),
-        }}
-      />
+    <View style={styles.container}>
+      <Stack.Screen options={{ title: 'Pick Goal' }} />
       <KeyboardAvoidingView 
         style={styles.keyboardAvoidingView}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -130,10 +58,6 @@ export default function GoalPickerRoute() {
           personId={personId}
           isProcessingScreenshot={isProcessingScreenshot}
           onGenerate={async (payload) => {
-          if (gated) {
-            router.push('/subscription-plans');
-            return;
-          }
           // Create a default personId if none provided
           const finalPersonId = personId || 'default-person';
           if (payload.mode === 'screenshot') {
@@ -141,14 +65,7 @@ export default function GoalPickerRoute() {
             return;
           }
           
-          const navParams: Record<string, string> = { personId: finalPersonId, channel };
-          
-          // If we have suggestion context from AI Goal Suggestions, pass it along
-          if (suggestionContext) {
-            navParams.aiSuggestionGoal = suggestionContext.goal;
-            navParams.aiSuggestionReason = suggestionContext.reason;
-            navParams.aiSuggestionCategory = suggestionContext.category;
-          }
+          const params: Record<string, string> = { personId: finalPersonId, channel };
           
           if (payload.mode === 'suggested') {
             const raw = (payload.goal ?? '').trim();
@@ -162,45 +79,27 @@ export default function GoalPickerRoute() {
 
             const askAboutMatch = /^ask about\s+(.+)$/i.exec(raw);
             if (askAboutMatch && askAboutMatch[1]) {
-              navParams.goalId = 'custom';
-              navParams.customGoal = `Ask about ${askAboutMatch[1]}`;
+              params.goalId = 'custom';
+              params.customGoal = `Ask about ${askAboutMatch[1]}`;
             } else {
               const mappedGoalId = goalMapping[raw];
               if (mappedGoalId) {
-                navParams.goalId = mappedGoalId;
+                params.goalId = mappedGoalId;
               } else {
-                navParams.goalId = 'custom';
-                navParams.customGoal = raw;
+                params.goalId = 'custom';
+                params.customGoal = raw;
               }
             }
-            
-            // Track suggested goal selection
-            screenAnalytics.track('goal_selected', {
-              type: 'suggested',
-              goal: raw,
-              goalId: navParams.goalId,
-              contactId: finalPersonId,
-              fromAISuggestion: !!suggestionContext,
-            });
           } else if (payload.mode === 'custom') {
-            navParams.goalId = 'custom';
-            navParams.customGoal = payload.goal || '';
-            
-            // Track custom goal selection
-            screenAnalytics.track('goal_selected', {
-              type: 'custom',
-              goal: payload.goal,
-              contactId: finalPersonId,
-            });
+            params.goalId = 'custom';
+            params.customGoal = payload.goal || '';
           }
           
-          console.log('Navigating to message-results with params:', navParams);
-          const query = Object.entries(navParams)
-            .filter(([, v]) => typeof v === 'string' && v.length > 0)
-            .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
-            .join('&');
-          Keyboard.dismiss();
-          router.push(`/message-results?${query}`);
+          console.log('Navigating to message-results with params:', params);
+          router.push({
+            pathname: '/message-results',
+            params,
+          });
         }}
           />
         </View>
@@ -271,58 +170,41 @@ export default function GoalPickerRoute() {
         mimeType = blob.type || 'image/jpeg';
       }
       
-      // Analyze the screenshot via repo
-      console.log('🔍 Analyzing screenshot (repo)...');
-      const analysisResult = await MediaRepo.analyzeScreenshot({
-        base64Data,
+      // Upload the screenshot
+      console.log('📤 Uploading screenshot...');
+      const uploadResult = await uploadMediaMutation.mutateAsync({
+        fileName: `screenshot-${Date.now()}.jpg`,
         mimeType,
+        fileSize: base64Data.length * 0.75, // Approximate file size from base64
+        base64Data,
         personId: finalPersonId,
+        kind: 'screenshot'
+      });
+      
+      console.log('✅ Screenshot uploaded:', uploadResult.id);
+      
+      // Analyze the screenshot
+      console.log('🔍 Analyzing screenshot...');
+      const analysisResult = await analyzeMediaMutation.mutateAsync({
+        assetId: uploadResult.id
       });
       
       console.log('✅ Screenshot analyzed:', analysisResult);
       
-      // Track analysis completion
-      screenAnalytics.track('screenshot_analyzed', {
-        contactId: finalPersonId,
-        has_vision_summary: !!analysisResult.vision_summary,
-        has_ocr_text: !!analysisResult.ocr_text,
-      });
+      // Navigate to message results with screenshot context
+      const params: Record<string, string> = {
+        personId: finalPersonId,
+        channel,
+        goalId: 'screenshot_response',
+        screenshotAssetId: uploadResult.id,
+        screenshotContext: analysisResult.vision_summary || 'Screenshot uploaded',
+        screenshotText: analysisResult.ocr_text || ''
+      };
       
-      // Generate message using compose endpoint (same as Screenshot Analysis page)
-      const messageGoal = analysisResult.vision_summary || analysisResult.ocr_text || 'Screenshot analysis';
-      console.log('[GoalPicker] Calling compose API for contact:', finalPersonId);
-      
-      const response = await apiFetch(`/api/v1/compose`, {
-        method: 'POST',
-        requireAuth: true,
-        body: JSON.stringify({
-          contact_id: finalPersonId,
-          goal: messageGoal,
-          channel,
-          tone: 'casual',
-          context: {
-            screenshot_analysis: analysisResult.vision_summary,
-            ocr_text: analysisResult.ocr_text,
-          },
-        }),
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to generate message');
-      }
-      
-      const data = await response.json();
-      console.log('[GoalPicker] Message generated successfully');
-      
-      // Navigate to message-results with compose response
+      console.log('Navigating to message-results with screenshot params:', params);
       router.push({
         pathname: '/message-results',
-        params: {
-          personId: finalPersonId,
-          channel,
-          goalId: 'screenshot_response',
-          customGoal: messageGoal,
-        },
+        params,
       });
       
     } catch (error) {
@@ -337,15 +219,12 @@ export default function GoalPickerRoute() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#F6F7FB',
   },
   keyboardAvoidingView: {
     flex: 1,
   },
   innerContainer: {
     flex: 1,
-  },
-  headerButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
   },
 });

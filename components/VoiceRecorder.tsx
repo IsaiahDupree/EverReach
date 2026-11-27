@@ -43,7 +43,7 @@ export default function VoiceRecorder({
   const [duration, setDuration] = useState(0);
   const [recordingUri, setRecordingUri] = useState<string | null>(null);
   const [, setAudioLevels] = useState<AudioLevel[]>([]);
-  // Removed Audio.usePermissions() - we request permissions manually on button press
+  const [permissionResponse, requestPermission] = Audio.usePermissions();
   const [webMicStatus, setWebMicStatus] = useState<'unknown' | 'granted' | 'denied'>('unknown');
   const [transcript, setTranscript] = useState<string>('');
   const [isTranscribing, setIsTranscribing] = useState(false);
@@ -245,11 +245,13 @@ export default function VoiceRecorder({
       }
 
       // Native (iOS/Android) recording
-      console.log('Requesting permission (native)..');
-      const { granted } = await Audio.requestPermissionsAsync();
-      if (!granted) {
-        Alert.alert('Permission Required', 'Microphone permission is required to record audio.');
-        return;
+      if (permissionResponse?.status !== 'granted') {
+        console.log('Requesting permission (native)..');
+        const newPermission = await requestPermission();
+        if (newPermission.status !== 'granted') {
+          Alert.alert('Permission Required', 'Microphone permission is required to record audio.');
+          return;
+        }
       }
 
       // Set audio mode for recording
@@ -466,8 +468,7 @@ export default function VoiceRecorder({
       }
       
       // Call the speech-to-text API
-      const baseUrl = process.env.EXPO_PUBLIC_API_URL || 'https://ever-reach-be.vercel.app';
-      const response = await fetch(`${baseUrl}/api/v1/transcribe`, {
+      const response = await fetch('https://toolkit.rork.com/stt/transcribe/', {
         method: 'POST',
         body: formData,
       });
@@ -576,7 +577,7 @@ export default function VoiceRecorder({
             testID="record-button"
             style={[styles.recordButton, isRecording && styles.recordButtonActive]}
             onPress={isRecording ? stopRecording : startRecording}
-            disabled={Platform.OS === 'web' && webMicStatus === 'denied'}
+            disabled={(Platform.OS !== 'web' && !permissionResponse?.granted) || (Platform.OS === 'web' && webMicStatus === 'denied')}
           >
             {isRecording ? (
               <Square size={32} color="white" fill="white" />
@@ -613,6 +614,12 @@ export default function VoiceRecorder({
       )}
 
       {/* Status Messages */}
+      {Platform.OS !== 'web' && !permissionResponse?.granted && (
+        <Text style={styles.permissionText}>
+          Microphone permission required
+        </Text>
+      )}
+
       {Platform.OS === 'web' && webMicStatus !== 'granted' && (
         <View style={styles.webPermWrapper}>
           <TouchableOpacity style={styles.webPermButton} onPress={requestWebMic}>

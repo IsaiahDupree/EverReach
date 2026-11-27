@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Stack } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { apiFetch, backendBase } from '@/lib/api';
@@ -24,17 +24,6 @@ interface TestResult {
   ok: boolean;
   durationMs: number;
   error?: string;
-  expected: number[];
-  authed: boolean;
-}
-
-interface TestCase {
-  name: string;
-  method: string;
-  path: string;
-  expectStatus: number | number[];
-  requireAuth?: boolean;
-  body?: any;
 }
 
 interface TestReport {
@@ -54,74 +43,6 @@ export default function APITestSuiteScreen() {
   const [running, setRunning] = useState(false);
   const [report, setReport] = useState<TestReport | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [baseOverride, setBaseOverride] = useState<string>('');
-  const [authStatus, setAuthStatus] = useState<string>('Checking...');
-  const [tokenPreview, setTokenPreview] = useState<string>('');
-  const [refreshing, setRefreshing] = useState(false);
-
-  // Check auth status on mount
-  React.useEffect(() => {
-    checkAuthStatus();
-  }, []);
-
-  async function checkAuthStatus() {
-    try {
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError) {
-        setAuthStatus(`Error: ${sessionError.message}`);
-        setTokenPreview('');
-        return;
-      }
-      
-      if (!session) {
-        setAuthStatus('❌ Not authenticated');
-        setTokenPreview('');
-        return;
-      }
-      
-      const token = session.access_token;
-      const expiresAt = session.expires_at ? new Date(session.expires_at * 1000) : null;
-      const now = new Date();
-      const isExpired = expiresAt && expiresAt < now;
-      
-      if (isExpired) {
-        setAuthStatus('⚠️ Token expired');
-      } else {
-        const timeLeft = expiresAt ? Math.floor((expiresAt.getTime() - now.getTime()) / 1000 / 60) : 0;
-        setAuthStatus(`✅ Authenticated (${timeLeft}m left)`);
-      }
-      
-      setTokenPreview(token.substring(0, 30) + '...');
-    } catch (err: any) {
-      setAuthStatus(`Error: ${err.message}`);
-      setTokenPreview('');
-    }
-  }
-
-  async function refreshToken() {
-    setRefreshing(true);
-    try {
-      const { data, error } = await supabase.auth.refreshSession();
-      
-      if (error) {
-        throw error;
-      }
-      
-      if (data.session) {
-        await checkAuthStatus();
-        setError(null);
-        console.log('✅ Token refreshed successfully');
-      } else {
-        throw new Error('No session returned after refresh');
-      }
-    } catch (err: any) {
-      setError(`Token refresh failed: ${err.message}`);
-      console.error('Token refresh error:', err);
-    } finally {
-      setRefreshing(false);
-    }
-  }
 
   async function runTests() {
     setRunning(true);
@@ -129,27 +50,13 @@ export default function APITestSuiteScreen() {
     setReport(null);
 
     const results: TestResult[] = [];
-    const BASE = (baseOverride?.trim() || backendBase());
+    const BASE = backendBase();
 
     try {
       // Check authentication
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError) {
-        throw new Error(`Session error: ${sessionError.message}`);
-      }
-      
+      const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         throw new Error('Not authenticated. Please log in first.');
-      }
-      
-      // Check if token is expired
-      const expiresAt = session.expires_at ? new Date(session.expires_at * 1000) : null;
-      const now = new Date();
-      const isExpired = expiresAt && expiresAt < now;
-      
-      if (isExpired) {
-        throw new Error('Token is expired. Please refresh your token.');
       }
 
       const token = session.access_token;
@@ -157,14 +64,13 @@ export default function APITestSuiteScreen() {
       console.log('[api-test] Backend:', BASE);
       console.log('[api-test] Authenticated:', !!token);
 
-      // Helper to make requests with optional auth (explicit per test)
-      const makeRequest = async (method: string, path: string, requireAuth = false, body?: any) => {
+      // Helper to make requests with auth
+      const makeRequest = async (method: string, path: string, body?: any) => {
         const startTime = Date.now();
         try {
           const response = await apiFetch(path, {
             method,
-            requireAuth,
-            baseOverride: BASE,
+            requireAuth: path.includes('/me') || path.includes('/contacts') || path.includes('/v1'),
             body: body ? JSON.stringify(body) : undefined
           });
           
@@ -184,42 +90,42 @@ export default function APITestSuiteScreen() {
         }
       };
 
-      const tests: TestCase[] = [
-        // Health & Version (public)
-        { name: 'Health Check', method: 'GET', path: '/api/health', expectStatus: 200, requireAuth: false },
-        { name: 'Version Check', method: 'GET', path: '/api/version', expectStatus: 200, requireAuth: false },
+      const tests = [
+        // Health & Version
+        { name: 'Health Check', method: 'GET', path: '/api/health', expectStatus: 200 },
+        { name: 'Version Check', method: 'GET', path: '/api/version', expectStatus: 200 },
         
-        // Auth & User (protected)
-        { name: 'Get Current User (v1)', method: 'GET', path: '/api/v1/me', expectStatus: 200, requireAuth: true },
-        { name: 'Get User Entitlements', method: 'GET', path: '/api/v1/me/entitlements', expectStatus: [200, 404], requireAuth: true },
+        // Auth & User
+        { name: 'Get Current User (v1)', method: 'GET', path: '/api/v1/me', expectStatus: 200 },
+        { name: 'Get User Entitlements', method: 'GET', path: '/api/v1/me/entitlements', expectStatus: [200, 404] },
         
-        // Contacts (protected)
-        { name: 'List Contacts', method: 'GET', path: '/api/v1/contacts?limit=5', expectStatus: 200, requireAuth: true },
-        { name: 'Search Contacts', method: 'GET', path: '/api/v1/contacts?q=test', expectStatus: 200, requireAuth: true },
+        // Contacts
+        { name: 'List Contacts', method: 'GET', path: '/api/v1/contacts?limit=5', expectStatus: 200 },
+        { name: 'Search Contacts', method: 'GET', path: '/api/v1/contacts?q=test', expectStatus: 200 },
         
-        // Pipelines (protected)
-        { name: 'List Pipelines', method: 'GET', path: '/api/v1/pipelines', expectStatus: 200, requireAuth: true },
-        { name: 'Get Pipeline Stages', method: 'GET', path: '/api/v1/pipelines/business/stages', expectStatus: 200, requireAuth: true },
+        // Pipelines
+        { name: 'List Pipelines', method: 'GET', path: '/api/v1/pipelines', expectStatus: 200 },
+        { name: 'Get Pipeline Stages', method: 'GET', path: '/api/v1/pipelines/business/stages', expectStatus: 200 },
         
-        // Templates (protected; may return 404 if not implemented)
-        { name: 'List Templates', method: 'GET', path: '/api/v1/templates?limit=5', expectStatus: [200, 404], requireAuth: true },
+        // Templates
+        { name: 'List Templates', method: 'GET', path: '/api/v1/templates?limit=5', expectStatus: [200, 404] },
         
-        // Persona Notes (protected)
-        { name: 'List Persona Notes', method: 'GET', path: '/api/v1/me/persona-notes?type=voice&limit=1', expectStatus: 200, requireAuth: true },
+        // Persona Notes
+        { name: 'List Persona Notes', method: 'GET', path: '/api/v1/me/persona-notes?type=voice&limit=1', expectStatus: 200 },
         
-        // Paywall (protected)
-        { name: 'Usage Summary', method: 'GET', path: '/api/me/usage-summary?window=30d', expectStatus: 200, requireAuth: true },
-        { name: 'Impact Summary', method: 'GET', path: '/api/me/impact-summary?window=90d', expectStatus: 200, requireAuth: true },
-        { name: 'Plan Recommendation', method: 'GET', path: '/api/me/plan-recommendation', expectStatus: 200, requireAuth: true },
+        // Paywall
+        { name: 'Usage Summary', method: 'GET', path: '/api/me/usage-summary?window=30d', expectStatus: 200 },
+        { name: 'Impact Summary', method: 'GET', path: '/api/me/impact-summary?window=90d', expectStatus: 200 },
+        { name: 'Plan Recommendation', method: 'GET', path: '/api/me/plan-recommendation', expectStatus: 200 },
         
-        // Trending (public)
-        { name: 'Trending Prompts', method: 'GET', path: '/api/trending/prompts?window=today&limit=5', expectStatus: 200, requireAuth: false },
+        // Trending
+        { name: 'Trending Prompts', method: 'GET', path: '/api/trending/prompts?window=today&limit=5', expectStatus: 200 },
         
-        // Recommendations (protected in most setups)
-        { name: 'Daily Recommendations', method: 'GET', path: '/api/recommendations/daily', expectStatus: [200, 404], requireAuth: true },
+        // Recommendations
+        { name: 'Daily Recommendations', method: 'GET', path: '/api/recommendations/daily', expectStatus: [200, 404] },
         
-        // Config Status (backend returns 200 in this codebase)
-        { name: 'Config Status', method: 'GET', path: '/api/v1/ops/config-status', expectStatus: 200, requireAuth: true },
+        // Config Status
+        { name: 'Config Status', method: 'GET', path: '/api/v1/ops/config-status', expectStatus: 200 },
       ];
 
       // Run each test
@@ -227,7 +133,7 @@ export default function APITestSuiteScreen() {
         console.log(`\n📝 Testing: ${test.name}`);
         console.log(`   ${test.method} ${test.path}`);
 
-        const result = await makeRequest(test.method, test.path, !!test.requireAuth, test.body);
+        const result = await makeRequest(test.method, test.path);
         
         const expectedStatuses = Array.isArray(test.expectStatus) ? test.expectStatus : [test.expectStatus];
         const testPassed = expectedStatuses.includes(result.status);
@@ -239,9 +145,7 @@ export default function APITestSuiteScreen() {
           status: result.status,
           ok: testPassed,
           durationMs: result.durationMs,
-          error: result.error,
-          expected: expectedStatuses,
-          authed: !!test.requireAuth,
+          error: result.error
         };
 
         results.push(testResult);
@@ -399,14 +303,6 @@ export default function APITestSuiteScreen() {
       color: theme.colors.error,
       marginTop: 4,
     },
-    input: {
-      borderColor: theme.colors.border,
-      borderWidth: 1,
-      borderRadius: 8,
-      padding: 12,
-      color: theme.colors.text,
-      backgroundColor: theme.colors.background,
-    },
   });
 
   return (
@@ -419,61 +315,6 @@ export default function APITestSuiteScreen() {
           <Text style={dynamicStyles.subtitle}>
             Tests all backend endpoints (similar to Node.js test suite)
           </Text>
-        </View>
-
-        {/* Auth Status */}
-        <View style={[dynamicStyles.reportCard, { marginBottom: 16 }]}>
-          <Text style={[dynamicStyles.subtitle, { marginBottom: 8, fontWeight: '600' }]}>Authentication Status</Text>
-          <Text style={[dynamicStyles.testDetails, { marginBottom: 4 }]}>{authStatus}</Text>
-          {tokenPreview && (
-            <Text style={[dynamicStyles.testDetails, { marginBottom: 8 }]}>Token: {tokenPreview}</Text>
-          )}
-          <TouchableOpacity
-            style={[dynamicStyles.button, { marginTop: 8, backgroundColor: '#10B981' }, refreshing && dynamicStyles.buttonDisabled]}
-            onPress={refreshToken}
-            disabled={refreshing}
-          >
-            {refreshing ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <Text style={dynamicStyles.buttonText}>Refresh Token</Text>
-            )}
-          </TouchableOpacity>
-        </View>
-
-        {/* Common Issues Warning */}
-        {report && report.summary.failed > 0 && (
-          <View style={[dynamicStyles.errorCard, { backgroundColor: '#FFF3CD', borderColor: '#FFC107' }]}>
-            <Text style={[dynamicStyles.errorText, { color: '#856404', fontWeight: '600', marginBottom: 8 }]}>
-              ⚠️ Common Issues for 401 Errors:
-            </Text>
-            <Text style={[dynamicStyles.errorText, { color: '#856404', marginBottom: 4 }]}>
-              1. SUPABASE_JWT_SECRET not configured in backend .env
-            </Text>
-            <Text style={[dynamicStyles.errorText, { color: '#856404', marginBottom: 4 }]}>
-              2. Token expired - try refreshing above
-            </Text>
-            <Text style={[dynamicStyles.errorText, { color: '#856404', marginBottom: 4 }]}>
-              3. Backend not recognizing Supabase tokens
-            </Text>
-            <Text style={[dynamicStyles.errorText, { color: '#856404', marginTop: 8 }]}>
-              🔧 Fix: Get JWT secret from Supabase Dashboard → Settings → API → JWT Secret
-            </Text>
-          </View>
-        )}
-
-        {/* Backend base override */}
-        <View style={{ marginBottom: 16 }}>
-          <Text style={[dynamicStyles.subtitle, { marginBottom: 6 }]}>Backend base override (optional)</Text>
-          <TextInput
-            style={dynamicStyles.input}
-            value={baseOverride}
-            onChangeText={setBaseOverride}
-            placeholder={backendBase()}
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-          <Text style={[dynamicStyles.subtitle, { marginTop: 6 }]}>Leave empty to use the default above.</Text>
         </View>
 
         <TouchableOpacity

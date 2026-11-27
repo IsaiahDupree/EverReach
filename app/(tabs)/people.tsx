@@ -6,48 +6,22 @@ import {
   FlatList,
   TouchableOpacity,
   TextInput,
-  RefreshControl,
-  ActivityIndicator,
-  ScrollView,
-  Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { usePeople } from "@/providers/PeopleProvider";
-import { useWarmth } from "@/providers/WarmthProvider";
 import { useAppSettings, type Theme } from "@/providers/AppSettingsProvider";
-import { router, useLocalSearchParams, useFocusEffect } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { Search, Plus, MessageSquare } from "lucide-react-native";
-import Avatar from "@/components/Avatar";
-import CrossPlatformTextInput from "@/components/CrossPlatformTextInput";
-import { getWarmthColorFromBand } from "@/lib/imageUpload";
-import { useAnalytics } from "@/hooks/useAnalytics";
-import analytics from "@/lib/analytics";
 
 type FilterType = 'all' | 'hot' | 'warm' | 'cool' | 'cold';
 
 export default function PeopleScreen() {
   const insets = useSafeAreaInsets();
-  const { people, isLoading, refreshPeople } = usePeople();
-  const { getWarmth } = useWarmth();
+  const { people, getWarmthStatus, getWarmthScore } = usePeople();
   const { theme } = useAppSettings();
   const { filter: urlFilter } = useLocalSearchParams<{ filter?: string }>();
   const [searchQuery, setSearchQuery] = useState("");
-
-  // Analytics tracking
-  const screenAnalytics = useAnalytics('People');
   const [filter, setFilter] = useState<FilterType>('all');
-  const [refreshing, setRefreshing] = useState<boolean>(false);
-
-  // Debug logging to diagnose empty contacts
-  /*
-  useEffect(() => {
-    console.log('=== PEOPLE PAGE DEBUG ===');
-    console.log('Is Loading:', isLoading);
-    console.log('People count:', people.length);
-    console.log('First 3 people:', people.slice(0, 3));
-    console.log('========================');
-  }, [isLoading, people]);
-  */
 
   useEffect(() => {
     if (urlFilter && ['all', 'hot', 'warm', 'cool', 'cold'].includes(urlFilter)) {
@@ -55,116 +29,63 @@ export default function PeopleScreen() {
     }
   }, [urlFilter]);
 
-  useFocusEffect(
-    React.useCallback(() => {
-      console.log('[PeopleScreen] Screen focused, refreshing people list');
-      refreshPeople();
-    }, [refreshPeople])
-  );
-
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    screenAnalytics.startTimer('people_refresh');
-    try {
-      await refreshPeople();
-      screenAnalytics.endTimer('people_refresh', { success: true });
-    } catch (error) {
-      console.error('Failed to refresh people:', error);
-      screenAnalytics.endTimer('people_refresh', { success: false });
-      analytics.errors.occurred(error as Error, 'People');
-    } finally {
-      setRefreshing(false);
-    }
-  };
-
-  // Track search when query changes
-  useEffect(() => {
-    if (searchQuery) {
-      const timeoutId = setTimeout(() => {
-        analytics.contacts.searched(searchQuery, filteredPeople.length);
-      }, 500); // Debounce search tracking
-      return () => clearTimeout(timeoutId);
-    }
-  }, [searchQuery]);
-
-  // Track filter changes
-  useEffect(() => {
-    if (filter !== 'all') {
-      screenAnalytics.track('filter_applied', { filter });
-    }
-  }, [filter]);
-
   const filteredPeople = people
     .filter(person => {
       const matchesSearch = person.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         person.company?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         person.tags?.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
-
-      const warmth = getWarmth(person.id);
-      const matchesFilter = filter === 'all' || warmth.band === filter;
-
+      
+      const matchesFilter = filter === 'all' || getWarmthStatus(person.id) === filter;
+      
       return matchesSearch && matchesFilter;
     })
-    .sort((a, b) => getWarmth(b.id).score - getWarmth(a.id).score);
+    .sort((a, b) => getWarmthScore(b.id) - getWarmthScore(a.id));
 
-  const renderPerson = ({ item }: { item: any }) => {
-    const warmth = getWarmth(item.id);
-    const tags = item.tags || [];
+  const getWarmthColor = (status: string) => {
+    switch (status) {
+      case 'hot': return '#4ECDC4';
+      case 'warm': return '#FFD93D';
+      case 'cool': return '#95E1D3';
+      case 'cold': return '#FF6B6B';
+      default: return '#999999';
+    }
+  };
 
-    // DEBUG: Log avatar data
-
+  const renderPerson = ({ item }: { item: typeof people[0] }) => {
+    const warmthStatus = getWarmthStatus(item.id);
+    const warmthColor = getWarmthColor(warmthStatus);
 
     return (
       <TouchableOpacity
         style={styles.personCard}
-        onPress={() => {
-          analytics.contacts.viewed(item.id);
-          router.push(`/contact/${item.id}`);
-        }}
+        onPress={() => router.push(`/contact/${item.id}`)}
       >
         <View style={styles.personHeader}>
-          <Avatar
-            name={item.fullName}
-            photoUrl={item.photo_url}
-            avatarUrl={item.avatarUrl}
-            size={56}
-            warmthColor={warmth.color}
-            borderWidth={3}
-          />
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>
+              {item.fullName.split(' ').map(n => n[0]).join('')}
+            </Text>
+          </View>
           <View style={styles.personInfo}>
             <Text style={styles.personName}>{item.fullName}</Text>
             {item.company && (
               <Text style={styles.personCompany}>{item.title ? `${item.title} at ${item.company}` : item.company}</Text>
             )}
-            {(item.lastInteraction || item.nextTouchAt) && (
-              <View style={styles.inlineFooter}>
-                {item.lastInteraction && (
-                  <Text style={styles.lastInteraction}>
-                    Last: {new Date(item.lastInteraction).toLocaleDateString()}
-                  </Text>
-                )}
-                {!item.lastInteraction && (
-                  <Text style={styles.lastInteraction}>No interactions yet</Text>
-                )}
-              </View>
-            )}
           </View>
           <View style={styles.personActions}>
-            <View style={styles.warmthBadge}>
-              <Text style={[styles.warmthScore, { color: warmth.color }]}>{warmth.score}</Text>
-            </View>
-            <TouchableOpacity
+            <TouchableOpacity 
               style={styles.messageButton}
               onPress={(e) => {
                 e.stopPropagation();
                 router.push(`/(tabs)/chat?threadId=${encodeURIComponent(item.id)}&threadLabel=${encodeURIComponent(item.fullName)}`);
               }}
             >
-              <MessageSquare size={22} color={theme.colors.textSecondary} />
+              <MessageSquare size={16} color={theme.colors.textSecondary} />
             </TouchableOpacity>
+            <View style={[styles.warmthIndicator, { backgroundColor: warmthColor }]} />
           </View>
         </View>
-
+        
         {item.tags && item.tags.length > 0 && (
           <View style={styles.tags}>
             {item.tags.slice(0, 3).map((tag, index) => (
@@ -174,6 +95,18 @@ export default function PeopleScreen() {
             ))}
           </View>
         )}
+        <View style={styles.personFooter}>
+          <Text style={styles.lastInteraction}>
+            {item.lastInteraction 
+              ? `Last: ${new Date(item.lastInteraction).toLocaleDateString()}`
+              : 'No interactions yet'}
+          </Text>
+          {item.nextTouchAt && (
+            <Text style={styles.nextTouch}>
+              Next: {new Date(item.nextTouchAt).toLocaleDateString()}
+            </Text>
+          )}
+        </View>
       </TouchableOpacity>
     );
   };
@@ -186,7 +119,7 @@ export default function PeopleScreen() {
       <View style={styles.searchContainer}>
         <View style={styles.searchBar}>
           <Search size={20} color={theme.colors.textSecondary} />
-          <CrossPlatformTextInput
+          <TextInput
             style={styles.searchInput}
             placeholder="Search people, companies, tags..."
             value={searchQuery}
@@ -196,87 +129,48 @@ export default function PeopleScreen() {
         </View>
       </View>
 
-      {/* Warmth Filters */}
-      <View style={styles.filterRow}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filterScrollContent}
-          style={styles.filterScrollView}
+      {/* Filters */}
+      <View style={styles.filterContainer}>
+        <TouchableOpacity
+          style={[styles.filterChip, filter === 'all' && styles.filterChipActive]}
+          onPress={() => setFilter('all')}
         >
-          <TouchableOpacity
-            style={[styles.filterChip, filter === 'all' && styles.filterChipActive]}
-            onPress={() => {
-              setFilter('all');
-              screenAnalytics.track('filter_cleared');
-            }}
-          >
-            <Text style={[styles.filterText, filter === 'all' && styles.filterTextActive]}>All</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.filterChip, filter === 'hot' && styles.filterChipActive]}
-            onPress={() => setFilter('hot')}
-          >
-            <Text style={[styles.filterText, filter === 'hot' && styles.filterTextActive]}>Hot</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.filterChip, filter === 'warm' && styles.filterChipActive]}
-            onPress={() => setFilter('warm')}
-          >
-            <Text style={[styles.filterText, filter === 'warm' && styles.filterTextActive]}>Warm</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.filterChip, filter === 'cool' && styles.filterChipActive]}
-            onPress={() => setFilter('cool')}
-          >
-            <Text style={[styles.filterText, filter === 'cool' && styles.filterTextActive]}>Cool</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.filterChip, filter === 'cold' && styles.filterChipActive]}
-            onPress={() => setFilter('cold')}
-          >
-            <Text style={[styles.filterText, filter === 'cold' && styles.filterTextActive]}>Cold</Text>
-          </TouchableOpacity>
-        </ScrollView>
+          <Text style={[styles.filterText, filter === 'all' && styles.filterTextActive]}>All</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.filterChip, filter === 'hot' && styles.filterChipActive]}
+          onPress={() => setFilter('hot')}
+        >
+          <Text style={[styles.filterText, filter === 'hot' && styles.filterTextActive]}>Hot</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.filterChip, filter === 'warm' && styles.filterChipActive]}
+          onPress={() => setFilter('warm')}
+        >
+          <Text style={[styles.filterText, filter === 'warm' && styles.filterTextActive]}>Warm</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.filterChip, filter === 'cool' && styles.filterChipActive]}
+          onPress={() => setFilter('cool')}
+        >
+          <Text style={[styles.filterText, filter === 'cool' && styles.filterTextActive]}>Cool</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.filterChip, filter === 'cold' && styles.filterChipActive]}
+          onPress={() => setFilter('cold')}
+        >
+          <Text style={[styles.filterText, filter === 'cold' && styles.filterTextActive]}>Cold</Text>
+        </TouchableOpacity>
       </View>
 
       {/* People List */}
-      {isLoading && people.length === 0 ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
-          <Text style={styles.loadingText}>Loading contacts...</Text>
-        </View>
-      ) : filteredPeople.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>No contacts found</Text>
-          <Text style={styles.emptySubtext}>
-            {searchQuery || filter !== 'all'
-              ? 'Try adjusting your filters'
-              : 'Add your first contact to get started'}
-          </Text>
-        </View>
-      ) : (
-        <FlatList
-          data={filteredPeople}
-          renderItem={renderPerson}
-          keyExtractor={item => item.id}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-          removeClippedSubviews={true}
-          maxToRenderPerBatch={10}
-          windowSize={10}
-          initialNumToRender={10}
-          updateCellsBatchingPeriod={50}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={handleRefresh}
-              tintColor={theme.colors.primary}
-              colors={[theme.colors.primary]}
-            />
-          }
-        />
-      )}
+      <FlatList
+        data={filteredPeople}
+        renderItem={renderPerson}
+        keyExtractor={item => item.id}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+      />
 
       {/* Add Button */}
       <TouchableOpacity
@@ -314,36 +208,18 @@ const createStyles = (theme: Theme) => StyleSheet.create({
     fontSize: 14,
     color: theme.colors.text,
   },
-  filterRow: {
+  filterContainer: {
     flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    alignItems: 'center',
-  },
-  filterScrollView: {
-    flex: 1,
-  },
-  filterScrollContent: {
+    padding: 16,
     gap: 8,
-    paddingRight: 16,
-  },
-  filterLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: theme.colors.text,
-    marginRight: 12,
-    width: 75, // Fixed width instead of minWidth
   },
   filterChip: {
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 22,
+    paddingVertical: 8,
+    borderRadius: 20,
     backgroundColor: theme.colors.surface,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    minHeight: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   filterChipActive: {
     backgroundColor: theme.colors.primary,
@@ -375,6 +251,7 @@ const createStyles = (theme: Theme) => StyleSheet.create({
   personHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 12,
   },
   avatar: {
     width: 48,
@@ -392,7 +269,6 @@ const createStyles = (theme: Theme) => StyleSheet.create({
   },
   personInfo: {
     flex: 1,
-    marginLeft: 12,
   },
   personName: {
     fontSize: 16,
@@ -404,55 +280,49 @@ const createStyles = (theme: Theme) => StyleSheet.create({
     fontSize: 14,
     color: theme.colors.textSecondary,
   },
-  warmthBadge: {
-    minWidth: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  warmthScore: {
-    fontSize: 18,
-    fontWeight: '700',
+  warmthIndicator: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
   },
   tags: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 6,
-    marginTop: 12,
+    marginBottom: 12,
   },
   tag: {
     backgroundColor: theme.colors.border,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderRadius: 12,
-    minHeight: 32,
-    justifyContent: 'center',
   },
   tagText: {
     fontSize: 12,
     color: theme.colors.textSecondary,
   },
+  personFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
   lastInteraction: {
-    fontSize: 11,
+    fontSize: 12,
     color: theme.colors.textSecondary,
   },
+  nextTouch: {
+    fontSize: 12,
+    color: theme.colors.primary,
+    fontWeight: '500',
+  },
   personActions: {
-    flexDirection: 'column',
+    flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
   messageButton: {
-    padding: 12,
-    borderRadius: 12,
+    padding: 8,
+    borderRadius: 8,
     backgroundColor: theme.colors.background,
-    minHeight: 44,
-    minWidth: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  inlineFooter: {
-    marginTop: 4,
   },
   fab: {
     position: 'absolute',
@@ -469,33 +339,5 @@ const createStyles = (theme: Theme) => StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 32,
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: theme.colors.textSecondary,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 32,
-  },
-  emptyText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: theme.colors.text,
-    marginBottom: 8,
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: theme.colors.textSecondary,
-    textAlign: 'center',
   },
 });

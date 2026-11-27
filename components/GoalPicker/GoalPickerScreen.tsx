@@ -6,7 +6,6 @@ import SuggestedGoalsCarousel from './SuggestedGoalsCarousel';
 import { CustomGoalBubble, ScreenshotResponseBubble } from './CustomAndScreenshot';
 import { OrDivider, SectionTitle, Bubble } from './ui';
 import { deriveSuggestedGoals, exampleContext, type ChosenMode, type ContactContext } from './types';
-import { useAppSettings } from '@/providers/AppSettingsProvider';
 
 export default function GoalPickerScreen({
   ctx = exampleContext,
@@ -22,7 +21,6 @@ export default function GoalPickerScreen({
   const suggestions = useMemo(() => deriveSuggestedGoals(ctx), [ctx]);
   const scrollViewRef = useRef<ScrollView>(null);
   const insets = useSafeAreaInsets();
-  const { theme } = useAppSettings();
 
   const [mode, setMode] = useState<ChosenMode>(null);
   const [selectedGoal, setSelectedGoal] = useState<string | null>(null);
@@ -32,10 +30,10 @@ export default function GoalPickerScreen({
   const canGenerate =
     (mode === 'suggested' && !!selectedGoal) ||
     (mode === 'custom' && customGoal.trim().length > 0) ||
-    (mode === 'screenshot' && !!screenshotUri && !isProcessingScreenshot);
+    (mode === 'screenshot' && !!screenshotUri);
 
   const handleGenerate = () => {
-    if (!canGenerate || isProcessingScreenshot) return;
+    if (!canGenerate) return;
     const payload =
       mode === 'suggested'
         ? { mode, goal: selectedGoal as string }
@@ -46,11 +44,11 @@ export default function GoalPickerScreen({
   };
 
   return (
-    <View style={[styles.mainContainer, { backgroundColor: theme.colors.background }]}>
+    <View style={styles.mainContainer}>
       <ScrollView 
         ref={scrollViewRef}
         style={styles.scrollView}
-        contentContainerStyle={[styles.scrollContent]} 
+        contentContainerStyle={styles.scrollContent} 
         testID="goalPickerScreen"
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
@@ -59,7 +57,7 @@ export default function GoalPickerScreen({
         scrollEnabled={true}
       >
           <SectionTitle><Text>Pick or Create Goal</Text></SectionTitle>
-          <Text style={[styles.step, { color: theme.colors.textSecondary }]}>Step 1 of 4 • What&apos;s your goal for reaching out?</Text>
+          <Text style={styles.step}>Step 1 of 4 • What&apos;s your goal for reaching out?</Text>
 
           <ContextBubble ctx={ctx} personId={personId} />
 
@@ -102,21 +100,16 @@ export default function GoalPickerScreen({
         </ScrollView>
       
       {/* Fixed Generate Button at Bottom */}
-      <View style={[styles.fixedButtonContainer, { paddingBottom: insets.bottom, backgroundColor: theme.colors.surface, borderTopColor: theme.colors.border }]}>
+      <View style={[styles.fixedButtonContainer, { paddingBottom: insets.bottom }]}>
         <Bubble>
           <Pressable
-            disabled={!canGenerate || isProcessingScreenshot}
+            disabled={!canGenerate}
             onPress={handleGenerate}
-            style={[
-              styles.cta,
-              { backgroundColor: canGenerate && !isProcessingScreenshot ? theme.colors.primary : theme.colors.border },
-            ]}
+            style={[styles.cta, !canGenerate ? styles.ctaDisabled : null]}
             accessibilityRole="button"
             testID="generateButton"
           >
-            <Text style={[styles.ctaText, { color: canGenerate && !isProcessingScreenshot ? theme.colors.surface : theme.colors.textSecondary }]}>
-              {isProcessingScreenshot ? 'Analyzing Screenshot...' : 'Generate Message'}
-            </Text>
+            <Text style={styles.ctaText}>Generate Message</Text>
           </Pressable>
         </Bubble>
       </View>
@@ -163,6 +156,9 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
+  },
+  ctaDisabled: { 
+    backgroundColor: '#c7cfec' 
   },
   ctaText: { 
     color: '#fff', 

@@ -12,8 +12,7 @@ import {
   Modal,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Stack } from 'expo-router';
-import { go } from '@/lib/navigation';
+import { Stack, router } from 'expo-router';
 import { Users, CheckCircle, XCircle, ArrowLeft, Settings, AlertCircle, UserPlus, Info, X } from 'lucide-react-native';
 import { usePeople } from '@/providers/PeopleProvider';
 import * as Contacts from 'expo-contacts';
@@ -48,21 +47,23 @@ export default function ImportContactsScreen() {
   const [sessionState, setSessionState] = useState<ImportSessionState>('idle');
   const [progress, setProgress] = useState({ current: 0, total: 0, imported: 0 });
   const [importHistory, setImportHistory] = useState<ImportHistoryEntry[]>([]);
+
   const [nativeBusy, setNativeBusy] = useState<boolean>(false);
   const [permissionStatus, setPermissionStatus] = useState<'granted' | 'denied' | 'undetermined' | 'limited'>('undetermined');
   const [contactsCount, setContactsCount] = useState<number>(0);
   const [selectedHistoryEntry, setSelectedHistoryEntry] = useState<ImportHistoryEntry | null>(null);
   const [currentDiagnosticLogs, setCurrentDiagnosticLogs] = useState<DiagnosticLog[]>([]);
   const [diagnosticPanelExpanded, setDiagnosticPanelExpanded] = useState<boolean>(false);
-  const deviceSupported = Platform.OS !== 'web';
 
   useEffect(() => {
     (async () => {
       const hist = await loadHistory<ImportHistoryEntry[]>();
       setImportHistory(Array.isArray(hist) ? hist : []);
+      
       // Check permission status
       await checkPermissionStatus();
     })();
+
     return () => {
       setSessionState('idle');
     };
@@ -71,29 +72,26 @@ export default function ImportContactsScreen() {
   const checkPermissionStatus = async () => {
     try {
       const { status } = await Contacts.getPermissionsAsync();
+      
       if (status === 'granted') {
         setPermissionStatus('granted');
-        // Get contact count (includes both device and SIM contacts on Android)
-        // On Android, READ_CONTACTS permission provides access to all contacts including SIM card
-        const { data } = await Contacts.getContactsAsync({ 
-          pageSize: 0,
-          // Expo Contacts automatically includes SIM contacts when READ_CONTACTS is granted
-        });
+        // Get contact count
+        const { data } = await Contacts.getContactsAsync({ pageSize: 0 });
         setContactsCount(data.length);
-        console.log('[ImportContacts] Contacts available (device + SIM):', data.length);
       } else if (status === 'denied') {
         setPermissionStatus('denied');
       } else {
         setPermissionStatus('undetermined');
       }
     } catch (error) {
-      console.error('[ImportContacts] Failed to check permissions:', error);
+      console.error('Failed to check permissions:', error);
     }
   };
 
   const requestPermissions = async () => {
     try {
       const { status } = await Contacts.requestPermissionsAsync();
+      
       if (status === 'granted') {
         setPermissionStatus('granted');
         await checkPermissionStatus();
@@ -136,7 +134,7 @@ export default function ImportContactsScreen() {
 
   const handleDone = () => {
     resetSession();
-    go.back();
+    router.back();
   };
 
   const handlePickOne = async () => {
@@ -144,14 +142,18 @@ export default function ImportContactsScreen() {
       await requestPermissions();
       return;
     }
+    
     setNativeBusy(true);
     // Start capturing diagnostic logs
     startDiagnosticCapture();
+    
     try {
       const start = Date.now();
       const res = await pickOneNativeContact(people, (p) => Promise.resolve(addPerson(p)));
+      
       // Stop capturing and get logs
       const diagnosticLogs = stopDiagnosticCapture();
+      
       // Check if import failed and provide helpful message
       if (res.errors > 0 && res.imported === 0) {
         Alert.alert(
@@ -163,6 +165,7 @@ export default function ImportContactsScreen() {
       } else {
         setSessionState('complete');
       }
+      
       const entry: ImportHistoryEntry = {
         id: start.toString(),
         date: start,
@@ -180,6 +183,7 @@ export default function ImportContactsScreen() {
       console.error('Failed to pick contact:', error);
       Alert.alert('Error', 'Failed to import contact. Please try again.');
       setSessionState('error');
+      
       // Save error to history with logs
       const entry: ImportHistoryEntry = {
         id: Date.now().toString(),
@@ -201,6 +205,7 @@ export default function ImportContactsScreen() {
       await requestPermissions();
       return;
     }
+    
     setNativeBusy(true);
     try {
       setSessionState('running');
@@ -338,11 +343,14 @@ export default function ImportContactsScreen() {
           
           <Text style={styles.title}>Import Contacts</Text>
           <Text style={styles.description}>
-            Import contacts from your phone{Platform.OS !== 'web' ? ' address book' : ''}. We'll skip duplicates and only add new contacts.
+            {Platform.OS === 'web' 
+              ? 'Contact import is only available on mobile devices. Please use the mobile app to import your contacts.'
+              : 'Import contacts from your phone\'s address book. We\'ll skip duplicates and only add new contacts.'
+            }
           </Text>
 
           {/* Permission Status Banner */}
-          {deviceSupported && permissionStatus !== 'granted' && sessionState === 'idle' && (
+          {Platform.OS !== 'web' && permissionStatus !== 'granted' && sessionState === 'idle' && (
             <View style={[
               styles.permissionBanner,
               permissionStatus === 'denied' ? styles.permissionBannerDenied : styles.permissionBannerUndetermined
@@ -360,8 +368,8 @@ export default function ImportContactsScreen() {
                 </Text>
                 <Text style={styles.permissionBannerText}>
                   {permissionStatus === 'denied'
-                    ? 'Enable contacts access in Settings to import from your device and SIM card.'
-                    : 'Grant access to your contacts (device + SIM) to get started.'
+                    ? 'Enable contacts access in Settings to import.'
+                    : 'Grant access to your contacts to get started.'
                   }
                 </Text>
               </View>
@@ -381,25 +389,15 @@ export default function ImportContactsScreen() {
             </View>
           )}
 
-          {/* Web banner when device import is not supported */}
-          {!deviceSupported && (
-            <View style={[styles.permissionBanner, styles.permissionBannerUndetermined]}> 
-              <AlertCircle size={20} color="#F59E0B" />
-              <View style={styles.permissionBannerContent}>
-                <Text style={styles.permissionBannerTitle}>Phone Contacts Not Available on Web</Text>
-                <Text style={styles.permissionBannerText}>Use the mobile app to import from your device. For third-party imports, go to Settings → Import from Third Parties.</Text>
-              </View>
-            </View>
-          )}
           {/* Contact Count Info */}
-          {deviceSupported && permissionStatus === 'granted' && contactsCount > 0 && sessionState === 'idle' && (
+          {Platform.OS !== 'web' && permissionStatus === 'granted' && contactsCount > 0 && sessionState === 'idle' && (
             <View style={styles.infoBox}>
               <Text style={styles.infoText}>
                 📱 {contactsCount} contact{contactsCount === 1 ? '' : 's'} available to import
-                {Platform.OS === 'android' && ' (device + SIM)'}
               </Text>
             </View>
           )}
+
           {sessionState === 'complete' ? (
             <View style={styles.successContainer}>
               <CheckCircle size={32} color="#10B981" />
@@ -421,46 +419,42 @@ export default function ImportContactsScreen() {
             </View>
           ) : null}
 
-          {/* Device Import Section (shown on web as disabled) */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Import from Device</Text>
-            <TouchableOpacity
-              testID="pickOneContact"
-              style={[styles.primaryButton, styles.nativeButton, (!deviceSupported || nativeBusy || permissionStatus !== 'granted') && styles.disabledButton]}
-              onPress={deviceSupported ? handlePickOne : undefined}
-              disabled={!deviceSupported || nativeBusy || permissionStatus !== 'granted'}
-            >
-              <Text style={[styles.primaryButtonText, !deviceSupported && styles.disabledButtonText]}>
-                {!deviceSupported
-                  ? 'Pick One Contact (Mobile Only)'
-                  : permissionStatus !== 'granted' ? 'Allow Access to Pick Contacts' : 'Pick One Contact'}
-              </Text>
-            </TouchableOpacity>
 
-            <TouchableOpacity
-              testID="pickMultipleContacts"
-              style={[styles.secondaryButton, styles.nativeButton, (!deviceSupported || nativeBusy || permissionStatus !== 'granted') && styles.disabledButton]}
-              onPress={deviceSupported ? handlePickMultiple : undefined}
-              disabled={!deviceSupported || nativeBusy || permissionStatus !== 'granted'}
-            >
-              <View style={styles.buttonContent}>
-                <Users size={20} color={(!deviceSupported || nativeBusy || permissionStatus !== 'granted') ? '#9CA3AF' : '#374151'} />
-                <Text style={[styles.secondaryButtonText, (!deviceSupported || nativeBusy || permissionStatus !== 'granted') && styles.disabledButtonText]}>
-                  {!deviceSupported ? 'Pick Multiple Contacts (Mobile Only)' : 'Pick Multiple Contacts'}
-                </Text>
-              </View>
-            </TouchableOpacity>
 
-            {Platform.OS === 'ios' && deviceSupported && (
+          {Platform.OS !== 'web' && (
+            <>
               <TouchableOpacity
-                testID="manageLimitedAccess"
-                style={styles.secondaryButton}
-                onPress={handleManageLimitedAccess}
+                testID="pickOneContact"
+                style={[styles.primaryButton, styles.nativeButton, { opacity: nativeBusy || permissionStatus !== 'granted' ? 0.6 : 1 }]}
+                onPress={handlePickOne}
+                disabled={nativeBusy || permissionStatus !== 'granted'}
               >
-                <Text style={styles.secondaryButtonText}>Manage Limited Access (iOS 18)</Text>
+                <Text style={styles.primaryButtonText}>
+                  {permissionStatus !== 'granted' ? 'Allow Access to Pick Contacts' : 'Pick One Contact'}
+                </Text>
               </TouchableOpacity>
-            )}
-          </View>
+
+              <TouchableOpacity
+                testID="pickMultipleContacts"
+                style={[styles.secondaryButton, styles.nativeButton, { opacity: nativeBusy || permissionStatus !== 'granted' ? 0.6 : 1 }]}
+                onPress={handlePickMultiple}
+                disabled={nativeBusy || permissionStatus !== 'granted'}
+              >
+                <Text style={styles.secondaryButtonText}>Pick Multiple Contacts</Text>
+              </TouchableOpacity>
+
+              {Platform.OS === 'ios' && (
+                <TouchableOpacity
+                  testID="manageLimitedAccess"
+                  style={styles.secondaryButton}
+                  onPress={handleManageLimitedAccess}
+                >
+                  <Text style={styles.secondaryButtonText}>Manage Limited Access (iOS 18)</Text>
+                </TouchableOpacity>
+              )}
+            </>
+          )}
+
 
           {(sessionState === 'complete' || sessionState === 'error') && (
             <TouchableOpacity testID="importDone" style={styles.secondaryButton} onPress={handleDone}>
@@ -481,7 +475,7 @@ export default function ImportContactsScreen() {
           title: 'Import Contacts',
           headerShown: true,
           headerLeft: () => (
-            <TouchableOpacity testID="importBack" onPress={() => go.back()} style={styles.backButton}>
+            <TouchableOpacity testID="importBack" onPress={() => router.back()} style={styles.backButton}>
               <ArrowLeft size={24} color="#000000" />
             </TouchableOpacity>
           ),
@@ -766,31 +760,18 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   secondaryButton: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'transparent',
     paddingHorizontal: 32,
     paddingVertical: 16,
     borderRadius: 12,
-    marginBottom: 16,
+    marginBottom: 32,
     minWidth: 200,
-    borderWidth: 2,
-    borderColor: '#E5E7EB',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
   },
   secondaryButtonText: {
-    color: '#374151',
+    color: '#666666',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '500',
     textAlign: 'center',
-  },
-  buttonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
   },
   section: {
     width: '100%',

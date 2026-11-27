@@ -431,16 +431,6 @@ export default function Auth() {
                 </Text>
               </TouchableOpacity>
 
-              {Platform.OS !== 'web' && (
-                <TouchableOpacity
-                  style={styles.installCodeButton}
-                  onPress={() => router.push('/auth/install-code' as any)}
-                  testID="install-attribution-code-button"
-                >
-                  <Text style={styles.installCodeButtonText}>I have an install code</Text>
-                </TouchableOpacity>
-              )}
-
             </View>
 
             {/* Footer */}
@@ -472,18 +462,6 @@ export default function Auth() {
                 >
                   Privacy Policy
                 </Text>
-              </Text>
-              <Text
-                style={[styles.footerLink, { marginTop: 8 }]}
-                onPress={() => {
-                  if (Platform.OS === 'web' && typeof window !== 'undefined') {
-                    window.open('/blog', '_blank');
-                  } else {
-                    router.push('/blog' as any);
-                  }
-                }}
-              >
-                Blog
               </Text>
             </View>
           </Animated.View>
@@ -619,22 +597,6 @@ const styles = StyleSheet.create({
   secondaryButtonText: {
     fontSize: 15,
     color: '#7C3AED',
-    fontWeight: '600',
-  },
-  installCodeButton: {
-    alignItems: 'center',
-    borderColor: '#DDD6FE',
-    borderRadius: 10,
-    borderWidth: 1,
-    justifyContent: 'center',
-    marginTop: 4,
-    minHeight: 44,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  installCodeButtonText: {
-    color: '#6D28D9',
-    fontSize: 14,
     fontWeight: '600',
   },
   socialAuthContainer: {

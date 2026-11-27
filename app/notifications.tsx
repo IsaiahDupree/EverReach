@@ -6,6 +6,8 @@ import {
   ScrollView,
   TouchableOpacity,
   Switch,
+  Alert,
+  Platform,
   Modal,
   Pressable,
 } from 'react-native';
@@ -14,6 +16,7 @@ import { Stack } from 'expo-router';
 import { 
   Bell, 
   Clock,
+  Calendar,
   ChevronRight,
   Moon,
   Sun,
@@ -24,17 +27,12 @@ import {
   Check
 } from 'lucide-react-native';
 import { useAppSettings, type Theme } from '@/providers/AppSettingsProvider';
-import { useAnalytics } from '@/hooks/useAnalytics';
-import analytics from '@/lib/analytics';
 
-type NotificationFrequency = 'daily' | 'weekly' | 'monthly';
+type NotificationFrequency = 'daily' | 'weekly' | 'custom';
 
 export default function NotificationsScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useAppSettings();
-  
-  // Analytics tracking
-  const screenAnalytics = useAnalytics('Notifications');
   
   const [pushNotifications, setPushNotifications] = React.useState<boolean>(true);
   const [coldContactAlerts, setColdContactAlerts] = React.useState<boolean>(true);
@@ -42,6 +40,8 @@ export default function NotificationsScreen() {
   const [quietHours, setQuietHours] = React.useState<boolean>(true);
   const [soundEnabled, setSoundEnabled] = React.useState<boolean>(true);
   const [vibrationEnabled, setVibrationEnabled] = React.useState<boolean>(true);
+  const [weeklyGoal, setWeeklyGoal] = React.useState<number>(2);
+  const [goldGoal, setGoldGoal] = React.useState<number>(5);
   const [showFrequencyModal, setShowFrequencyModal] = React.useState<boolean>(false);
 
   const handleFrequencyChange = () => {
@@ -52,22 +52,38 @@ export default function NotificationsScreen() {
     if (!frequency || !frequency.trim()) return;
     if (frequency.length > 20) return;
     const sanitizedFrequency = frequency.trim() as NotificationFrequency;
-    
-    screenAnalytics.track('notifications_frequency_changed', {
-      frequency: sanitizedFrequency,
-      previousFrequency: reminderFrequency,
-    });
-    
     setReminderFrequency(sanitizedFrequency);
     setShowFrequencyModal(false);
   };
 
+  const handleGoalChange = (type: 'weekly' | 'gold') => {
+    const title = type === 'weekly' ? 'Weekly Goal' : 'Gold Streak Goal';
+    const message = type === 'weekly' 
+      ? 'How many people do you want to stay connected with weekly?'
+      : 'How many people for a gold streak?';
+    
+    const options = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => ({
+      text: `${num} ${num === 1 ? 'person' : 'people'}`,
+      onPress: () => type === 'weekly' ? setWeeklyGoal(num) : setGoldGoal(num),
+    }));
+
+    const buttons = [
+      { text: 'Cancel', style: 'cancel' as const },
+      ...options,
+    ];
+    
+    if (Platform.OS !== 'web') {
+      Alert.alert(title, message, buttons);
+    } else {
+      console.log(`Goal change requested: ${type}`);
+    }
+  };
 
   const getFrequencyDisplayText = () => {
     switch (reminderFrequency) {
       case 'daily': return 'Daily';
       case 'weekly': return 'Weekly';
-      case 'monthly': return 'Monthly';
+      case 'custom': return 'Custom';
       default: return 'Weekly';
     }
   };
@@ -100,12 +116,7 @@ export default function NotificationsScreen() {
               </View>
               <Switch
                 value={pushNotifications}
-                onValueChange={(value) => {
-                  screenAnalytics.track('notifications_push_toggled', {
-                    enabled: value,
-                  });
-                  setPushNotifications(value);
-                }}
+                onValueChange={setPushNotifications}
                 trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
                 thumbColor={theme.colors.surface}
               />
@@ -121,12 +132,7 @@ export default function NotificationsScreen() {
               </View>
               <Switch
                 value={coldContactAlerts}
-                onValueChange={(value) => {
-                  screenAnalytics.track('notifications_cold_alerts_toggled', {
-                    enabled: value,
-                  });
-                  setColdContactAlerts(value);
-                }}
+                onValueChange={setColdContactAlerts}
                 trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
                 thumbColor={theme.colors.surface}
               />
@@ -163,12 +169,7 @@ export default function NotificationsScreen() {
               </View>
               <Switch
                 value={quietHours}
-                onValueChange={(value) => {
-                  screenAnalytics.track('notifications_quiet_hours_toggled', {
-                    enabled: value,
-                  });
-                  setQuietHours(value);
-                }}
+                onValueChange={setQuietHours}
                 trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
                 thumbColor={theme.colors.surface}
               />
@@ -188,12 +189,7 @@ export default function NotificationsScreen() {
               </View>
               <Switch
                 value={soundEnabled}
-                onValueChange={(value) => {
-                  screenAnalytics.track('notifications_sound_toggled', {
-                    enabled: value,
-                  });
-                  setSoundEnabled(value);
-                }}
+                onValueChange={setSoundEnabled}
                 trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
                 thumbColor={theme.colors.surface}
               />
@@ -209,16 +205,56 @@ export default function NotificationsScreen() {
               </View>
               <Switch
                 value={vibrationEnabled}
-                onValueChange={(value) => {
-                  screenAnalytics.track('notifications_vibration_toggled', {
-                    enabled: value,
-                  });
-                  setVibrationEnabled(value);
-                }}
+                onValueChange={setVibrationEnabled}
                 trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
                 thumbColor={theme.colors.surface}
               />
             </View>
+          </View>
+        </View>
+
+        {/* Goals & Streaks */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Goals & Streaks</Text>
+          <View style={styles.sectionContent}>
+            <View style={styles.goalExplanation}>
+              <Text style={styles.goalExplanationText}>
+                Keep a {weeklyGoal}-person streak weekly to stay green.
+              </Text>
+              <Text style={styles.goalExplanationText}>
+                {goldGoal}-person streak unlocks gold.
+              </Text>
+            </View>
+            
+            <TouchableOpacity 
+              style={[styles.settingItem, styles.settingItemBorder]}
+              onPress={() => handleGoalChange('weekly')}
+              accessibilityRole="button"
+            >
+              <View style={styles.settingLeft}>
+                <Calendar size={20} color={theme.colors.success} />
+                <View>
+                  <Text style={styles.settingLabel}>Weekly Goal</Text>
+                  <Text style={styles.settingSubtitle}>{weeklyGoal} {weeklyGoal === 1 ? 'person' : 'people'} per week</Text>
+                </View>
+              </View>
+              <ChevronRight size={20} color={theme.colors.textSecondary} />
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.settingItem}
+              onPress={() => handleGoalChange('gold')}
+              accessibilityRole="button"
+            >
+              <View style={styles.settingLeft}>
+                <Calendar size={20} color="#FFD700" />
+                <View>
+                  <Text style={styles.settingLabel}>Gold Streak Goal</Text>
+                  <Text style={styles.settingSubtitle}>{goldGoal} {goldGoal === 1 ? 'person' : 'people'} for gold</Text>
+                </View>
+              </View>
+              <ChevronRight size={20} color={theme.colors.textSecondary} />
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -299,21 +335,21 @@ export default function NotificationsScreen() {
               <TouchableOpacity 
                 style={[
                   styles.modalOption,
-                  reminderFrequency === 'monthly' && styles.modalOptionSelected
+                  reminderFrequency === 'custom' && styles.modalOptionSelected
                 ]}
-                onPress={() => handleFrequencySelect('monthly')}
+                onPress={() => handleFrequencySelect('custom')}
               >
                 <View style={styles.modalOptionContent}>
                   <Text style={[
                     styles.modalOptionTitle,
-                    reminderFrequency === 'monthly' && styles.modalOptionTitleSelected
-                  ]}>Monthly</Text>
+                    reminderFrequency === 'custom' && styles.modalOptionTitleSelected
+                  ]}>Custom</Text>
                   <Text style={[
                     styles.modalOptionSubtitle,
-                    reminderFrequency === 'monthly' && styles.modalOptionSubtitleSelected
-                  ]}>Get reminded once a month</Text>
+                    reminderFrequency === 'custom' && styles.modalOptionSubtitleSelected
+                  ]}>Set your own schedule</Text>
                 </View>
-                {reminderFrequency === 'monthly' && (
+                {reminderFrequency === 'custom' && (
                   <Check size={20} color={theme.colors.primary} />
                 )}
               </TouchableOpacity>
@@ -383,6 +419,18 @@ const createStyles = (theme: Theme) => StyleSheet.create({
     color: theme.colors.textSecondary,
     marginTop: 2,
     flexWrap: 'wrap',
+  },
+  goalExplanation: {
+    padding: 16,
+    backgroundColor: theme.colors.background,
+    borderBottomWidth: 0.5,
+    borderBottomColor: theme.colors.border,
+  },
+  goalExplanationText: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: 4,
   },
   footer: {
     alignItems: 'center',

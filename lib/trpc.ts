@@ -6,7 +6,7 @@ import { createTRPCClient, httpBatchLink } from "@trpc/client";
 import superjson from "superjson";
 import { FLAGS } from "@/constants/flags";
 import { Platform } from "react-native";
-import type { AppRouter } from '@/backend-vercel/backend/trpc/router-types';
+import type { AppRouter } from '@/types/trpc';
 import { supabase } from '@/lib/supabase';
 
 // Verify we're not accidentally importing server code
@@ -18,27 +18,19 @@ if (typeof process !== 'undefined' && process.env.NODE_ENV === 'development') {
 export const trpc = createTRPCReact<AppRouter>();
 
 export const getBaseUrl = (): string => {
-  // Priority order for API base URL:
-  // 1. EXPO_PUBLIC_API_BASE_URL (preferred)
-  // 2. EXPO_PUBLIC_API_URL
-  // 3. EXPO_PUBLIC_BACKEND_URL
-  // 4. NEXT_PUBLIC_API_URL (for web builds)
-  // 5. Production fallback
-  let envUrl = 
-    process.env.EXPO_PUBLIC_API_BASE_URL ?? 
-    process.env.EXPO_PUBLIC_API_URL ?? 
-    process.env.EXPO_PUBLIC_BACKEND_URL ??
-    process.env.NEXT_PUBLIC_API_URL ?? 
-    "https://ever-reach-be.vercel.app"; // Production fallback
-  
-  // Platform-specific URL transformation for LOCAL development
-  // Android emulator needs 10.0.2.2, web needs localhost
-  if (Platform.OS === 'android' && envUrl.includes('localhost')) {
-    envUrl = envUrl.replace('localhost', '10.0.2.2');
-    console.log(' [tRPC/Android] Converted localhost to 10.0.2.2 for emulator');
+  // Always prefer an explicit API base URL for all platforms (web and native)
+  const envUrl = process.env.EXPO_PUBLIC_API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "";
+  if (envUrl) {
+    return envUrl.replace(/\/?$/, "");
   }
-  
-  return envUrl.replace(/\/?$/, "");
+
+  // Development fallbacks (used only if no env is provided)
+  if (Platform.OS === "android") {
+    // Android emulator can reach host via 10.0.2.2
+    return "http://10.0.2.2:3000";
+  }
+  // iOS simulator, web dev, or unknown native env
+  return "http://localhost:3000";
 };
 
 // Create standalone tRPC client for non-React usage
@@ -74,17 +66,10 @@ export const trpcClient = createTRPCClient<AppRouter>({
           throw new Error("Invalid TRPC URL");
         }
         console.log("[TRPC] Making request to:", safeUrl);
-        
-        // Create manual timeout for React Native compatibility
-        // AbortSignal.timeout() is not supported in React Native
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000);
-        
         return fetch(safeUrl, {
           ...options,
-          signal: controller.signal,
+          signal: AbortSignal.timeout(15000),
         })
-          .finally(() => clearTimeout(timeoutId))
           .then(async (response) => {
             console.log("[TRPC] Response status:", response.status, "Content-Type:", response.headers.get("content-type"));
             const contentType = response.headers.get("content-type") ?? "";

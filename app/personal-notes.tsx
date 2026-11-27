@@ -1,20 +1,18 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   Text,
   View,
   ScrollView,
   TouchableOpacity,
+  TextInput,
   Alert,
   KeyboardAvoidingView,
   Platform,
   TouchableWithoutFeedback,
   Keyboard,
-  Image,
 } from 'react-native';
-import { Stack, useLocalSearchParams } from 'expo-router';
-import { go } from '@/lib/navigation';
-import CrossPlatformTextInput from '@/components/CrossPlatformTextInput';
+import { Stack, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   Plus,
@@ -27,69 +25,66 @@ import {
   Play,
   Pause,
   RefreshCw,
-  Camera,
-  X,
-  ChevronLeft,
 } from 'lucide-react-native';
 import { VoiceNotesRepo } from '@/repos/VoiceNotesRepo';
 import { TextNotesRepo } from '@/repos/TextNotesRepo';
-import { usePeople } from '@/providers/PeopleProvider';
-import { useVoiceNotes } from '@/providers/VoiceNotesProvider';
+import { PeopleRepo } from '@/repos/PeopleRepo';
 import { Audio } from 'expo-av';
-import { useTheme } from '@/providers/ThemeProvider';
-import { useAnalytics } from '@/hooks/useAnalytics';
-import { useNotesComposer } from '@/providers/NotesComposerProvider';
-import analytics from '@/lib/analytics';
 
 type PersonalNote = {
   id: string;
-  type: 'voice' | 'text' | 'screenshot';
+  type: 'voice' | 'text';
   content: string;
   personId?: string;
   personName?: string;
   createdAt: number;
   audioUri?: string;
-  metadata?: {
-    type?: string;
-    file_url?: string;
-    file_id?: string;
-    linked_contacts?: Array<{ id: string; name: string }>;
-  };
 };
 
-type FilterType = 'all' | 'voice' | 'text' | 'personal' | 'people' | 'screenshot';
+type FilterType = 'all' | 'voice' | 'text' | 'personal' | 'people';
 
 export default function PersonalNotesScreen() {
   const insets = useSafeAreaInsets();
-  const { people } = usePeople();
-  const { voiceNotes } = useVoiceNotes();
-  const { theme } = useTheme();
-  const params = useLocalSearchParams();
-  const notesComposer = useNotesComposer();
-  
-  // Analytics tracking
-  const screenAnalytics = useAnalytics('PersonalNotes');
-  
-  // Get initial filter from query params (default to 'all')
-  const initialFilter = (params.filter as FilterType) || 'all';
-  
   const [notes, setNotes] = useState<PersonalNote[]>([]);
   const [filteredNotes, setFilteredNotes] = useState<PersonalNote[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeFilter, setActiveFilter] = useState<FilterType>(initialFilter);
-  // Using global Notes Composer; local modal removed
+  const [activeFilter, setActiveFilter] = useState<FilterType>('all');
+  const [isLoading, setIsLoading] = useState(false);
+  const [showAddNote, setShowAddNote] = useState(false);
+  const [newNoteText, setNewNoteText] = useState('');
   const [playingAudio, setPlayingAudio] = useState<string | null>(null);
   const [sound, setSound] = useState<Audio.Sound | null>(null);
 
-  const loadNotes = useCallback(async () => {
+  const loadNotes = async () => {
     try {
-      console.log('[PersonalNotes] Loading notes from backend...');
+      setIsLoading(true);
+      
+      // Load voice notes and text notes
+      const voiceNotes = await VoiceNotesRepo.all();
       const textNotes = await TextNotesRepo.all();
+      const people = await PeopleRepo.all();
       const peopleMap = new Map(people.map(p => [p.id, p]));
-
-      console.log('[PersonalNotes] Loaded', textNotes.length, 'text notes');
-      console.log('[PersonalNotes] Loaded', voiceNotes.length, 'voice notes');
-
+      
+      // Load text notes from people interactions
+      const interactionTextNotes: PersonalNote[] = [];
+      for (const person of people) {
+        if (person.interactions) {
+          for (const interaction of person.interactions) {
+            if (interaction.channel === 'note') {
+              interactionTextNotes.push({
+                id: `${person.id}-${interaction.id}`,
+                type: 'text',
+                content: interaction.summary,
+                personId: person.id,
+                personName: person.fullName,
+                createdAt: new Date(interaction.occurredAt).getTime(),
+              });
+            }
+          }
+        }
+      }
+      
+      // Convert voice notes
       const voiceNotesConverted: PersonalNote[] = voiceNotes.map(vn => ({
         id: vn.id,
         type: 'voice',
@@ -99,37 +94,33 @@ export default function PersonalNotesScreen() {
         createdAt: vn.createdAt,
         audioUri: vn.audioUri,
       }));
-
-      const textNotesConverted: PersonalNote[] = textNotes.map(tn => {
-        // Check if this is a screenshot note by looking at metadata
-        const isScreenshot = tn.metadata?.type === 'screenshot' || !!tn.metadata?.file_url;
-        
-        return {
-          id: tn.id,
-          type: isScreenshot ? 'screenshot' : 'text',
-          content: tn.content,
-          personId: tn.personId,
-          personName: tn.personId ? peopleMap.get(tn.personId)?.fullName : undefined,
-          createdAt: tn.createdAt,
-          metadata: tn.metadata, // Include metadata for screenshot file_url
-        };
-      });
-
-      const allNotes = [...voiceNotesConverted, ...textNotesConverted]
+      
+      // Convert text notes from TextNotesRepo
+      const textNotesConverted: PersonalNote[] = textNotes.map(tn => ({
+        id: tn.id,
+        type: 'text',
+        content: tn.content,
+        personId: tn.personId,
+        personName: tn.personId ? peopleMap.get(tn.personId)?.fullName : undefined,
+        createdAt: tn.createdAt,
+      }));
+      
+      const allNotes = [...interactionTextNotes, ...voiceNotesConverted, ...textNotesConverted]
         .sort((a, b) => b.createdAt - a.createdAt);
-
-      console.log('[PersonalNotes] Total notes:', allNotes.length);
+      
       setNotes(allNotes);
     } catch (error) {
-      console.error('[PersonalNotes] Failed to load notes:', error);
+      console.error('Failed to load notes:', error);
       Alert.alert('Error', 'Failed to load notes');
+    } finally {
+      setIsLoading(false);
     }
-  }, [people, voiceNotes]);
+  };
 
   useEffect(() => {
     loadNotes();
-  }, [loadNotes]);
-
+  }, []);
+  
   // Cleanup audio on unmount
   useEffect(() => {
     return () => {
@@ -141,115 +132,91 @@ export default function PersonalNotesScreen() {
 
   useEffect(() => {
     let filtered = notes;
-
-    // Track search usage if query exists
-    if (searchQuery.trim() && searchQuery.length >= 3) {
-      screenAnalytics.track('notes_searched', {
-        queryLength: searchQuery.length,
-        resultCount: filtered.filter(n => 
-          n.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          (n.personName && n.personName.toLowerCase().includes(searchQuery.toLowerCase()))
-        ).length,
-      });
-    }
-
+    
     // Apply filter
     if (activeFilter !== 'all') {
       if (activeFilter === 'voice') {
         filtered = filtered.filter(n => n.type === 'voice');
       } else if (activeFilter === 'text') {
         filtered = filtered.filter(n => n.type === 'text');
-      } else if (activeFilter === 'screenshot') {
-        filtered = filtered.filter(n => n.type === 'screenshot');
       } else if (activeFilter === 'personal') {
         filtered = filtered.filter(n => !n.personId);
       } else if (activeFilter === 'people') {
         filtered = filtered.filter(n => n.personId);
       }
     }
-
+    
     // Apply search
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(n =>
+      filtered = filtered.filter(n => 
         n.content.toLowerCase().includes(query) ||
         (n.personName && n.personName.toLowerCase().includes(query))
       );
     }
-
+    
     setFilteredNotes(filtered);
   }, [notes, activeFilter, searchQuery]);
 
-  // Legacy add-text flow removed; composer handles save
+  const handleAddTextNote = async () => {
+    if (!newNoteText.trim()) return;
+    
+    try {
+      // Create a new text note
+      const newNote = {
+        id: Date.now().toString(),
+        content: newNoteText.trim(),
+        createdAt: Date.now(),
+      };
+      
+      // Save using TextNotesRepo
+      await TextNotesRepo.upsert(newNote);
+      
+      setNewNoteText('');
+      setShowAddNote(false);
+      await loadNotes();
+    } catch (error) {
+      console.error('Failed to add note:', error);
+      Alert.alert('Error', 'Failed to add note');
+    }
+  };
 
   const handleDeleteNote = async (note: PersonalNote) => {
-    // Web-compatible confirmation
-    if (Platform.OS === 'web') {
-      const confirmed = window.confirm('Are you sure you want to delete this note?');
-      if (!confirmed) return;
-      
-      try {
-        // Track note deletion
-        screenAnalytics.track('personal_note_deleted', {
-          noteType: note.type,
-          noteLength: note.content.length,
-          hasContact: !!note.personId,
-        });
-        
-        if (note.type === 'voice') {
-          // Stop playing audio if this note is currently playing
-          if (playingAudio === note.id) {
-            await stopAudio();
-          }
-          await VoiceNotesRepo.remove(note.id);
-        } else {
-          await TextNotesRepo.remove(note.id);
-        }
-        await loadNotes();
-      } catch (error) {
-        console.error('Failed to delete note:', error);
-        analytics.errors.occurred(error as Error, 'PersonalNotes');
-        window.alert('Failed to delete note');
-      }
-    } else {
-      // Mobile: Use native Alert
-      Alert.alert(
-        'Delete Note',
-        'Are you sure you want to delete this note?',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Delete',
-            style: 'destructive',
-            onPress: async () => {
-              try {
-                // Track note deletion
-                screenAnalytics.track('personal_note_deleted', {
-                  noteType: note.type,
-                  noteLength: note.content.length,
-                  hasContact: !!note.personId,
-                });
-                
-                if (note.type === 'voice') {
-                  // Stop playing audio if this note is currently playing
-                  if (playingAudio === note.id) {
-                    await stopAudio();
-                  }
-                  await VoiceNotesRepo.remove(note.id);
+    Alert.alert(
+      'Delete Note',
+      'Are you sure you want to delete this note?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              if (note.type === 'voice') {
+                // Stop playing audio if this note is currently playing
+                if (playingAudio === note.id) {
+                  await stopAudio();
+                }
+                await VoiceNotesRepo.remove(note.id);
+              } else {
+                // Check if it's an interaction note (has personId and starts with personId-)
+                if (note.personId && note.id.startsWith(`${note.personId}-`)) {
+                  Alert.alert('Cannot Delete', 'Text notes linked to people cannot be deleted from here. Please edit them from the person\'s profile.');
+                  return;
                 } else {
+                  // It's a standalone text note, delete from TextNotesRepo
                   await TextNotesRepo.remove(note.id);
                 }
-                await loadNotes();
-              } catch (error) {
-                console.error('Failed to delete note:', error);
-                analytics.errors.occurred(error as Error, 'PersonalNotes');
-                Alert.alert('Error', 'Failed to delete note');
               }
-            },
+              await loadNotes();
+            } catch (error) {
+              console.error('Failed to delete note:', error);
+              Alert.alert('Error', 'Failed to delete note');
+            }
           },
-        ]
-      );
-    }
+        },
+      ]
+    );
   };
 
   const playAudio = async (note: PersonalNote) => {
@@ -259,31 +226,25 @@ export default function PersonalNotesScreen() {
         await sound.unloadAsync();
         setSound(null);
       }
-
+      
       if (playingAudio === note.id) {
         setPlayingAudio(null);
         return;
       }
-
+      
       if (!note.audioUri) {
         Alert.alert('No Audio', 'This voice note has no audio file.');
         return;
       }
       
-      // Track audio playback
-      screenAnalytics.track('voice_note_played', {
-        noteId: note.id,
-        hasContact: !!note.personId,
-      });
-
       const { sound: newSound } = await Audio.Sound.createAsync(
         { uri: note.audioUri },
         { shouldPlay: true }
       );
-
+      
       setSound(newSound);
       setPlayingAudio(note.id);
-
+      
       newSound.setOnPlaybackStatusUpdate((status) => {
         if (status.isLoaded && status.didJustFinish) {
           setPlayingAudio(null);
@@ -295,33 +256,25 @@ export default function PersonalNotesScreen() {
       Alert.alert('Error', 'Failed to play audio');
     }
   };
-
+  
   const stopAudio = async () => {
     try {
       if (sound) {
-        // Check if sound is still loaded before stopping
-        const status = await sound.getStatusAsync();
-        if (status.isLoaded) {
-          await sound.stopAsync();
-          await sound.unloadAsync();
-        }
+        await sound.unloadAsync();
         setSound(null);
       }
       setPlayingAudio(null);
     } catch (error) {
       console.error('Failed to stop audio:', error);
-      // Even if unload fails, clear the state
-      setSound(null);
-      setPlayingAudio(null);
     }
   };
-
+  
   const formatDate = (timestamp: number) => {
     const date = new Date(timestamp);
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
+    
     if (diffDays === 0) {
       return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     } else if (diffDays === 1) {
@@ -332,45 +285,27 @@ export default function PersonalNotesScreen() {
       return date.toLocaleDateString();
     }
   };
-
-  const getFullStorageUrl = (pathOrUrl: string): string => {
-    if (!pathOrUrl) return '';
-    if (pathOrUrl.startsWith('http://') || pathOrUrl.startsWith('https://')) {
-      return pathOrUrl;
-    }
-    return `https://uepnwxxyxvmeibtnwwmh.supabase.co/storage/v1/object/public/media-assets/${pathOrUrl}`;
+  
+  const handleAddVoiceNote = () => {
+    router.push('/voice-note');
   };
 
-  // Inline voice handled by composer; long-press from composer deep-links to voice-note
-
   const filters: { key: FilterType; label: string; icon: any }[] = [
-    // ... (rest of the code remains the same)
     { key: 'all', label: 'All', icon: FileText },
     { key: 'voice', label: 'Voice', icon: Mic },
     { key: 'text', label: 'Text', icon: Edit3 },
-    { key: 'screenshot', label: 'Screenshots', icon: Camera },
     { key: 'personal', label: 'Personal', icon: FileText },
     { key: 'people', label: 'People', icon: Calendar },
   ];
 
-  const isEmpty = filteredNotes.length === 0;
-
   return (
-    <View style={[styles.container, { paddingTop: insets.top, backgroundColor: theme.colors.background }]}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <Stack.Screen
         options={{
           title: 'Personal Notes',
           headerStyle: { backgroundColor: '#FFFFFF' },
           headerTitleStyle: { color: '#000000', fontWeight: '600' },
           headerTintColor: '#000000',
-          headerLeft: () => (
-            <TouchableOpacity 
-              onPress={() => go.back()} 
-              style={{ marginLeft: 16 }}
-            >
-              <ChevronLeft size={24} color="#000000" />
-            </TouchableOpacity>
-          ),
         }}
       />
       
@@ -378,7 +313,7 @@ export default function PersonalNotesScreen() {
       <View style={styles.searchContainer}>
         <View style={styles.searchBar}>
           <Search size={20} color="#666666" />
-          <CrossPlatformTextInput
+          <TextInput
             style={styles.searchInput}
             placeholder="Search notes..."
             value={searchQuery}
@@ -397,12 +332,7 @@ export default function PersonalNotesScreen() {
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.addButton}
-          onPress={() =>
-            notesComposer.open({
-              target: { type: 'personal' },
-              onSaved: () => loadNotes(),
-            })
-          }
+          onPress={() => setShowAddNote(true)}
         >
           <Plus size={20} color="#FFFFFF" />
         </TouchableOpacity>
@@ -422,13 +352,7 @@ export default function PersonalNotesScreen() {
             <TouchableOpacity
               key={filter.key}
               style={[styles.filterTab, isActive && styles.filterTabActive]}
-              onPress={() => {
-                screenAnalytics.track('notes_filter_changed', {
-                  filter: filter.key,
-                  previousFilter: activeFilter,
-                });
-                setActiveFilter(filter.key);
-              }}
+              onPress={() => setActiveFilter(filter.key)}
             >
               <Icon
                 size={14}
@@ -446,16 +370,11 @@ export default function PersonalNotesScreen() {
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <ScrollView
           style={styles.notesList}
-          contentContainerStyle={[
-            styles.notesContent,
-            isEmpty ? styles.notesContentEmpty : styles.notesContentNotEmpty,
-          ]}
-          contentInsetAdjustmentBehavior="never"
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
         >
-        {isEmpty ? (
+        {filteredNotes.length === 0 ? (
           <View style={styles.emptyState}>
             <FileText size={48} color="#CCCCCC" />
             <Text style={styles.emptyTitle}>
@@ -511,37 +430,88 @@ export default function PersonalNotesScreen() {
                 <Text style={styles.noteContent} numberOfLines={4}>
                   {note.content}
                 </Text>
-
-                {/* Screenshot Image */}
-                {note.metadata?.file_url && note.metadata?.type === 'screenshot_analysis' && (
-                  <Image 
-                    source={{ uri: getFullStorageUrl(note.metadata.file_url) }}
-                    style={styles.screenshotImage}
-                    resizeMode="cover"
-                  />
-                )}
-
-                {/* Linked Contacts */}
-                {note.metadata?.linked_contacts && note.metadata.linked_contacts.length > 0 && (
-                  <View style={styles.linkedContactsContainer}>
-                    <Text style={styles.linkedContactsLabel}>Linked Contacts:</Text>
-                    <View style={styles.contactChips}>
-                      {note.metadata.linked_contacts.map((contact) => (
-                        <View key={contact.id} style={styles.contactChip}>
-                          <Text style={styles.contactChipText}>{contact.name}</Text>
-                        </View>
-                      ))}
-                    </View>
-                  </View>
-                )}
               </View>
             );
           })
         )}
+        
+          <View style={styles.bottomPadding} />
         </ScrollView>
       </TouchableWithoutFeedback>
       
-      {/* Global Notes Composer handles add; legacy inline modal removed */}
+      {/* Add Note Modal */}
+      {showAddNote && (
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View style={styles.modalOverlay}>
+            <KeyboardAvoidingView 
+              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+              keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+              style={styles.keyboardAvoidingModal}
+            >
+              <TouchableWithoutFeedback onPress={() => {}}>
+                <View style={styles.modalContent}>
+                  <Text style={styles.modalTitle}>Add Note</Text>
+                  
+                  {/* Note Type Selector */}
+                  <View style={styles.noteTypeSelector}>
+                    <TouchableOpacity
+                      style={styles.noteTypeButton}
+                      onPress={() => {
+                        setShowAddNote(false);
+                        handleAddVoiceNote();
+                      }}
+                    >
+                      <Mic size={20} color="#10B981" />
+                      <Text style={styles.noteTypeButtonText}>Voice Note</Text>
+                    </TouchableOpacity>
+                    <View style={styles.noteTypeDividerContainer}>
+                      <View style={styles.noteTypeDivider} />
+                      <Text style={styles.noteTypeOrText}>or</Text>
+                      <View style={styles.noteTypeDivider} />
+                    </View>
+                  </View>
+                  
+                  <Text style={styles.textNoteLabel}>Add Text Note</Text>
+                  <TextInput
+                    style={styles.noteInput}
+                    placeholder="Write your note..."
+                    value={newNoteText}
+                    onChangeText={setNewNoteText}
+                    multiline
+                    numberOfLines={4}
+                    textAlignVertical="top"
+                    placeholderTextColor="#999999"
+                    returnKeyType="done"
+                    blurOnSubmit={true}
+                    onSubmitEditing={() => {
+                      Keyboard.dismiss();
+                      handleAddTextNote();
+                    }}
+                  />
+                  <View style={styles.modalActions}>
+                    <TouchableOpacity
+                      style={styles.cancelButton}
+                      onPress={() => {
+                        setShowAddNote(false);
+                        setNewNoteText('');
+                      }}
+                    >
+                      <Text style={styles.cancelText}>Cancel</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.saveButton, !newNoteText.trim() && styles.saveButtonDisabled]}
+                      onPress={handleAddTextNote}
+                      disabled={!newNoteText.trim()}
+                    >
+                      <Text style={styles.saveText}>Save Text</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </TouchableWithoutFeedback>
+            </KeyboardAvoidingView>
+          </View>
+        </TouchableWithoutFeedback>
+      )}
     </View>
   );
 }
@@ -549,6 +519,7 @@ export default function PersonalNotesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#F8F9FA',
   },
   searchContainer: {
     flexDirection: 'row',
@@ -591,8 +562,7 @@ const styles = StyleSheet.create({
   },
   filterContainer: {
     paddingHorizontal: 16,
-    marginBottom: 12,
-    maxHeight: 40,  // ✅ Tab height (28) + padding wiggle room
+    marginBottom: 8,
   },
   filterContent: {
     gap: 8,
@@ -601,11 +571,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,
-    paddingVertical: 4,
+    paddingVertical: 6,
     borderRadius: 16,
     backgroundColor: '#FFFFFF',
     gap: 4,
-    height: 28,
   },
   filterTabActive: {
     backgroundColor: '#000000',
@@ -622,22 +591,10 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
   },
-  notesContent: {
-    paddingTop: 0,
-    paddingBottom: 32,
-    flexGrow: 1,
-  },
-  notesContentEmpty: {
-    justifyContent: 'center',
-  },
-  notesContentNotEmpty: {
-    justifyContent: 'flex-start',
-  },
   emptyState: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 32,
-    paddingTop: 48,
+    paddingVertical: 64,
   },
   emptyTitle: {
     fontSize: 18,
@@ -708,11 +665,8 @@ const styles = StyleSheet.create({
     color: '#000000',
     lineHeight: 20,
   },
-  keyboardAvoidingModal: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: '100%',
+  bottomPadding: {
+    height: 32,
   },
   modalOverlay: {
     position: 'absolute',
@@ -723,52 +677,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 1000,
+    paddingHorizontal: 16,
   },
-  modalOverlayTouchable: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-  noteTypeSelector: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  noteTypeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-    backgroundColor: '#F0FDF4',
-    borderWidth: 1,
-    borderColor: '#10B981',
-    gap: 8,
-    width: '100%',
-    marginBottom: 16,
-  },
-  noteTypeButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#10B981',
-  },
-  noteTypeDividerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '100%',
-  },
-  noteTypeDivider: {
-    height: 1,
-    backgroundColor: '#E5E5E5',
+  keyboardAvoidingModal: {
     flex: 1,
-  },
-  noteTypeOrText: {
-    fontSize: 14,
-    color: '#999999',
-    marginHorizontal: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
   },
   modalContent: {
     backgroundColor: '#FFFFFF',
@@ -825,49 +740,48 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '600',
   },
+  noteTypeSelector: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  noteTypeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    backgroundColor: '#F0FDF4',
+    borderWidth: 1,
+    borderColor: '#10B981',
+    gap: 8,
+    width: '100%',
+    marginBottom: 16,
+  },
+  noteTypeButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#10B981',
+  },
+  noteTypeDividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+  },
+  noteTypeDivider: {
+    height: 1,
+    backgroundColor: '#E5E5E5',
+    flex: 1,
+  },
+  noteTypeOrText: {
+    fontSize: 14,
+    color: '#999999',
+    marginHorizontal: 16,
+  },
   textNoteLabel: {
     fontSize: 16,
     fontWeight: '600',
     color: '#000000',
     marginBottom: 12,
-  },
-  screenshotImage: {
-    width: '100%',
-    height: 200,
-    borderRadius: 8,
-    marginTop: 12,
-    backgroundColor: '#F3F4F6',
-  },
-  linkedContactsContainer: {
-    marginTop: 12,
-    padding: 8,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 8,
-  },
-  linkedContactsLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#6B7280',
-    marginBottom: 8,
-  },
-  contactChips: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  contactChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  contactChipText: {
-    fontSize: 13,
-    color: '#374151',
-    fontWeight: '500',
   },
 });

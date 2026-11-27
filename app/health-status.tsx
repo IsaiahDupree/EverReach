@@ -1,25 +1,21 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { Stack, useRouter } from 'expo-router';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { Stack } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowLeft } from 'lucide-react-native';
 import { HealthStatus } from '@/components/HealthStatus';
 import { useAppSettings } from '@/providers/AppSettingsProvider';
-import { useAnalytics } from '@/hooks/useAnalytics';
 
 export default function HealthStatusScreen() {
   const insets = useSafeAreaInsets();
-  const router = useRouter();
   const { theme } = useAppSettings();
-
-  // Analytics tracking
-  useAnalytics('HealthStatus');
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <Stack.Screen 
         options={{ 
-          headerShown: false,
+          title: 'API Health Status',
+          headerStyle: { backgroundColor: theme.colors.surface },
+          headerTintColor: theme.colors.text,
         }} 
       />
       
@@ -28,19 +24,10 @@ export default function HealthStatusScreen() {
         contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 20 }]}
         showsVerticalScrollIndicator={false}
       >
-        <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
-          <View style={styles.headerRow}>
-            <TouchableOpacity 
-              onPress={() => router.back()} 
-              style={styles.backButton}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <ArrowLeft size={24} color={theme.colors.text} />
-            </TouchableOpacity>
-            <Text style={[styles.title, { color: theme.colors.text }]}>
-              Backend Health Status
-            </Text>
-          </View>
+        <View style={styles.header}>
+          <Text style={[styles.title, { color: theme.colors.text }]}>
+            Backend Health Status
+          </Text>
           <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
             Real-time status of your Vercel backend deployment
           </Text>
@@ -107,23 +94,11 @@ const styles = StyleSheet.create({
     padding: 20,
     alignItems: 'center',
   },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-    marginBottom: 8,
-  },
-  backButton: {
-    position: 'absolute',
-    left: 0,
-    padding: 8,
-    zIndex: 1,
-  },
   title: {
     fontSize: 24,
     fontWeight: '700',
     textAlign: 'center',
+    marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,

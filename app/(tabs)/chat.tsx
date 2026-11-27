@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -12,7 +12,7 @@ import {
   TouchableWithoutFeedback,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useLocalSearchParams, useNavigation } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import {
   MessageCircle,
   TrendingUp,
@@ -20,20 +20,15 @@ import {
   Users,
   BarChart3,
   ArrowRight,
-  Send,
   Sparkles,
-  TrendingDown,
   Clock,
-  Image as ImageIcon,
+  Send,
 } from 'lucide-react-native';
 import { useAppSettings } from '@/providers/AppSettingsProvider';
-import CrossPlatformTextInput from '@/components/CrossPlatformTextInput';
-import { useAnalytics } from '@/hooks/useAnalytics';
-import VoiceMicButton from '@/components/VoiceMicButton';
-import { useVoiceNotes } from '@/providers/VoiceNotesProvider';
 import { usePeople } from '@/providers/PeopleProvider';
+import { useVoiceNotes } from '@/providers/VoiceNotesProvider';
 import ChatInterface from '@/components/ChatInterface';
-import { PaywallGate } from '@/components/PaywallGate';
+import VoiceMicButton from '@/components/VoiceMicButton';
 
 interface TrendingQuery {
   id: string;
@@ -59,17 +54,8 @@ export default function ChatTabScreen() {
   const { voiceNotes } = useVoiceNotes();
   const params = useLocalSearchParams<{ threadId?: string; threadLabel?: string; initialQuery?: string }>();
   const [selectedTimeframe, setSelectedTimeframe] = useState<'today' | 'week' | 'month'>('today');
-  
-  // Analytics tracking
-  const analytics = useAnalytics('Chat', {
-    screenProperties: {
-      has_initial_query: !!params.initialQuery,
-      thread_id: params.threadId,
-    },
-  });
   const [inputText, setInputText] = useState('');
   const [showChatInterface, setShowChatInterface] = useState(false);
-  const [autoOpenImagePicker, setAutoOpenImagePicker] = useState(false);
   const inputRef = useRef<TextInput>(null);
   const [stats, setStats] = useState<QueryStats>({
     totalQueries: 0,
@@ -79,19 +65,6 @@ export default function ChatTabScreen() {
   });
 
   const containerStyle = useMemo(() => [{ backgroundColor: theme.colors.background }, styles.container], [theme.colors.background]);
-
-  // Hide bottom tab bar during a focused chat session (ChatInterface)
-  const navigation = useNavigation();
-  useEffect(() => {
-    const defaultTabBar = {
-      backgroundColor: theme.colors.surface,
-      borderTopWidth: 0.5,
-      borderTopColor: theme.colors.border,
-    } as any;
-    (navigation as any)?.setOptions?.({
-      tabBarStyle: showChatInterface ? { display: 'none' } : defaultTabBar,
-    });
-  }, [navigation, showChatInterface, theme]);
 
   // Show chat interface if there are params or if explicitly requested
   useEffect(() => {
@@ -219,32 +192,19 @@ export default function ChatTabScreen() {
 
   const handleQueryPress = (query: string) => {
     if (!query?.trim()) return;
-    
-    // Track trending query selection
-    analytics.track('chat_trending_query_selected', {
-      query: query.trim(),
-      queryLength: query.trim().length,
-    });
-    
     setInputText(query.trim());
     setShowChatInterface(true);
   };
 
   const handleSendQuery = () => {
     if (inputText.trim()) {
-      // Track query sent
-      analytics.track('chat_query_sent', {
-        queryLength: inputText.trim().length,
-        source: 'manual_input',
-      });
-      
       setShowChatInterface(true);
     }
   };
 
   const handleInputChange = (text: string) => {
-    if (text.length <= 500) {
-      setInputText(text);
+    if (!text || text.length <= 500) {
+      setInputText(text.trim() ? text : '');
     }
   };
 
@@ -266,29 +226,23 @@ export default function ChatTabScreen() {
 
   if (showChatInterface) {
     return (
-      <PaywallGate featureArea="ai_messages">
-        <View style={containerStyle}>
-          <ChatInterface 
-            visible={visible} 
-            onClose={handleClose} 
-            threadId={params.threadId} 
-            threadLabel={params.threadLabel}
-            initialQuery={autoOpenImagePicker ? undefined : (inputText || params.initialQuery)}
-            draftText={inputText}
-            onDraftTextChange={setInputText}
-            embedHeader={{
-              onBack: handleBackToTrending,
-              title: "CRM Assistant"
-            }}
-            autoOpenImagePicker={autoOpenImagePicker}
-          />
-        </View>
-      </PaywallGate>
+      <View style={containerStyle}>
+        <ChatInterface 
+          visible={visible} 
+          onClose={handleClose} 
+          threadId={params.threadId} 
+          threadLabel={params.threadLabel}
+          initialQuery={inputText || params.initialQuery}
+          embedHeader={{
+            onBack: handleBackToTrending,
+            title: "CRM Assistant"
+          }}
+        />
+      </View>
     );
   }
 
   return (
-    <PaywallGate featureArea="ai_messages">
     <View style={containerStyle}>
       {/* Custom Header for Trending View */}
       <View style={[styles.customHeader, { backgroundColor: theme.colors.surface, paddingTop: insets.top }]}>
@@ -301,13 +255,9 @@ export default function ChatTabScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
         >
-          <View style={styles.innerContainer}>
-              <ScrollView 
-                style={styles.scrollView} 
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ paddingBottom: 16 }}
-                keyboardShouldPersistTaps="handled"
-              >
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <View style={styles.innerContainer}>
+              <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
                 {/* Header */}
                 <View style={styles.header}>
                   <View style={styles.headerContent}>
@@ -315,9 +265,50 @@ export default function ChatTabScreen() {
                       <MessageCircle size={32} color={theme.colors.primary} />
                     </View>
                     <Text style={[styles.title, { color: theme.colors.text }]}>EverReach CRM Assistant</Text>
-                    <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}> 
-                      Ask about your contacts, notes, or get suggestions...
+                    <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
+                      Discover what others are asking and get inspired for your next query
                     </Text>
+                  </View>
+                </View>
+
+                {/* Interactive Input Bar */}
+                <View style={styles.inputContainer}>
+                  <View style={[styles.inputBar, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+                    <TextInput
+                      ref={inputRef}
+                      style={[styles.input, { color: theme.colors.text }]}
+                      placeholder="Ask about your contacts, notes, or get suggestions..."
+                      placeholderTextColor={theme.colors.textSecondary}
+                      value={inputText}
+                      onChangeText={handleInputChange}
+                      multiline
+                      maxLength={500}
+                      onSubmitEditing={handleSendQuery}
+                      blurOnSubmit={false}
+                    />
+                    <VoiceMicButton
+                      size={36}
+                      onRecordingComplete={(uri, duration) => {
+                        console.log('Recording completed:', uri, duration);
+                      }}
+                      onTranscriptReady={(transcript) => {
+                        if (transcript.trim()) {
+                          setInputText(transcript);
+                          setShowChatInterface(true);
+                        }
+                      }}
+                      style={styles.micBtn}
+                    />
+                    <TouchableOpacity
+                      style={[
+                        styles.sendBtn, 
+                        { backgroundColor: inputText.trim() ? theme.colors.primary : theme.colors.border }
+                      ]}
+                      onPress={handleSendQuery}
+                      disabled={!inputText.trim()}
+                    >
+                      <Send size={18} color={inputText.trim() ? '#fff' : theme.colors.textSecondary} />
+                    </TouchableOpacity>
                   </View>
                 </View>
 
@@ -339,13 +330,7 @@ export default function ChatTabScreen() {
                               : theme.colors.border,
                           }
                         ]}
-                        onPress={() => {
-                        analytics.track('chat_timeframe_changed', {
-                          timeframe: option.key,
-                          previousTimeframe: selectedTimeframe,
-                        });
-                        setSelectedTimeframe(option.key);
-                      }}
+                        onPress={() => setSelectedTimeframe(option.key)}
                       >
                         {option.icon}
                         <Text style={[
@@ -427,67 +412,10 @@ export default function ChatTabScreen() {
                   </Text>
                 </View>
               </ScrollView>
-              
-              {/* Fixed Input Bar at Bottom */}
-              <View style={[styles.fixedInputContainer, { backgroundColor: theme.colors.background, paddingBottom: insets.bottom + 8 }]}>
-                <View style={[styles.inputBar, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
-                  <CrossPlatformTextInput
-                    style={[styles.input, { color: theme.colors.text }]}
-                    placeholder="Ask me anything..."
-                    placeholderTextColor={theme.colors.textSecondary}
-                    value={inputText}
-                    onChangeText={handleInputChange}
-                    multiline
-                    maxLength={500}
-                    onSubmitEditing={handleSendQuery}
-                    blurOnSubmit={false}
-                    autoFocus={false}
-                    inputAccessoryViewID={undefined}
-                  />
-                  <VoiceMicButton
-                    size={36}
-                    compact
-                    onRecordingComplete={(uri, duration) => {
-                      console.log('Recording completed:', uri, duration);
-                    }}
-                    onTranscriptReady={(transcript) => {
-                      if (transcript.trim()) {
-                        analytics.track('chat_voice_query_used', {
-                          transcriptLength: transcript.trim().length,
-                        });
-                        setInputText(transcript);
-                        setShowChatInterface(true);
-                      }
-                    }}
-                    style={styles.micBtn}
-                  />
-                  <TouchableOpacity
-                    style={styles.attachBtn}
-                    onPress={() => {
-                      setAutoOpenImagePicker(true);
-                      setShowChatInterface(true);
-                      setTimeout(() => setAutoOpenImagePicker(false), 0);
-                    }}
-                    accessibilityLabel="Attach screenshot"
-                  >
-                    <ImageIcon size={20} color={theme.colors.textSecondary} />
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[
-                      styles.sendBtn, 
-                      { backgroundColor: inputText.trim() ? theme.colors.primary : theme.colors.border }
-                    ]}
-                    onPress={handleSendQuery}
-                    disabled={!inputText.trim()}
-                  >
-                    <Send size={20} color={inputText.trim() ? theme.colors.surface : theme.colors.textSecondary} />
-                  </TouchableOpacity>
-                </View>
-              </View>
-          </View>
+            </View>
+          </TouchableWithoutFeedback>
         </KeyboardAvoidingView>
     </View>
-    </PaywallGate>
   );
 }
 
@@ -560,15 +488,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     marginBottom: 32,
   },
-  fixedInputContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.05)',
-  },
   inputBar: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     gap: 12,
     padding: 16,
     borderRadius: 16,
@@ -593,23 +515,14 @@ const styles = StyleSheet.create({
     minHeight: 20,
   },
   micBtn: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    // Style for VoiceMicButton container
   },
   sendBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  attachBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F3F4F6',
   },
   sectionTitle: {
     fontSize: 20,

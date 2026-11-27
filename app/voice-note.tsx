@@ -9,29 +9,15 @@ import {
   ActivityIndicator,
   Animated,
   Dimensions,
-  Modal,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
 import { VoiceNotesRepo } from "@/repos/VoiceNotesRepo";
-import { useVoiceNotes } from "@/providers/VoiceNotesProvider";
 import { TextNotesRepo } from "@/repos/TextNotesRepo";
 import { usePeople } from "@/providers/PeopleProvider";
-import { Mic, Square, X, Check, User, AlertCircle } from "lucide-react-native";
+import { Mic, Square, X, Check, User } from "lucide-react-native";
 import { Audio } from 'expo-av';
-// Using legacy import for expo-file-system (SDK 54+ deprecated many methods)
-import * as FileSystem from 'expo-file-system/legacy';
-import AuthGate from '@/components/AuthGate';
-import { usePaywallGate } from '@/hooks/usePaywallGate';
-import ContactPickerBottomSheet from '@/components/ContactPickerBottomSheet';
-import { useAnalytics } from '@/hooks/useAnalytics';
-import analytics from '@/lib/analytics';
-import { 
-  getAudioPermissionPreference, 
-  requestAudioPermission, 
-  shouldRequestAudioPermission,
-  type AudioPermissionPreference 
-} from '@/lib/audioPermissions';
+import * as FileSystem from 'expo-file-system';
 
 const { width } = Dimensions.get('window');
 const INTEREST_SUGGESTIONS = [
@@ -44,38 +30,20 @@ export default function VoiceNoteScreen() {
   const { personId } = useLocalSearchParams();
 
   const { people, updatePerson } = usePeople();
-  const { addVoiceNote } = useVoiceNotes();
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [duration, setDuration] = useState(0);
   const [transcript, setTranscript] = useState("");
   const [isTranscribing, setIsTranscribing] = useState(false);
-  const [selectedPersonId, setSelectedPersonId] = useState<string | null>(() => (personId ? (personId as string) : null));
+  const [selectedPersonId, setSelectedPersonId] = useState<string>(personId as string || "");
   const [contextScope, setContextScope] = useState<'about_person' | 'about_me'>('about_person');
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [audioLevel, setAudioLevel] = useState(0);
   const [showInterestTags, setShowInterestTags] = useState(false);
-  const [recordedAudioUri, setRecordedAudioUri] = useState<string>('');
-  const [recordedAudioBlob, setRecordedAudioBlob] = useState<Blob | null>(null);
-  
-  // Permission state
-  const [showPermissionPrompt, setShowPermissionPrompt] = useState(false);
-  const [permissionState, setPermissionState] = useState<AudioPermissionPreference>('not-asked');
-  
-  // Analytics tracking
-  const screenAnalytics = useAnalytics('VoiceNote');
-  const [recordingStartTime, setRecordingStartTime] = useState<number>(0);
   
   // Animation refs
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const barsAnim = useRef(Array.from({ length: 20 }, () => new Animated.Value(0.1))).current;
-
-  // Load permission state on mount
-  useEffect(() => {
-    getAudioPermissionPreference().then(state => {
-      setPermissionState(state.preference);
-    });
-  }, []);
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
@@ -127,66 +95,9 @@ export default function VoiceNoteScreen() {
     });
   };
 
-  const handleStartRecordingClick = async () => {
-    // Check if we should request permission
-    const shouldRequest = await shouldRequestAudioPermission();
-    
-    if (permissionState === 'denied' && !shouldRequest) {
-      // User previously denied, show them how to enable
-      alert(
-        Platform.OS === 'web'
-          ? 'Microphone access was previously denied. Please enable it in your browser settings and reload the page.'
-          : 'Microphone permission was denied. Please enable it in Settings > Privacy > Microphone.'
-      );
-      return;
-    }
-    
-    // Show friendly prompt before requesting permission
-    if (permissionState === 'not-asked') {
-      setShowPermissionPrompt(true);
-    } else {
-      // Permission already granted, start recording directly
-      proceedWithRecording();
-    }
-  };
-
-  const proceedWithRecording = async () => {
-    try {
-      // Request permission if needed
-      if (permissionState !== 'granted') {
-        const { granted, preference } = await requestAudioPermission();
-        setPermissionState(preference);
-        
-        if (!granted) {
-          alert(
-            Platform.OS === 'web'
-              ? 'Microphone access is required to record voice notes.'
-              : 'Microphone permission is required to record voice notes.'
-          );
-          return;
-        }
-      }
-      
-      // Start recording
-      await startRecording();
-    } catch (error) {
-      console.error('Failed to proceed with recording:', error);
-      analytics.errors.occurred(error as Error, 'VoiceNote');
-    }
-  };
-
   const startRecording = async () => {
     try {
       setDuration(0);
-      const startTime = Date.now();
-      setRecordingStartTime(startTime);
-      
-      // Track recording started
-      screenAnalytics.track('recording_started', {
-        contactId: selectedPersonId || undefined,
-        contactIds: selectedPersonId ? [selectedPersonId] : undefined,
-        contextScope: contextScope,
-      });
       
       if (Platform.OS === 'web') {
         // Web recording using MediaRecorder API
@@ -240,6 +151,12 @@ export default function VoiceNoteScreen() {
         
       } else {
         // Native recording for iOS/Android
+        const permission = await Audio.requestPermissionsAsync();
+        if (!permission.granted) {
+          alert("Permission to access microphone is required!");
+          return;
+        }
+
         await Audio.setAudioModeAsync({ 
           allowsRecordingIOS: true, 
           playsInSilentModeIOS: true,
@@ -248,11 +165,7 @@ export default function VoiceNoteScreen() {
           playThroughEarpieceAndroid: false
         });
 
-        // Create new Recording instance
-        const rec = new Audio.Recording();
-        
-        // Prepare recording with options
-        await rec.prepareToRecordAsync({
+        const { recording: rec } = await Audio.Recording.createAsync({
           android: {
             extension: '.m4a',
             outputFormat: Audio.AndroidOutputFormat.MPEG_4,
@@ -278,7 +191,10 @@ export default function VoiceNoteScreen() {
           },
         });
         
-        // Set up metering before starting
+        setRecording(rec);
+        setIsRecording(true);
+        
+        // Set up metering for native
         rec.setOnRecordingStatusUpdate((status) => {
           if (status.isRecording && status.metering) {
             const normalizedLevel = Math.max(0, Math.min(1, (status.metering + 160) / 160));
@@ -289,28 +205,12 @@ export default function VoiceNoteScreen() {
         
         // Enable metering
         await rec.setProgressUpdateInterval(100);
-        
-        // Start recording
-        await rec.startAsync();
-        
-        setRecording(rec);
-        setIsRecording(true);
       }
       
       console.log('Recording started successfully');
-    } catch (err: any) {
+    } catch (err) {
       console.error('Failed to start recording', err);
-      analytics.errors.occurred(err as Error, 'VoiceNote');
-      
-      // Check for specific iOS background audio error
-      const errorMessage = err?.message || String(err);
-      if (errorMessage.includes('background') || errorMessage.includes('audio session could not be activated')) {
-        alert('Please keep the app in the foreground to record. Tap the record button again when ready.');
-      } else if (errorMessage.includes('permission') || errorMessage.includes('denied')) {
-        alert('Microphone permission is required. Please enable it in Settings.');
-      } else {
-        alert('Failed to start recording. Please try again.');
-      }
+      alert('Failed to start recording. Please check microphone permissions.');
     }
   };
 
@@ -415,8 +315,7 @@ export default function VoiceNoteScreen() {
       }
       
       console.log('Sending audio for transcription...');
-      const baseUrl = process.env.EXPO_PUBLIC_API_URL || 'https://ever-reach-be.vercel.app';
-      const resp = await fetch(`${baseUrl}/api/v1/transcribe`, {
+      const resp = await fetch('https://toolkit.rork.com/stt/transcribe/', {
         method: 'POST',
         body: form,
       });
@@ -430,19 +329,6 @@ export default function VoiceNoteScreen() {
       console.log('Transcription received:', text.substring(0, 100) + '...');
       setTranscript(text);
       
-      // Store audio data for later upload when saving
-      if (audioUri) setRecordedAudioUri(audioUri);
-      if (audioBlob) setRecordedAudioBlob(audioBlob);
-      
-      // Track successful recording completion
-      const recordingDuration = recordingStartTime > 0 ? Date.now() - recordingStartTime : duration * 1000;
-      screenAnalytics.track('recording_completed', {
-        contactId: selectedPersonId || undefined,
-        contactIds: selectedPersonId ? [selectedPersonId] : undefined,
-        duration: Math.floor(recordingDuration / 1000),
-        transcriptLength: text.length,
-      });
-      
       // Extract interests from transcript
       const extractedInterests = INTEREST_SUGGESTIONS.filter((interest) => 
         text.toLowerCase().includes(interest.toLowerCase())
@@ -451,36 +337,8 @@ export default function VoiceNoteScreen() {
       setSelectedInterests(extractedInterests);
       setShowInterestTags(extractedInterests.length > 0 || text.length > 50);
       
-      // Track transcription view and interests extracted
-      screenAnalytics.track('transcription_viewed', {
-        contactId: selectedPersonId || undefined,
-        contactIds: selectedPersonId ? [selectedPersonId] : undefined,
-        transcriptLength: text.length,
-        duration: Math.floor(recordingDuration / 1000),
-      });
-      
-      if (extractedInterests.length > 0) {
-        screenAnalytics.track('contacts_extracted', {
-          contactId: selectedPersonId || undefined,
-          contactIds: selectedPersonId ? [selectedPersonId] : undefined,
-          extractedCount: extractedInterests.length,
-          interests: extractedInterests,
-        });
-      }
-      
     } catch (error) {
       console.error('Recording/transcription error:', error);
-      analytics.errors.occurred(error as Error, 'VoiceNote');
-      
-      // Track recording cancelled or failed
-      const recordingDuration = recordingStartTime > 0 ? Date.now() - recordingStartTime : duration * 1000;
-      screenAnalytics.track('recording_cancelled', {
-        contactId: selectedPersonId || undefined,
-        contactIds: selectedPersonId ? [selectedPersonId] : undefined,
-        duration: Math.floor(recordingDuration / 1000),
-        reason: 'error',
-      });
-      
       alert('Failed to process recording. Please try again.');
     } finally {
       setIsTranscribing(false);
@@ -493,13 +351,18 @@ export default function VoiceNoteScreen() {
     if (transcript) {
       try {
         if (contextScope === 'about_person' && selectedPersonId) {
-          // Save voice note linked to selected contact
-          await addVoiceNote({
+          // Save voice note to contact
+          const voiceNote = {
+            id: Date.now().toString(),
             personId: selectedPersonId,
-            audioUri: recordedAudioUri,
             transcription: transcript,
-            audioBlob: recordedAudioBlob || undefined,
-          });
+            audioUri: "", // In production, upload to storage
+            createdAt: Date.now(),
+            processed: true,
+          };
+          await VoiceNotesRepo.upsert(voiceNote);
+          
+          // Update person's interests
           const person = people.find(p => p.id === selectedPersonId);
           if (person) {
             const updatedInterests = Array.from(new Set([...(person.interests || []), ...selectedInterests]));
@@ -509,32 +372,21 @@ export default function VoiceNoteScreen() {
               lastInteractionSummary: transcript.slice(0, 100) + '...',
             });
           }
-          // Track voice note saved with contact
-          screenAnalytics.track('voice_note_saved', {
-            contactId: selectedPersonId,
-            transcriptLength: transcript.length,
-            interestsCount: selectedInterests.length,
-            contextScope: 'about_person',
-          });
         } else {
           // Save as personal voice note
-          await addVoiceNote({
+          const voiceNote = {
+            id: Date.now().toString(),
             personId: undefined, // Personal note, no person associated
-            audioUri: recordedAudioUri,
             transcription: transcript,
-            audioBlob: recordedAudioBlob || undefined,
-          });
-          
-          // Track personal voice note saved
-          screenAnalytics.track('voice_note_saved', {
-            transcriptLength: transcript.length,
-            contextScope: 'about_me',
-          });
+            audioUri: "", // In production, upload to storage
+            createdAt: Date.now(),
+            processed: true,
+          };
+          await VoiceNotesRepo.upsert(voiceNote);
         }
         router.back();
       } catch (error) {
         console.error('Failed to save voice note:', error);
-        analytics.errors.occurred(error as Error, 'VoiceNote');
         alert('Failed to save voice note. Please try again.');
       }
     }
@@ -554,214 +406,180 @@ export default function VoiceNoteScreen() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Auto-show paywall if user is not paid
-  usePaywallGate();
-
   return (
-    <AuthGate requireAuth>
-      <SafeAreaView style={styles.container}>
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {/* Context Scope Selector */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Save to</Text>
-            <View style={styles.scopeSelector}>
-              <TouchableOpacity
-                style={[styles.scopeButton, contextScope === 'about_person' && styles.scopeButtonSelected]}
-                onPress={() => setContextScope('about_person')}
-              >
-                <Text style={[styles.scopeButtonText, contextScope === 'about_person' && styles.scopeButtonTextSelected]}>
-                  Contact
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.scopeButton, contextScope === 'about_me' && styles.scopeButtonSelected]}
-                onPress={() => setContextScope('about_me')}
-              >
-                <User size={16} color={contextScope === 'about_me' ? '#FFFFFF' : '#666666'} />
-                <Text style={[styles.scopeButtonText, contextScope === 'about_me' && styles.scopeButtonTextSelected]}>
-                  My Personal Context
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* Contact Picker - only show if about_person */}
-          {contextScope === 'about_person' && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Select Contact</Text>
-              <ContactPickerBottomSheet
-                selectedId={selectedPersonId ?? undefined}
-                onSelect={(id: string) => setSelectedPersonId(id)}
-                placeholder="Choose contact..."
-                disabled={isRecording}
-              />
-            </View>
-          )}
-
-          {/* Recording Interface */}
-          <View style={styles.recordingSection}>
-            {/* Audio Visualization */}
-            {isRecording && (
-              <View style={styles.audioVisualization}>
-                <View style={styles.barsContainer}>
-                  {barsAnim.map((bar, index) => (
-                    <Animated.View
-                      key={index}
-                      style={[
-                        styles.audioBar,
-                        {
-                          height: bar.interpolate({ inputRange: [0, 1], outputRange: [10, 28] }),
-                          opacity: 0.9,
-                        },
-                      ]}
-                    />
-                  ))}
-                </View>
-              </View>
-            )}
-            
-            <View style={styles.recordingVisual}>
-              <Animated.View
-                style={[
-                  styles.recordButton,
-                  isRecording && styles.recordButtonActive,
-                  { transform: [{ scale: pulseAnim }] },
-                ]}
-              >
-                <TouchableOpacity
-                  style={styles.recordButtonInner}
-                  onPress={isRecording ? stopRecording : handleStartRecordingClick}
-                >
-                  {isRecording ? (
-                    <Square size={32} color="#FFFFFF" fill="#FFFFFF" />
-                  ) : (
-                    <Mic size={32} color="#FFFFFF" />
-                  )}
-                </TouchableOpacity>
-              </Animated.View>
-            </View>
-            
-            <Text style={styles.duration}>{formatDuration(duration)}</Text>
-            <Text style={styles.recordingHint}>
-              {isRecording ? "Tap to stop recording" : "Tap to start recording"}
-            </Text>
-          </View>
-
-          {/* Transcript */}
-          {(transcript || isTranscribing) && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Transcript</Text>
-              {isTranscribing ? (
-                <View style={styles.transcribingContainer}>
-                  <ActivityIndicator size="small" color="#000000" />
-                  <Text style={styles.transcribingText}>Transcribing and extracting insights...</Text>
-                </View>
-              ) : (
-                <View style={styles.transcriptContainer}>
-                  <Text style={styles.transcriptText}>{transcript}</Text>
-                </View>
-              )}
-            </View>
-          )}
-
-          {/* Interest Tags */}
-          {showInterestTags && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Extracted Interests</Text>
-              <Text style={styles.sectionSubtitle}>
-                {selectedInterests.length > 0 
-                  ? `Tap to add/remove from ${contextScope === 'about_me' ? 'your profile' : 'contact'}`
-                  : 'Select interests to tag this note'}
+    <SafeAreaView style={styles.container}>
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Context Scope Selector */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Save to</Text>
+          <View style={styles.scopeSelector}>
+            <TouchableOpacity
+              style={[styles.scopeButton, contextScope === 'about_person' && styles.scopeButtonSelected]}
+              onPress={() => setContextScope('about_person')}
+            >
+              <Text style={[styles.scopeButtonText, contextScope === 'about_person' && styles.scopeButtonTextSelected]}>
+                Contact
               </Text>
-              <View style={styles.interestGrid}>
-                {INTEREST_SUGGESTIONS.map(interest => {
-                  const isSelected = selectedInterests.includes(interest);
-                  const isExtracted = selectedInterests.includes(interest);
-                  return (
-                    <TouchableOpacity
-                      key={interest}
-                      style={[
-                        styles.interestChip,
-                        isSelected && styles.interestChipSelected,
-                        isExtracted && !isSelected && styles.interestChipExtracted,
-                      ]}
-                      onPress={() => toggleInterest(interest)}
-                    >
-                      <Text style={[
-                        styles.interestChipText,
-                        isSelected && styles.interestChipTextSelected,
-                      ]}>
-                        {interest}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            </View>
-          )}
-        </ScrollView>
-
-        {/* Actions */}
-        <View style={styles.actions}>
-          <TouchableOpacity style={styles.cancelButton} onPress={() => router.back()}>
-            <X size={20} color="#666666" />
-            <Text style={styles.cancelButtonText}>Cancel</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.saveButton, (!transcript || (contextScope === 'about_person' && !selectedPersonId)) && styles.saveButtonDisabled]}
-            onPress={handleSave}
-            disabled={!transcript || (contextScope === 'about_person' && !selectedPersonId)}
-          >
-            <Check size={20} color="#FFFFFF" />
-            <Text style={styles.saveButtonText}>Save Note</Text>
-          </TouchableOpacity>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.scopeButton, contextScope === 'about_me' && styles.scopeButtonSelected]}
+              onPress={() => setContextScope('about_me')}
+            >
+              <User size={16} color={contextScope === 'about_me' ? '#FFFFFF' : '#666666'} />
+              <Text style={[styles.scopeButtonText, contextScope === 'about_me' && styles.scopeButtonTextSelected]}>
+                My Personal Context
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
-        {/* Permission Prompt Modal - App Store Guideline 5.1.1 compliant */}
-        {/* Note: No exit/dismiss button per Apple requirement - user must proceed to permission request */}
-        <Modal
-          visible={showPermissionPrompt}
-          transparent
-          animationType="fade"
-          onRequestClose={() => {
-            // Per Apple Guideline 5.1.1: User must proceed to permission request
-            // Closing modal also triggers the permission request
-            setShowPermissionPrompt(false);
-            screenAnalytics.track('permission_prompt_accepted', { via: 'back_gesture' });
-            proceedWithRecording();
-          }}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <View style={styles.modalIconContainer}>
-                <Mic size={32} color="#000000" />
+        {/* Person Selector - only show if about_person */}
+        {contextScope === 'about_person' && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Select Contact</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View style={styles.personList}>
+                {people.map(person => (
+                  <TouchableOpacity
+                    key={person.id}
+                    style={[
+                      styles.personChip,
+                      selectedPersonId === person.id && styles.personChipSelected
+                    ]}
+                    onPress={() => setSelectedPersonId(person.id)}
+                  >
+                    <Text style={[
+                      styles.personChipText,
+                      selectedPersonId === person.id && styles.personChipTextSelected
+                    ]}>
+                      {person.fullName}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
               </View>
-              
-              <Text style={styles.modalTitle}>
-                Enable Microphone Access
-              </Text>
-              
-              <Text style={styles.modalMessage}>
-                EverReach uses your microphone to record voice notes. For example, you can record a quick note like "Remind me to follow up with Sarah about the project meeting" and it will be transcribed and saved to your contacts. Your audio is processed securely and only used for transcription.
-              </Text>
-              
-              <View style={styles.modalActions}>
-                <TouchableOpacity 
-                  style={styles.modalAllowButtonFull}
-                  onPress={() => {
-                    setShowPermissionPrompt(false);
-                    screenAnalytics.track('permission_prompt_accepted', {});
-                    proceedWithRecording();
-                  }}
-                >
-                  <Text style={styles.modalAllowText}>Continue</Text>
-                </TouchableOpacity>
+            </ScrollView>
+          </View>
+        )}
+
+        {/* Recording Interface */}
+        <View style={styles.recordingSection}>
+          {/* Audio Visualization */}
+          {isRecording && (
+            <View style={styles.audioVisualization}>
+              <View style={styles.barsContainer}>
+                {barsAnim.map((bar, index) => (
+                  <Animated.View
+                    key={index}
+                    style={[
+                      styles.audioBar,
+                      {
+                        height: bar.interpolate({ inputRange: [0, 1], outputRange: [10, 28] }),
+                        opacity: 0.9,
+                      },
+                    ]}
+                  />
+                ))}
               </View>
             </View>
+          )}
+          
+          <View style={styles.recordingVisual}>
+            <Animated.View
+              style={[
+                styles.recordButton,
+                isRecording && styles.recordButtonActive,
+                { transform: [{ scale: pulseAnim }] },
+              ]}
+            >
+              <TouchableOpacity
+                style={styles.recordButtonInner}
+                onPress={isRecording ? stopRecording : startRecording}
+              >
+                {isRecording ? (
+                  <Square size={32} color="#FFFFFF" fill="#FFFFFF" />
+                ) : (
+                  <Mic size={32} color="#FFFFFF" />
+                )}
+              </TouchableOpacity>
+            </Animated.View>
           </View>
-        </Modal>
-      </SafeAreaView>
-    </AuthGate>
+          
+          <Text style={styles.duration}>{formatDuration(duration)}</Text>
+          <Text style={styles.recordingHint}>
+            {isRecording ? "Tap to stop recording" : "Tap to start recording"}
+          </Text>
+        </View>
+
+        {/* Transcript */}
+        {(transcript || isTranscribing) && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Transcript</Text>
+            {isTranscribing ? (
+              <View style={styles.transcribingContainer}>
+                <ActivityIndicator size="small" color="#000000" />
+                <Text style={styles.transcribingText}>Transcribing and extracting insights...</Text>
+              </View>
+            ) : (
+              <View style={styles.transcriptContainer}>
+                <Text style={styles.transcriptText}>{transcript}</Text>
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* Interest Tags */}
+        {showInterestTags && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Extracted Interests</Text>
+            <Text style={styles.sectionSubtitle}>
+              {selectedInterests.length > 0 
+                ? `Tap to add/remove from ${contextScope === 'about_me' ? 'your profile' : 'contact'}`
+                : 'Select interests to tag this note'}
+            </Text>
+            <View style={styles.interestGrid}>
+              {INTEREST_SUGGESTIONS.map(interest => {
+                const isSelected = selectedInterests.includes(interest);
+                const isExtracted = selectedInterests.includes(interest);
+                return (
+                  <TouchableOpacity
+                    key={interest}
+                    style={[
+                      styles.interestChip,
+                      isSelected && styles.interestChipSelected,
+                      isExtracted && !isSelected && styles.interestChipExtracted,
+                    ]}
+                    onPress={() => toggleInterest(interest)}
+                  >
+                    <Text style={[
+                      styles.interestChipText,
+                      isSelected && styles.interestChipTextSelected,
+                    ]}>
+                      {interest}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+        )}
+      </ScrollView>
+
+      {/* Actions */}
+      <View style={styles.actions}>
+        <TouchableOpacity style={styles.cancelButton} onPress={() => router.back()}>
+          <X size={20} color="#666666" />
+          <Text style={styles.cancelButtonText}>Cancel</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={[styles.saveButton, (!transcript || (contextScope === 'about_person' && !selectedPersonId)) && styles.saveButtonDisabled]}
+          onPress={handleSave}
+          disabled={!transcript || (contextScope === 'about_person' && !selectedPersonId)}
+        >
+          <Check size={20} color="#FFFFFF" />
+          <Text style={styles.saveButtonText}>Save Note</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
   );
 }
 
@@ -986,80 +804,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   interestChipTextSelected: {
-    color: '#FFFFFF',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  modalContent: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 24,
-    width: '100%',
-    maxWidth: 400,
-    alignItems: 'center',
-  },
-  modalIconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#F0F0F0',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#000000',
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  modalMessage: {
-    fontSize: 15,
-    color: '#666666',
-    lineHeight: 22,
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  modalActions: {
-    flexDirection: 'row',
-    gap: 12,
-    width: '100%',
-  },
-  modalCancelButton: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 12,
-    backgroundColor: '#F0F0F0',
-    alignItems: 'center',
-  },
-  modalCancelText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#666666',
-  },
-  modalAllowButton: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 12,
-    backgroundColor: '#000000',
-    alignItems: 'center',
-  },
-  modalAllowButtonFull: {
-    width: '100%',
-    paddingVertical: 14,
-    borderRadius: 12,
-    backgroundColor: '#000000',
-    alignItems: 'center',
-  },
-  modalAllowText: {
-    fontSize: 16,
-    fontWeight: '600',
     color: '#FFFFFF',
   },
 });

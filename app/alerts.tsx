@@ -14,16 +14,11 @@ import { Bell, BellOff, Archive } from 'lucide-react-native';
 import { AlertCard } from '@/components/AlertCard';
 import { apiFetch } from '@/lib/api';
 import { useAppSettings } from '@/providers/AppSettingsProvider';
-import { useAnalytics } from '@/hooks/useAnalytics';
-import analytics from '@/lib/analytics';
 
 export default function AlertsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { theme } = useAppSettings();
-  
-  // Analytics tracking
-  const screenAnalytics = useAnalytics('Alerts');
 
   const [alerts, setAlerts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,21 +45,11 @@ export default function AlertsScreen() {
   };
 
   const onRefresh = useCallback(() => {
-    screenAnalytics.track('alerts_refreshed', {
-      showingDismissed: showDismissed,
-    });
     setRefreshing(true);
     loadAlerts();
-  }, [showDismissed, screenAnalytics]);
+  }, [showDismissed]);
 
   const handleReachOut = (alert: any) => {
-    // Track reach out action
-    screenAnalytics.track('alert_reached_out', {
-      alertId: alert.id,
-      contactId: alert.contact?.id,
-      warmthScore: alert.contact?.warmth_score,
-    });
-    
     router.push({
       pathname: '/compose/[contactId]',
       params: {
@@ -79,17 +64,10 @@ export default function AlertsScreen() {
   };
 
   const handleSnooze = async (alertId: string) => {
-    screenAnalytics.track('alert_snoozed', {
-      alertId: alertId,
-      snoozeDays: 7,
-    });
     await handleAction(alertId, 'snooze');
   };
 
   const handleDismiss = async (alertId: string) => {
-    screenAnalytics.track('alert_dismissed', {
-      alertId: alertId,
-    });
     await handleAction(alertId, 'dismiss');
   };
 
@@ -108,7 +86,6 @@ export default function AlertsScreen() {
       setAlerts(prev => prev.filter(a => a.id !== alertId));
     } catch (error: any) {
       console.error(`Failed to ${action} alert:`, error);
-      analytics.errors.occurred(error as Error, 'Alerts');
       alert(`Failed to ${action} alert`);
     }
   };
@@ -133,12 +110,7 @@ export default function AlertsScreen() {
 
         <TouchableOpacity
           style={[styles.toggleBtn, { borderColor: theme.colors.border }]}
-          onPress={() => {
-            screenAnalytics.track('alerts_view_toggled', {
-              showingDismissed: !showDismissed,
-            });
-            setShowDismissed(!showDismissed);
-          }}
+          onPress={() => setShowDismissed(!showDismissed)}
         >
           {showDismissed ? (
             <>

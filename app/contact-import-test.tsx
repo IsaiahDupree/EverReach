@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator
 import { Stack } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { apiFetch } from '@/lib/api';
-import { API_ENDPOINTS, getBackendBase } from '@/constants/endpoints';
+import { API_ENDPOINTS, getFullUrl } from '@/constants/endpoints';
 
 interface TestResult {
   name: string;
@@ -37,23 +37,23 @@ export default function ContactImportTestScreen() {
 
   const testScenarios = [
     {
-      name: 'Process 1: Phone Only (US)',
+      name: 'Phone Only (US)',
       platform: 'iOS',
       payload: {
-        display_name: 'Sarah Ashley',
+        display_name: 'Phone Test',
         phones: ['+16018264769'],
         emails: [],
-        tags: ['imported']
+        tags: ['test-phone-only']
       }
     },
     {
-      name: 'Process 2: Email Only',
-      platform: 'Google',
+      name: 'Phone Only (International)',
+      platform: 'Android',
       payload: {
-        display_name: 'John Doe',
-        phones: [],
-        emails: ['john.doe@example.com'],
-        tags: ['imported']
+        display_name: 'International Phone',
+        phones: ['+442012345678'],
+        emails: [],
+        tags: ['test-intl-phone']
       }
     },
     {
@@ -125,7 +125,7 @@ export default function ContactImportTestScreen() {
         throw new Error('Not authenticated. Please log in first.');
       }
 
-      const backend = getBackendBase();
+      const backend = getFullUrl('');
       console.log('\n🧪 Contact Import/Export Test Suite');
       console.log('[contacts-test] Backend:', backend);
       console.log('[contacts-test] Authenticated:', !!session.access_token);

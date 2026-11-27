@@ -4,57 +4,17 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from '../backend/lib/supabase';
 import { FLAGS } from '@/constants/flags';
 
-const safeAsyncStorage = {
-  getItem: async (key: string): Promise<string | null> => {
-    try {
-      const value = await AsyncStorage.getItem(key);
-      if (!value) return null;
-      
-      try {
-        JSON.parse(value);
-        return value;
-      } catch {
-        console.error(`[SafeStorage] Corrupted data for key ${key}, removing...`);
-        await AsyncStorage.removeItem(key);
-        return null;
-      }
-    } catch (error) {
-      console.error(`[SafeStorage] Failed to get ${key}:`, error);
-      return null;
-    }
-  },
-  setItem: async (key: string, value: string): Promise<void> => {
-    try {
-      JSON.parse(value);
-      await AsyncStorage.setItem(key, value);
-    } catch (error) {
-      console.error(`[SafeStorage] Failed to set ${key}:`, error);
-      throw error;
-    }
-  },
-  removeItem: async (key: string): Promise<void> => {
-    try {
-      await AsyncStorage.removeItem(key);
-    } catch (error) {
-      console.error(`[SafeStorage] Failed to remove ${key}:`, error);
-    }
-  },
-};
-
 // Real Supabase client (kept for later)
 const createRealClient = () => {
   const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL!;
   const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_KEY!;
   
-  console.log('[Supabase] Initializing client with URL:', supabaseUrl);
-  
   return createClient<Database>(supabaseUrl, supabaseAnonKey, {
     auth: {
-      storage: safeAsyncStorage as any,
+      storage: AsyncStorage,
       autoRefreshToken: true,
       persistSession: true,
-      detectSessionInUrl: true,
-      flowType: 'pkce',
+      detectSessionInUrl: false,
     },
   });
 };
@@ -202,5 +162,29 @@ export function subscribeToPeople(callback: (payload: any) => void) {
     .subscribe();
 }
 
-// Re-export warmth utilities from pure utils file
-export { calculateWarmth, getWarmthColor, getWarmthLabel } from './warmth-utils';
+// Warmth calculation helper
+export function calculateWarmth(lastInteraction?: string): number {
+  if (!lastInteraction) return 0;
+  
+  const daysSince = Math.floor(
+    (Date.now() - new Date(lastInteraction).getTime()) / (1000 * 60 * 60 * 24)
+  );
+  
+  const halfLife = 14; // days
+  return Math.round(100 * Math.exp(-daysSince / halfLife));
+}
+
+// Color helpers for warmth
+export function getWarmthColor(warmth: number): string {
+  if (warmth >= 60) return '#10B981'; // green (hot)
+  if (warmth >= 30) return '#F59E0B'; // yellow (warm)
+  if (warmth >= 10) return '#6B7280'; // gray (cool)
+  return '#EF4444'; // red (cold)
+}
+
+export function getWarmthLabel(warmth: number): string {
+  if (warmth >= 60) return 'Hot';
+  if (warmth >= 30) return 'Warm';
+  if (warmth >= 10) return 'Cool';
+  return 'Cold';
+}

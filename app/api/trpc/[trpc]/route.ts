@@ -46,6 +46,3 @@ const handler = async (request: Request) => {
 
 // Export handlers for all HTTP methods that tRPC supports
 export { handler as GET, handler as POST, handler as OPTIONS };
-
-// Default export for Expo Router compatibility
-export default handler;

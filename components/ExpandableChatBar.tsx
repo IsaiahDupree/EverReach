@@ -28,7 +28,6 @@ import { usePeople } from '@/providers/PeopleProvider';
 import { useVoiceNotes } from '@/providers/VoiceNotesProvider';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
 import * as Clipboard from 'expo-clipboard';
-import analytics from '@/lib/analytics';
 
 interface Message {
   id: string;
@@ -77,19 +76,21 @@ export default function ExpandableChatBar({ onQuerySubmit, initialQuery }: Expan
   // Analytics tracking
   const trackEvent = useCallback((event: string, properties?: Record<string, any>) => {
     if (!event?.trim()) return;
-    if (properties) {
+    if (properties && typeof properties === 'object') {
+      // Sanitize properties if needed
       const sanitizedProps = Object.fromEntries(
         Object.entries(properties)
-          .filter(([_, value]) => value !== undefined && value !== null)
+          .filter(([key]) => key && typeof key === 'string')
           .map(([key, value]) => [
             key,
             typeof value === 'string' ? value.slice(0, 1000) : value
           ])
       );
-      analytics.track(event, sanitizedProps);
+      console.log(`[Analytics] ${event}`, sanitizedProps);
     } else {
-      analytics.track(event);
+      console.log(`[Analytics] ${event}`);
     }
+    // TODO: Implement actual analytics tracking
   }, []);
 
   // Generate trending queries
@@ -262,8 +263,11 @@ export default function ExpandableChatBar({ onQuerySubmit, initialQuery }: Expan
       // Build voice notes context
       const notesContext = voiceNotes.map(note => ({
         personId: note.personId,
-        transcription: note.transcription,
-        createdAt: note.createdAt
+        transcript: note.transcript,
+        duration: note.duration,
+        createdAt: note.createdAt,
+        contextScope: note.contextScope,
+        extractedInterests: note.extractedInterests
       }));
 
       const systemPrompt = `You are a helpful personal CRM assistant for EverReach. You have access to the user's contact list and voice notes.
@@ -276,7 +280,7 @@ ${contactsContext.map(c => `• ${c.name}${c.company ? ` (${c.company})` : ''}${
   Contact: ${c.emails?.[0] || c.phones?.[0] || 'No contact info'}`).join('\n\n')}
 
 VOICE NOTES (${voiceNotes.length} notes):
-${notesContext.map(n => `• Note from ${n.createdAt}: ${n.transcription || 'No transcription'}`).join('\n')}
+${notesContext.map(n => `• Note from ${n.createdAt}: ${n.transcript || 'No transcript'}`).join('\n')}
 
 You can help with:
 - Finding specific contacts by name, company, or other details
@@ -287,8 +291,7 @@ You can help with:
 
 Be concise, helpful, and reference specific contact details when relevant.`;
 
-      const baseUrl = process.env.EXPO_PUBLIC_API_URL || 'https://ever-reach-be.vercel.app';
-      const response = await fetch(`${baseUrl}/api/v1/agent/chat`, {
+      const response = await fetch('https://toolkit.rork.com/text/llm/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -376,13 +379,14 @@ Be concise, helpful, and reference specific contact details when relevant.`;
   }, [isExpanded, handleExpand, trackEvent, handleSendMessage]);
 
   const handleVoiceRecording = async () => {
-    // Voice recording feature coming soon
+    console.log('Voice recording not implemented yet');
   };
 
   const handleCopyMessage = async (text: string) => {
     if (!text.trim()) return;
     try {
       await Clipboard.setStringAsync(text);
+      console.log('Message copied to clipboard');
     } catch (error) {
       console.error('Failed to copy message:', error);
     }
@@ -547,11 +551,6 @@ Be concise, helpful, and reference specific contact details when relevant.`;
           maxLength={500}
           onSubmitEditing={() => handleSendMessage()}
           blurOnSubmit={false}
-          editable={true}
-          selectTextOnFocus={Platform.OS === 'web'}
-          {...(Platform.OS === 'web' && {
-            selection: undefined,
-          })}
         />
         <TouchableOpacity 
           style={[styles.micBtn, recorderIsRecording && styles.micActive]} 

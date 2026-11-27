@@ -9,8 +9,6 @@ import { FLAGS } from '@/constants/flags';
 import { useAppSettings } from '@/providers/AppSettingsProvider';
 import { getStorageStats, clearCorruptedData } from '@/tools/backup';
 import { Database, Wifi, WifiOff, HardDrive, Activity, Settings, Cloud, Smartphone, Heart } from 'lucide-react-native';
-import { useAnalytics } from '@/hooks/useAnalytics';
-import analytics from '@/lib/analytics';
 
 interface ConnectionTest {
   name: string;
@@ -35,15 +33,6 @@ interface HealthStatus {
 export default function ModeSettingsScreen() {
   const insets = useSafeAreaInsets();
   const { theme, cloudModeEnabled, enableCloudMode, disableCloudMode } = useAppSettings();
-  
-  // Analytics tracking
-  const screenAnalytics = useAnalytics('ModeSettings', {
-    screenProperties: {
-      cloud_mode_enabled: cloudModeEnabled,
-      flags_local_only: FLAGS.LOCAL_ONLY,
-    },
-  });
-  
   const [user, setUser] = useState<any>(null);
   const [localStats, setLocalStats] = useState<any>(null);
   const [tests, setTests] = useState<ConnectionTest[]>([
@@ -112,16 +101,6 @@ export default function ModeSettingsScreen() {
           if (FLAGS.LOCAL_ONLY || !supabase || !cloudModeEnabled) {
             throw new Error('Local-only mode enabled or cloud mode disabled');
           }
-          const authUser = await getCurrentUser();
-          if (!authUser) {
-            throw new Error('User not authenticated. Please sign in first.');
-          }
-          
-          const { error: orgError } = await supabase.rpc('ensure_user_org');
-          if (orgError) {
-            console.error('Failed to ensure user org:', orgError);
-          }
-          
           const { data: rlsData, error: rlsError } = await supabase
             .from('people')
             .select('id')
@@ -251,10 +230,10 @@ export default function ModeSettingsScreen() {
       const result = await clearCorruptedData();
       if (result.success) {
         Alert.alert('Success', `Cleared ${result.clearedCount || 0} corrupted entries`);
+        // Reload stats after clearing
         await loadLocalStats();
       }
-    } catch (err) {
-      console.error('Failed to clear corrupted data:', err);
+    } catch (error) {
       Alert.alert('Error', 'Failed to clear corrupted data');
     }
   }, [loadLocalStats]);

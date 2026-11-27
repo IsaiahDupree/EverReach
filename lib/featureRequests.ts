@@ -54,7 +54,7 @@ export const featureRequestsApi = {
     my_votes?: boolean;
   }): Promise<{ success: boolean; data: FeatureRequest[]; count: number }> {
     const query = new URLSearchParams(params as any);
-    const response = await apiFetch(`/api/v1/feature-requests?${query}`);
+    const response = await apiFetch(`/v1/feature-requests?${query}`);
     return response.json();
   },
 
@@ -62,7 +62,7 @@ export const featureRequestsApi = {
    * Get a single feature request by ID
    */
   async get(id: string): Promise<{ success: boolean; data: FeatureRequest }> {
-    const response = await apiFetch(`/api/v1/feature-requests/${id}`);
+    const response = await apiFetch(`/v1/feature-requests/${id}`);
     return response.json();
   },
 
@@ -77,7 +77,7 @@ export const featureRequestsApi = {
     tags?: string[];
     metadata?: Record<string, any>;
   }): Promise<{ success: boolean; data: FeatureRequest; message: string }> {
-    const response = await apiFetch('/api/v1/feature-requests', {
+    const response = await apiFetch('/v1/feature-requests', {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -97,7 +97,7 @@ export const featureRequestsApi = {
       priority?: string;
     }
   ): Promise<{ success: boolean; data: FeatureRequest; message: string }> {
-    const response = await apiFetch(`/api/v1/feature-requests/${id}`, {
+    const response = await apiFetch(`/v1/feature-requests/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
@@ -108,7 +108,7 @@ export const featureRequestsApi = {
    * Delete a feature request (owner only)
    */
   async delete(id: string): Promise<{ success: boolean; message: string }> {
-    const response = await apiFetch(`/api/v1/feature-requests/${id}`, {
+    const response = await apiFetch(`/v1/feature-requests/${id}`, {
       method: 'DELETE',
     });
     return response.json();
@@ -122,7 +122,7 @@ export const featureRequestsApi = {
     data: { vote_id: string; feature_id: string; votes_count: number };
     message: string;
   }> {
-    const response = await apiFetch(`/api/v1/feature-requests/${id}/vote`, {
+    const response = await apiFetch(`/v1/feature-requests/${id}/vote`, {
       method: 'POST',
     });
     return response.json();
@@ -136,7 +136,7 @@ export const featureRequestsApi = {
     data: { feature_id: string; votes_count: number };
     message: string;
   }> {
-    const response = await apiFetch(`/api/v1/feature-requests/${id}/vote`, {
+    const response = await apiFetch(`/v1/feature-requests/${id}/vote`, {
       method: 'DELETE',
     });
     return response.json();
@@ -156,7 +156,7 @@ export const featureRequestsApi = {
     count: number;
   }> {
     const query = new URLSearchParams(params as any);
-    const response = await apiFetch(`/api/v1/changelog?${query}`);
+    const response = await apiFetch(`/v1/changelog?${query}`);
     return response.json();
   },
 };

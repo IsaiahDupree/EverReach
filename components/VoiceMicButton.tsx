@@ -10,7 +10,6 @@ import {
 } from 'react-native';
 import { Mic, Square } from 'lucide-react-native';
 import { Audio } from 'expo-av';
-import * as Haptics from 'expo-haptics';
 import { useAppSettings } from '@/providers/AppSettingsProvider';
 
 
@@ -20,7 +19,6 @@ interface VoiceMicButtonProps {
   size?: number;
   disabled?: boolean;
   style?: any;
-  compact?: boolean;
 }
 
 export default function VoiceMicButton({
@@ -29,13 +27,12 @@ export default function VoiceMicButton({
   size = 40,
   disabled = false,
   style,
-  compact = false,
 }: VoiceMicButtonProps) {
   const { theme } = useAppSettings();
   const [isRecording, setIsRecording] = useState(false);
   const [duration, setDuration] = useState(0);
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
-  // Removed Audio.usePermissions() - we request permissions manually on button press
+  const [permissionResponse, requestPermission] = Audio.usePermissions();
   const [webMicStatus, setWebMicStatus] = useState<'unknown' | 'granted' | 'denied'>('unknown');
   
   // Animation values
@@ -196,11 +193,13 @@ export default function VoiceMicButton({
         setDuration(0);
         setWebMicStatus('granted');
       } else {
-        // Native recording (Expo AV)
-        const { granted } = await Audio.requestPermissionsAsync();
-        if (!granted) {
-          Alert.alert('Permission Required', 'Microphone permission is required to record audio.');
-          return;
+        // Native recording
+        if (permissionResponse?.status !== 'granted') {
+          const newPermission = await requestPermission();
+          if (newPermission.status !== 'granted') {
+            Alert.alert('Permission Required', 'Microphone permission is required to record audio.');
+            return;
+          }
         }
 
         await Audio.setAudioModeAsync({
@@ -211,11 +210,35 @@ export default function VoiceMicButton({
           staysActiveInBackground: false,
         });
 
-        // Use HIGH_QUALITY preset to avoid prepare/start race issues
-        const { recording: createdRecording } = await Audio.Recording.createAsync(
-          Audio.RecordingOptionsPresets.HIGH_QUALITY
-        );
-        setRecording(createdRecording);
+        const newRecording = new Audio.Recording();
+        await newRecording.prepareToRecordAsync({
+          android: {
+            extension: '.m4a',
+            outputFormat: Audio.AndroidOutputFormat.MPEG_4,
+            audioEncoder: Audio.AndroidAudioEncoder.AAC,
+            sampleRate: 44100,
+            numberOfChannels: 1,
+            bitRate: 128000,
+          },
+          ios: {
+            extension: '.wav',
+            outputFormat: Audio.IOSOutputFormat.LINEARPCM,
+            audioQuality: Audio.IOSAudioQuality.HIGH,
+            sampleRate: 44100,
+            numberOfChannels: 1,
+            bitRate: 128000,
+            linearPCMBitDepth: 16,
+            linearPCMIsBigEndian: false,
+            linearPCMIsFloat: false,
+          },
+          web: {
+            mimeType: 'audio/webm',
+            bitsPerSecond: 128000,
+          },
+        });
+
+        await newRecording.startAsync();
+        setRecording(newRecording);
         setIsRecording(true);
         setDuration(0);
       }
@@ -255,7 +278,7 @@ export default function VoiceMicButton({
           if (!analyser || !dataArray) return;
 
           try {
-            analyser.getByteFrequencyData(dataArray as any);
+            analyser.getByteFrequencyData(dataArray);
             
             // Create 20 frequency bands for visualization
             const bands = 20;
@@ -393,15 +416,12 @@ export default function VoiceMicButton({
   const handleTranscription = async (audioUri: string) => {
     if (!onTranscriptReady) return;
     
-    console.log('[VoiceMicButton] Starting transcription for:', audioUri);
-    
     try {
       const formData = new FormData();
       
       if (Platform.OS === 'web') {
         const response = await fetch(audioUri);
         const blob = await response.blob();
-        console.log('[VoiceMicButton] Web blob size:', blob.size, 'type:', blob.type);
         formData.append('audio', blob, 'recording.webm');
       } else {
         const uriParts = audioUri.split('.');
@@ -411,40 +431,26 @@ export default function VoiceMicButton({
           name: "recording." + fileType,
           type: "audio/" + fileType
         } as any;
-        console.log('[VoiceMicButton] Native audio file:', audioFile);
         formData.append('audio', audioFile);
       }
       
-      console.log('[VoiceMicButton] Calling transcription API...');
-      // Use backend transcription endpoint
-      const baseUrl = process.env.EXPO_PUBLIC_API_URL || 'https://ever-reach-be.vercel.app';
-      const response = await fetch(`${baseUrl}/api/v1/transcribe`, {
+      const response = await fetch('https://toolkit.rork.com/stt/transcribe/', {
         method: 'POST',
         body: formData,
       });
       
-      console.log('[VoiceMicButton] Transcription API response status:', response.status);
-      
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('[VoiceMicButton] Transcription API error:', errorText);
         throw new Error(`Transcription failed: ${response.status}`);
       }
       
       const result = await response.json();
-      console.log('[VoiceMicButton] Transcription result:', result);
       const transcriptText = result.text || '';
       
       if (transcriptText.trim()) {
-        console.log('[VoiceMicButton] Calling onTranscriptReady with:', transcriptText);
         onTranscriptReady(transcriptText);
-      } else {
-        console.warn('[VoiceMicButton] Transcription returned empty text');
-        Alert.alert('Transcription Error', 'Could not transcribe audio. Please try again.');
       }
     } catch (error) {
-      console.error('[VoiceMicButton] Transcription error:', error);
-      Alert.alert('Transcription Error', 'Failed to transcribe audio. Please check your internet connection.');
+      console.error('Transcription error:', error);
     }
   };
 
@@ -456,8 +462,6 @@ export default function VoiceMicButton({
 
   const handlePress = () => {
     if (disabled) return;
-    // Light haptic feedback on press
-    try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
     if (isRecording) {
       stopRecording();
     } else {
@@ -467,21 +471,12 @@ export default function VoiceMicButton({
 
   const canRecord = Platform.OS === 'web' 
     ? webMicStatus !== 'denied'
-    : true; // For native, we'll request permission when user taps record
-
-  // Dynamic colors by theme and variant
-  const buttonBg = isRecording
-    ? '#EF4444'
-    : (compact ? theme.colors.surface : theme.colors.primary);
-  const iconColor = isRecording
-    ? '#FFFFFF'
-    : (compact ? theme.colors.text : '#FFFFFF');
-  const buttonBorder = compact ? { borderWidth: 1, borderColor: theme.colors.border } : null;
+    : permissionResponse?.granted;
 
   return (
     <View style={[styles.container, style]}>
       {/* Audio Waveform Visualizer */}
-      {isRecording && !compact && (
+      {isRecording && (
         <View style={styles.waveformContainer}>
           <View style={styles.waveformBars}>
             {waveformAnims.map((anim, index) => {
@@ -508,7 +503,7 @@ export default function VoiceMicButton({
       )}
       
       {/* Pulse effect when recording */}
-      {isRecording && !compact && (
+      {isRecording && (
         <Animated.View 
           style={[
             styles.pulseRing,
@@ -532,9 +527,8 @@ export default function VoiceMicButton({
               width: size,
               height: size,
               borderRadius: size / 2,
-              backgroundColor: buttonBg,
+              backgroundColor: isRecording ? '#EF4444' : theme.colors.primary,
             },
-            buttonBorder as any,
             disabled && styles.disabled,
           ]}
           onPress={handlePress}
@@ -542,15 +536,15 @@ export default function VoiceMicButton({
           activeOpacity={0.8}
         >
           {isRecording ? (
-            <Square size={size * 0.4} color={iconColor} fill={iconColor} />
+            <Square size={size * 0.4} color="white" fill="white" />
           ) : (
-            <Mic size={size * 0.5} color={iconColor} />
+            <Mic size={size * 0.5} color="white" />
           )}
         </TouchableOpacity>
       </Animated.View>
       
       {/* Duration display */}
-      {isRecording && duration > 0 && !compact && (
+      {isRecording && duration > 0 && (
         <View style={styles.durationContainer}>
           <Text style={[styles.durationText, { color: 'white' }]}>
             {formatDuration(duration)}
@@ -558,14 +552,15 @@ export default function VoiceMicButton({
         </View>
       )}
       
-      {!compact && !canRecord && (
+      {/* Permission message */}
+      {!canRecord && (
         <View style={styles.permissionContainer}>
           <TouchableOpacity 
             style={[styles.permissionButton, { backgroundColor: theme.colors.primary + '15' }]}
-            onPress={requestWebMic}
+            onPress={Platform.OS === 'web' ? requestWebMic : requestPermission}
           >
             <Text style={[styles.permissionText, { color: theme.colors.primary }]}>
-              Enable Mic
+              {Platform.OS === 'web' ? 'Enable Mic' : 'Allow Microphone'}
             </Text>
           </TouchableOpacity>
         </View>

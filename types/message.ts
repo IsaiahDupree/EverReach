@@ -57,7 +57,6 @@ export interface MessageContext {
   goal_name: string;
   user_bio?: string;
   brand_voice?: string;
-  voiceContext?: string;
   contact_first: string;
   contact_last?: string;
   contact_role?: string;
@@ -81,7 +80,6 @@ export interface Person {
   title?: string;
   company?: string;
   warmth: number;
-  warmth_mode?: 'slow' | 'medium' | 'fast' | 'test';
   interests: string[];
   goals: string[];
   tags: string[];

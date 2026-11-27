@@ -27,20 +27,12 @@ export async function generateMessages(
     console.log('🌐 Attempting backend-vercel message generation...');
     
     try {
-      // Build prompt with optional voice context
-      let prompt = `Generate a ${context.tone} ${context.channel} message for ${goal.name}. Context: ${context.contact_first} ${context.contact_last} at ${context.company}. Recent notes: ${context.recent_notes}. Shared interests: ${context.shared_interests}.`;
-      
-      if (context.voiceContext) {
-        prompt += ` VOICE & TONE: ${context.voiceContext}`;
-      }
-      
       const response = await apiFetch('/api/messages/craft', {
         method: 'POST',
         requireAuth: true,
         body: JSON.stringify({
-          prompt,
-          tone: context.tone,
-          voiceContext: context.voiceContext
+          prompt: `Generate a ${context.tone} ${context.channel} message for ${goal.name}. Context: ${context.contact_first} ${context.contact_last} at ${context.company}. Recent notes: ${context.recent_notes}. Shared interests: ${context.shared_interests}.`,
+          tone: context.tone
         })
       });
       

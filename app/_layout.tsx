@@ -1,737 +1,519 @@
-/**
- * Root Layout v2 - Simplified Navigation
- * 
- * Just checks auth state and renders appropriate screens
- * All auth logic lives in AuthProvider.v2
- */
-
 // Import polyfills first
 import 'react-native-url-polyfill/auto';
 import 'react-native-get-random-values';
 import 'text-encoding-polyfill';
 
-// Disable LogBox (error overlays) for production screenshots and builds
-import { LogBox } from 'react-native';
-LogBox.ignoreAllLogs(true);
-LogBox.ignoreLogs([
-  '[OnboardingV2]',
-  'Superwall',
-  'RevenueCat',
-  'Error type:',
-  'onError callback',
-]);
-
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Stack, usePathname } from "expo-router";
-import Constants from 'expo-constants';
+import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import React, { useEffect } from "react";
+import React, { useEffect, Component, ReactNode } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import * as Linking from 'expo-linking';
 import { PeopleProvider } from "@/providers/PeopleProvider";
 import { VoiceNotesProvider } from "@/providers/VoiceNotesProvider";
 import { MessageProvider } from "@/providers/MessageProvider";
-import { InteractionsProvider } from "@/providers/InteractionsProvider";
-import { AuthProvider, useAuth } from "@/providers/AuthProviderV2";
+import { AuthProvider, useAuth } from "@/providers/AuthProvider";
 import { SubscriptionProvider } from "@/providers/SubscriptionProvider";
-import { EntitlementsProviderV3 } from "@/providers/EntitlementsProviderV3";
-import { AppSettingsProvider } from "@/providers/AppSettingsProvider";
+import { AppSettingsProvider, useAppSettings } from "@/providers/AppSettingsProvider";
 import { WarmthSettingsProvider } from "@/providers/WarmthSettingsProvider";
-import { WarmthProvider, useWarmth } from "@/providers/WarmthProvider";
 import { OnboardingProvider, useOnboarding } from "@/providers/OnboardingProvider";
-import { TemplatesContext } from "@/providers/TemplatesProvider";
-import { ThemeProvider } from "@/providers/ThemeProvider";
-import { shouldBlockPath } from "@/config/navigation";
+import { PostHogProvider } from "@/providers/PostHogProvider";
 import { trpc, trpcClient } from "@/lib/trpc";
-import { NotesComposerProvider } from "@/providers/NotesComposerProvider";
-import { PaywallProvider } from "@/providers/PaywallProvider";
-import { PaywallGuard } from "@/components/PaywallGuard";
-// Platform-specific: uses superwallWrapper.web.tsx (no-op) on web, superwallWrapper.tsx (native) on iOS/Android
-import { SuperwallWrapper } from '@/lib/superwallWrapper';
-import Auth from "./auth";
+import { supabase } from "@/lib/supabase";
+import { FLAGS } from "@/constants/flags";
+import SignIn from "./sign-in";
 import OnboardingFlow from "./onboarding";
-import OnboardingV2Screen from "./onboarding-v2";
-import UpgradeOnboarding from "./upgrade-onboarding";
-import WelcomeScreen, { hasSeenWelcome } from "./welcome";
-import LandingPage from "./landing";
-import { View, ActivityIndicator, StyleSheet, Text, Platform } from "react-native";
-import { useAppLifecycle } from "@/hooks/useAppLifecycle";
-import { initializeEnvelope } from "@/lib/eventEnvelope";
-import { initializeMarketingFunnel } from "@/lib/marketingFunnel";
-import { flushOwnedAttribution } from "@/lib/ownedAttributionCoordinator";
-import { initializePerformanceMonitoring } from "@/lib/performanceMonitor";
-import { initializePostHog, identifyUser } from "@/lib/posthog";
-import { initializeMetaAppEvents, identifyMetaUser, resetMetaUser } from "@/lib/metaAppEvents";
-import { initializeGA4, trackGA4PageView } from "@/lib/ga4";
-import { useScreenTracking } from "@/hooks/useScreenTracking";
-import { initializeRevenueCat } from "@/lib/revenuecat";
-import { useSubscription } from "@/providers/SubscriptionProvider";
-import { apiFetch } from "@/lib/api";
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { setQueryClientForImageUpload } from "@/lib/imageUpload";
-import { paywallConfigService } from "@/lib/paywallConfig";
+import { View, ActivityIndicator, StyleSheet, Text, Platform, TouchableOpacity } from "react-native";
 
-SplashScreen.preventAutoHideAsync().catch(() => { });
-
-// Initialize event envelope (session IDs, UTM params, experiments)
-initializeEnvelope().then(() => {
-  console.log('[App] Event envelope initialized');
-}).catch((error) => {
-  console.error('[App] Failed to initialize envelope:', error);
+// Prevent auto-hide on all platforms
+SplashScreen.preventAutoHideAsync().catch(() => {
+  // Ignore errors on web
 });
-
-// Initialize marketing funnel (install tracking, deep links, attribution)
-initializeMarketingFunnel().then(() => {
-  console.log('[App] Marketing funnel initialized');
-}).catch((error) => {
-  console.error('[App] Failed to initialize marketing funnel:', error);
-});
-
-// Initialize performance monitoring (memory, network, app state)
-initializePerformanceMonitoring();
-console.log('[App] Performance monitoring initialized');
-
-// Initialize PostHog analytics (no-op if API key missing)
-initializePostHog();
-
-// Initialize Meta App Events (Conversions API + native SDK if available)
-initializeMetaAppEvents();
-
-// Initialize GA4 analytics (web only, requires EXPO_PUBLIC_GA4_MEASUREMENT_ID)
-initializeGA4();
-
-// Initialize RevenueCat (IAP subscriptions)
-initializeRevenueCat().then((success) => {
-  if (success) {
-    console.log('[App] RevenueCat initialized successfully');
-  } else {
-    console.log('[App] RevenueCat initialization skipped (not available or missing keys)');
-  }
-}).catch((error) => {
-  console.error('[App] Failed to initialize RevenueCat:', error);
-});
-
-// Initialize Superwall (Remote Paywalls)
-import('@/lib/superwall').then(({ initializeSuperwall }) => {
-  initializeSuperwall().then((success) => {
-    if (success) {
-      console.log('[App] Superwall initialized successfully');
-    } else {
-      console.log('[App] Superwall initialization skipped (not available or missing keys)');
-    }
-  }).catch((error) => {
-    console.error('[App] Failed to initialize Superwall:', error);
-  });
-}).catch((error) => {
-  console.log('[App] Superwall not available (requires custom dev build):', error?.message || error);
-});
-
-// Throttle keys for warmth recompute
-const WARMTH_RECOMPUTE_KEY = 'warmth_recompute_last_run';
-const WARMTH_DAILY_RECOMPUTE_KEY = 'warmth_daily_recompute_last_run';
-let warmthRecomputeSessionRan = false;
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: (failureCount, error: any) => {
-        if (error?.message?.includes('HTML instead of JSON') ||
-          error?.message?.includes('fetch')) {
+      retry: (failureCount, error) => {
+        // Don't retry if it's a network error or HTML response
+        if (error?.message?.includes('HTML instead of JSON') || 
+            error?.message?.includes('fetch')) {
+          console.warn('[QueryClient] Not retrying due to network/API error:', error.message);
           return false;
         }
+        // Retry up to 2 times for other errors
         return failureCount < 2;
       },
       retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-      staleTime: 5 * 60 * 1000,
-      gcTime: 10 * 60 * 1000,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes
     },
     mutations: {
-      retry: false,
+      retry: false, // Don't retry mutations
     },
   },
 });
 
-// Initialize query client for image upload cache invalidation
-setQueryClientForImageUpload(queryClient);
+// Error Boundary Component
+class ErrorBoundary extends Component<
+  { children: ReactNode; fallback?: ReactNode },
+  { hasError: boolean; error?: Error }
+> {
+  constructor(props: { children: ReactNode; fallback?: ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
 
-// Global screen tracking helper (expo-router path + duration)
-function ScreenTracker() {
-  useScreenTracking();
-  return null;
+  static getDerivedStateFromError(error: Error) {
+    console.error('[ErrorBoundary] Caught error:', error);
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: any) {
+    console.error('[ErrorBoundary] Error details:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback || (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorTitle}>Something went wrong</Text>
+          <Text style={styles.errorMessage}>
+            {this.state.error?.message || 'Unknown error occurred'}
+          </Text>
+          <TouchableOpacity 
+            style={styles.retryButton}
+            onPress={() => this.setState({ hasError: false, error: undefined })}
+          >
+            <Text style={styles.retryButtonText}>Try Again</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    return this.props.children;
+  }
 }
 
-/**
- * Navigation component - just checks auth state
- */
 function RootLayoutNav() {
-  const { loading, isAuthenticated, user } = useAuth();
+  const { session, loading: authLoading } = useAuth();
+  const { theme, cloudModeEnabled } = useAppSettings();
   const { isCompleted: onboardingCompleted, loading: onboardingLoading } = useOnboarding();
-  const { isPaid, isTrialExpired } = useSubscription();
-  const pathname = usePathname();
   
-  // Track if user has seen welcome screens (for pre-auth onboarding)
-  const [welcomeSeen, setWelcomeSeen] = React.useState<boolean | null>(null);
-  
-  // Check if welcome has been seen on mount AND when auth state changes
-  // This ensures that after sign out, we re-check the welcome status
-  React.useEffect(() => {
-    hasSeenWelcome().then((seen) => {
-      setWelcomeSeen(seen);
-      console.log('[Layout] Welcome seen status:', seen, 'isAuthenticated:', isAuthenticated);
-    });
-  }, [isAuthenticated]); // Re-check when auth state changes (e.g., after sign out)
+  // Compute offline mode based on FLAGS and cloud mode setting
+  const isOfflineMode = FLAGS.LOCAL_ONLY || !cloudModeEnabled;
+  const loading = authLoading || onboardingLoading;
 
-  // Listen for welcome completion to update state (for re-renders after welcome)
-  React.useEffect(() => {
-    // Re-check welcome seen status when returning from welcome screen
-    const interval = setInterval(() => {
-      if (welcomeSeen === false) {
-        hasSeenWelcome().then((seen) => {
-          if (seen && !welcomeSeen) {
-            setWelcomeSeen(true);
-            console.log('[Layout] Welcome completed, updating state');
-          }
-        });
-      }
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [welcomeSeen]);
-
-  // Track app lifecycle events globally
-  useAppLifecycle();
-
-  // GA4 page view tracking on route changes (web only)
-  useEffect(() => {
-    if (Platform.OS === 'web' && pathname) {
-      trackGA4PageView(pathname);
-    }
-  }, [pathname]);
-
-  // Capture the native first-open install fact before authentication. The
-  // authenticated flush later binds that stored fact to the verified user and
-  // content journey without changing its observed timestamp.
-  useEffect(() => {
-    if (Platform.OS === 'web') return;
-    initializeMarketingFunnel().catch((error) => {
-      console.warn(
-        '[App] Native marketing funnel initialization pending retry:',
-        error instanceof Error ? error.message : String(error),
-      );
-    });
-  }, []);
-
-  // Initialize RevenueCat on native once authenticated
-  useEffect(() => {
-    if (!isAuthenticated || !user) return;
-    if (Platform.OS === 'web') return;
-
-    let customerInfoListener: any = null;
-
-    import('@/lib/revenuecat')
-      .then(async ({ initializeRevenueCat, logIn }) => {
-        const userId = typeof (user as any)?.id === 'string' ? (user as any).id : null;
-        
-        // Initialize RevenueCat with user ID
-        const success = await initializeRevenueCat(userId);
-        
-        // CRITICAL: After initialization, identify RevenueCat with the user ID
-        // This ensures subscriptions are tied to THIS user account, not the device
-        if (success && userId) {
-          console.log('[App] Identifying RevenueCat with user ID:', userId);
-          try {
-            const result = await logIn(userId);
-            if (result) {
-              console.log('[App] ✅ RevenueCat identified with user:', userId, 'created:', result.created);
-            }
-          } catch (rcError: any) {
-            console.error('[App] ❌ Failed to identify RevenueCat:', rcError?.message || rcError);
-          }
-        }
-
-        if (success) {
-          // Set up customer info update listener
-          const Purchases = await import('react-native-purchases').then(m => m.default || m);
-          if (Purchases && typeof Purchases.addCustomerInfoUpdateListener === 'function') {
-            customerInfoListener = Purchases.addCustomerInfoUpdateListener(async (customerInfo: any) => {
-              console.log('[App] RevenueCat customer info updated (active entitlements):', Object.keys(customerInfo?.entitlements?.active || {}));
-
-              // Refresh entitlements from backend when purchase occurs
-              try {
-                await queryClient.invalidateQueries({ queryKey: ['entitlements'] });
-                console.log('[App] Entitlements refreshed after purchase');
-              } catch (e) {
-                console.warn('[App] Failed to refresh entitlements:', e);
-              }
-            });
-            console.log('[App] RevenueCat customer info listener added');
-          }
-        }
-      })
-      .catch((e) => console.warn('[App] RevenueCat init skipped:', e?.message || e));
-
-    return () => {
-      // Clean up listener on unmount
-      if (customerInfoListener && typeof customerInfoListener.remove === 'function') {
-        customerInfoListener.remove();
-        console.log('[App] RevenueCat listener removed');
-      }
-    };
-  }, [isAuthenticated, queryClient]);
-
-  // Identify user with PostHog + Meta once authenticated
-  useEffect(() => {
-    if (!isAuthenticated || !user) return;
-    const userId = (user as any)?.id;
-    const userEmail = (user as any)?.email;
-    try {
-      identifyUser(userId, {
-        plan: isPaid ? 'paid' : 'free',
-        platform: Platform.OS,
-      });
-    } catch (e) {
-      console.warn('[App] PostHog identify skipped:', (e as any)?.message || e);
-    }
-    // Identify with Meta App Events for better Conversions API matching
-    identifyMetaUser(userId, userEmail).catch((e) => {
-      console.warn('[App] Meta identify skipped:', (e as any)?.message || e);
-    });
-  }, [isAuthenticated, user, isPaid]);
-
-  // Email verification and OAuth can create the user before an authenticated
-  // API session exists. Flush the original content touch as soon as the real
-  // Supabase identity is available; the client and backend both deduplicate it.
-  useEffect(() => {
-    if (!isAuthenticated || !user) return;
-    const userId = (user as any)?.id;
-    if (typeof userId !== 'string' || !userId) return;
-    flushOwnedAttribution(userId)
-      .then((result) => {
-        if (result.ok) return;
-        console.warn(
-          '[App] Owned attribution flush completed with pending stages:',
-          result.stages,
-        );
-      })
-      .catch((error) => {
-        console.warn('[App] Owned attribution flush could not start:',
-          error instanceof Error ? error.message : String(error));
-      });
-  }, [isAuthenticated, user]);
-
-  // ✅ REFACTORED: Get centralized warmth methods
-  const { refreshTop, refreshRecent } = useWarmth();
-
-  // Daily background recompute for top contacts by warmth (24h throttle)
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    (async () => {
-      try {
-        const last = await AsyncStorage.getItem(WARMTH_DAILY_RECOMPUTE_KEY);
-        const now = Date.now();
-        if (last && now - Number(last) < 24 * 60 * 60 * 1000) {
-          console.log('[Warmth] Daily recompute skipped (< 24h since last run)');
-          return;
-        }
-
-        console.log('[Warmth] Starting daily recompute for top 60 contacts...');
-
-        // Optimistic lock: Set timestamp BEFORE starting to prevent re-entry if component re-renders
-        await AsyncStorage.setItem(WARMTH_DAILY_RECOMPUTE_KEY, String(now));
-
-        await refreshTop(60, { source: 'daily-background' });
-        console.log('[Warmth] Daily recompute complete');
-      } catch (e) {
-        console.warn('[Warmth] Daily recompute failed:', (e as any)?.message || e);
-      }
-    })();
-  }, [isAuthenticated, refreshTop]);
-
-  // Prefetch contact avatars on startup (instant loading)
-  useEffect(() => {
-    if (!isAuthenticated) return;
-
-    (async () => {
-      try {
-        console.log('[Avatars] Prefetching contact avatars (top 100)...');
-
-        const response = await apiFetch('/api/v1/contacts?limit=100', {
-          method: 'GET',
-          requireAuth: true,
-        });
-
-        if (!response.ok) {
-          console.warn('[Avatars] Prefetch failed:', response.status);
-          return;
-        }
-
-        const data = await response.json();
-        const contacts = data.contacts || data.items || [];
-
-        // Cache the full contacts list
-        queryClient.setQueryData(['contacts', 'list'], contacts);
-
-        // Pre-cache individual avatar URLs
-        let cached = 0;
-        contacts.forEach((contact: any) => {
-          if (contact.id && contact.avatar_url) {
-            queryClient.setQueryData(['contact-avatar', contact.id], contact.avatar_url);
-            cached++;
-          }
-        });
-
-        console.log(`✅ [Avatars] Prefetched ${cached} avatars out of ${contacts.length} contacts`);
-      } catch (error) {
-        console.error('[Avatars] Prefetch error:', error);
-      }
-    })();
-  }, [isAuthenticated]);
-
-  // Recompute warmth on startup (once per session; 10min throttle via storage)
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    if (warmthRecomputeSessionRan) return;
-    warmthRecomputeSessionRan = true;
-    (async () => {
-      try {
-        const last = await AsyncStorage.getItem(WARMTH_RECOMPUTE_KEY);
-        const now = Date.now();
-        if (last && now - Number(last) < 10 * 60 * 1000) {
-          console.log('[Warmth] Startup recompute skipped (< 10min since last run)');
-          return;
-        }
-
-        console.log('[Warmth] Starting startup recompute for 30 recent contacts...');
-        await refreshRecent(30, { source: 'startup-background' });
-
-        await AsyncStorage.setItem(WARMTH_RECOMPUTE_KEY, String(now));
-        console.log('[Warmth] Startup recompute complete');
-      } catch (e) {
-        console.warn('[Warmth] Startup recompute failed:', (e as any)?.message || e);
-      }
-    })();
-  }, [isAuthenticated, refreshRecent]);
-
-  // Pre-fetch paywall configuration on app launch
-  useEffect(() => {
-    (async () => {
-      try {
-        console.log('[App] Pre-fetching paywall configuration...');
-        await paywallConfigService.fetchConfig('mobile');
-        console.log('[App] Paywall configuration loaded');
-      } catch (e) {
-        console.warn('[App] Failed to pre-fetch paywall config:', (e as any)?.message || e);
-      }
-    })();
-  }, []);
-
-  const isLoading = loading || onboardingLoading || welcomeSeen === null;
-
-  // Memoize ALL screen options at the TOP LEVEL (before any conditional returns)
-  // This prevents infinite re-renders caused by new object references
-  const screenOptions = React.useMemo(() => ({
-    headerShown: false,
-    headerBackTitle: '', // Hide "(tabs)" text on back buttons
-  }), []);
-
-  const noHeaderOptions = React.useMemo(() => ({ headerShown: false }), []);
-
-  // Memoize all screen options with titles
-  const warmthSettingsOptions = React.useMemo(() => ({ headerShown: true, title: "Warmth Settings" }), []);
-  const personalNotesOptions = React.useMemo(() => ({ headerShown: true, title: "Personal Notes" }), []);
-  const contactNotesOptions = React.useMemo(() => ({ headerShown: true, title: "Contact Notes" }), []);
-  const importContactsOptions = React.useMemo(() => ({ headerShown: true, title: "Import Contacts" }), []);
-  const modeSettingsOptions = React.useMemo(() => ({ headerShown: true, title: "Mode Settings" }), []);
-  const notificationsOptions = React.useMemo(() => ({ headerShown: true, title: "Notifications" }), []);
-  const contactContextOptions = React.useMemo(() => ({ headerShown: false } as const), []);
-  const personalProfileOptions = React.useMemo(() => ({ headerShown: true, title: "Personal Profile" }), []);
-  const termsOptions = React.useMemo(() => ({ headerShown: true, title: "Terms & Conditions" }), []);
-  const privacyOptions = React.useMemo(() => ({ headerShown: true, title: "Privacy Policy" }), []);
-  const addContactModalOptions = React.useMemo(() => ({
-    presentation: "fullScreenModal",
-    headerShown: true,
-    title: "Add Contact",
-  } as const), []);
-  const importThirdPartyOptions = React.useMemo(() => ({
-    presentation: "fullScreenModal",
-    headerShown: true,
-    title: "Import Contacts",
-  } as const), []);
-  const goalPickerOptions = React.useMemo(() => ({
-    presentation: "fullScreenModal",
-    headerShown: true,
-    title: "Pick Goal",
-  } as const), []);
-  const messageResultsOptions = React.useMemo(() => ({
-    presentation: "fullScreenModal",
-    headerShown: true,
-    title: "Generated Messages",
-  } as const), []);
-  const messageSentSuccessOptions = React.useMemo(() => ({
-    presentation: "fullScreenModal",
-    headerShown: false,
-  } as const), []);
-
-  const voiceNoteOptions = React.useMemo(() => ({
-    presentation: "fullScreenModal",
-    headerShown: true,
-    title: "Voice Note",
-  } as const), []);
-
-  /*
-  console.log('[Layout v2] State:', {
-    loading,
-    isAuthenticated,
-    onboardingCompleted,
+  console.log('[RootLayoutNav] Render state:', { 
+    loading, 
+    isOfflineMode, 
+    cloudModeEnabled, 
+    hasSession: !!session,
+    onboardingCompleted 
   });
-  */
 
-  // Show loading
-  if (isLoading) {
+  if (loading) {
+    console.log('[RootLayoutNav] Showing loading screen');
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#000" />
-        <Text style={styles.loadingText}>Loading...</Text>
+      <View style={[styles.loadingContainer, { backgroundColor: theme.colors.background }]}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+        <Text style={[styles.loadingText, { color: theme.colors.text }]}>Loading...</Text>
       </View>
     );
   }
 
-  // Public routes that bypass both onboarding and auth gates
-  const currentPath = pathname || '/';
-  const isPublicRoute = currentPath.startsWith('/auth') || currentPath.startsWith('/sign-in') || currentPath.startsWith('/billing') || currentPath.startsWith('/blog') || currentPath === '/terms' || currentPath === '/privacy-policy' || currentPath === '/telemetry-debug' || currentPath === '/welcome' || currentPath === '/landing';
-
-  // Show landing page on web for unauthenticated first-time visitors
-  // Show OnboardingV2 on native (iOS/Android)
-  if (!isAuthenticated && !welcomeSeen && !isPublicRoute) {
-    if (Platform.OS === 'web') {
-      console.log('[Layout v2] → Landing Page (Web)');
-      return <LandingPage />;
-    }
-    console.log('[Layout v2] → Onboarding V2 (Welcome/Pre-auth)');
-    return <OnboardingV2Screen />;
+  // Only require authentication if offline mode is disabled and no session exists
+  if (!isOfflineMode && !session) {
+    console.log('[RootLayoutNav] Showing sign in screen - cloud mode enabled but no session');
+    return <SignIn />;
   }
 
-  // Show landing page on web for unauthenticated returning visitors (who saw welcome but aren't signed in)
-  // Show auth screen on native
-  if (!isAuthenticated && !isPublicRoute) {
-    if (Platform.OS === 'web') {
-      console.log('[Layout v2] → Landing Page (Web, returning)');
-      return <LandingPage />;
-    }
-    return <Auth />;
-  }
-
-  // Show onboarding for first-time users (only after authentication)
-  // OnboardingV2 handles the post-auth questions
+  // Show onboarding for first-time users (unless disabled via environment variable)
   const isOnboardingDisabled = process.env.EXPO_PUBLIC_DISABLE_ONBOARDING === 'true';
-  if (isAuthenticated && !onboardingCompleted && !isOnboardingDisabled) {
-    // console.log('[Layout v2] → Onboarding V2 (Post-auth)');
-    return <OnboardingV2Screen />;
+  if (!onboardingCompleted && !isOnboardingDisabled) {
+    console.log('[RootLayoutNav] Showing onboarding flow - first time user');
+    return <OnboardingFlow />;
+  }
+  
+  if (isOnboardingDisabled) {
+    console.log('[RootLayoutNav] Onboarding disabled via environment variable - skipping');
   }
 
-  // Global gating: Simplified navigation control
-  // Use centralized config to determine if path should be blocked
-  const path = pathname || '/';
-
-  // Enhanced debug logging - ALWAYS log navigation checks
-  /*
-  console.log('🔍 [Layout v2] Navigation Check:', {
-    path,
-    isTrialExpired,
-    isPaid,
-    onboardingLoading,
-  });
-  */
-
-  // Show main app
-  // console.log('[Layout v2] → Main App');
+  console.log('[RootLayoutNav] Showing main app');
 
   return (
-    <>
-      <ScreenTracker />
-      <PaywallGuard>
-        <Stack screenOptions={screenOptions}>
-          {/* Main app with tabs */}
-          <Stack.Screen name="(tabs)" />
-
-          {/* Regular screens (not modals) */}
-          <Stack.Screen name="contact/[id]" options={noHeaderOptions} />
-          <Stack.Screen name="warmth-settings" options={warmthSettingsOptions} />
-          <Stack.Screen name="personal-notes" options={personalNotesOptions} />
-          <Stack.Screen name="contact-notes/[id]" options={contactNotesOptions} />
-          <Stack.Screen name="import-contacts" options={importContactsOptions} />
-          <Stack.Screen name="mode-settings" options={modeSettingsOptions} />
-          <Stack.Screen name="notifications" options={notificationsOptions} />
-          <Stack.Screen name="contact-context/[id]" options={contactContextOptions} />
-          <Stack.Screen name="personal-profile" options={personalProfileOptions} />
-
-          {/* Root index - handles auth code redirects */}
-          <Stack.Screen name="index" options={noHeaderOptions} />
-
-          {/* Auth screens - Public routes */}
-          <Stack.Screen name="auth" options={noHeaderOptions} />
-          <Stack.Screen name="auth/install-code" options={noHeaderOptions} />
-          <Stack.Screen name="auth/forgot-password" options={noHeaderOptions} />
-          <Stack.Screen name="auth/reset-password" options={noHeaderOptions} />
-          <Stack.Screen name="auth/callback" options={noHeaderOptions} />
-
-          {/* Billing screens - Public routes for Stripe redirects */}
-          <Stack.Screen name="billing/success" options={noHeaderOptions} />
-          <Stack.Screen name="billing/cancel" options={noHeaderOptions} />
-
-          {/* Legal pages - Public routes */}
-          <Stack.Screen name="terms" options={termsOptions} />
-          <Stack.Screen name="privacy-policy" options={privacyOptions} />
-
-          {/* Blog - Public routes */}
-          <Stack.Screen name="blog/index" options={noHeaderOptions} />
-          <Stack.Screen name="blog/[id]" options={noHeaderOptions} />
-          <Stack.Screen name="blog/search" options={noHeaderOptions} />
-          <Stack.Screen name="blog/category/[slug]" options={noHeaderOptions} />
-
-          {/* Modal screens - Full screen modals that slide up from bottom */}
-          <Stack.Screen
-            name="add-contact"
-            options={addContactModalOptions}
-          />
-          <Stack.Screen
-            name="import-third-party"
-            options={importThirdPartyOptions}
-          />
-          <Stack.Screen
-            name="goal-picker"
-            options={goalPickerOptions}
-          />
-          <Stack.Screen
-            name="message-results"
-            options={messageResultsOptions}
-          />
-          <Stack.Screen
-            name="voice-note"
-            options={voiceNoteOptions}
-          />
-          <Stack.Screen
-            name="message-sent-success"
-            options={messageSentSuccessOptions}
-          />
-
-          {/* Test/Debug screens - using default options to prevent re-renders */}
-          <Stack.Screen name="openai-test" />
-          <Stack.Screen name="supabase-test" />
-          <Stack.Screen name="api-test-suite" />
-          <Stack.Screen name="trpc-test" />
-          <Stack.Screen name="payment-events-test" />
-        </Stack>
-      </PaywallGuard>
-    </>
+    <Stack screenOptions={{ 
+      headerBackTitle: "Back",
+      headerStyle: {
+        backgroundColor: theme.colors.surface,
+      },
+      headerTintColor: theme.colors.text,
+      headerTitleStyle: {
+        fontWeight: '600',
+        color: theme.colors.text,
+      },
+    }}>
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen 
+        name="add-contact" 
+        options={{ 
+          title: "Add Contact",
+          presentation: "modal",
+          headerStyle: {
+            backgroundColor: theme.colors.surface,
+          },
+        }} 
+      />
+      <Stack.Screen 
+        name="contact/[id]" 
+        options={{ 
+          title: "",
+          headerTransparent: true,
+          headerBlurEffect: "light",
+        }} 
+      />
+      <Stack.Screen 
+        name="voice-note" 
+        options={{ 
+          title: "Voice Note",
+          presentation: "modal",
+          headerStyle: {
+            backgroundColor: theme.colors.surface,
+          },
+        }} 
+      />
+      <Stack.Screen 
+        name="sign-in" 
+        options={{ 
+          headerShown: false,
+        }} 
+      />
+      <Stack.Screen 
+        name="message-results" 
+        options={{ 
+          title: "Generated Messages",
+          presentation: "modal",
+          headerStyle: {
+            backgroundColor: theme.colors.surface,
+          },
+        }} 
+      />
+      <Stack.Screen 
+        name="concierge-demo" 
+        options={{ 
+          title: "AI Concierge Demo",
+          presentation: "modal",
+          headerStyle: {
+            backgroundColor: theme.colors.surface,
+          },
+        }} 
+      />
+      <Stack.Screen 
+        name="goal-picker" 
+        options={{ 
+          title: "Pick Goal",
+          presentation: "modal",
+          headerStyle: {
+            backgroundColor: theme.colors.surface,
+          },
+        }} 
+      />
+      <Stack.Screen 
+        name="audio-test" 
+        options={{ 
+          title: "Audio Test",
+          presentation: "modal",
+          headerStyle: {
+            backgroundColor: theme.colors.surface,
+          },
+        }} 
+      />
+      <Stack.Screen 
+        name="openai-test" 
+        options={{ 
+          title: "OpenAI Test",
+          presentation: "modal",
+          headerStyle: {
+            backgroundColor: theme.colors.surface,
+          },
+        }} 
+      />
+      <Stack.Screen 
+        name="privacy-policy" 
+        options={{ 
+          title: "Privacy Policy",
+          headerStyle: {
+            backgroundColor: theme.colors.surface,
+          },
+        }} 
+      />
+      <Stack.Screen 
+        name="terms-of-service" 
+        options={{ 
+          title: "Terms of Service",
+          headerStyle: {
+            backgroundColor: theme.colors.surface,
+          },
+        }} 
+      />
+      <Stack.Screen 
+        name="supabase-test" 
+        options={{ 
+          title: "Supabase Test",
+          presentation: "modal",
+          headerStyle: {
+            backgroundColor: theme.colors.surface,
+          },
+        }} 
+      />
+      <Stack.Screen 
+        name="contact-import-test" 
+        options={{ 
+          title: "Contact Import Tests",
+          presentation: "modal",
+          headerStyle: {
+            backgroundColor: theme.colors.surface,
+          },
+        }} 
+      />
+      <Stack.Screen 
+        name="api-test-suite" 
+        options={{ 
+          title: "API Test Suite",
+          presentation: "modal",
+          headerStyle: {
+            backgroundColor: theme.colors.surface,
+          },
+        }} 
+      />
+      <Stack.Screen 
+        name="warmth-settings" 
+        options={{ 
+          title: "Warmth Settings",
+          headerStyle: {
+            backgroundColor: theme.colors.surface,
+          },
+        }} 
+      />
+      <Stack.Screen 
+        name="personal-notes" 
+        options={{ 
+          title: "Personal Notes",
+          headerStyle: {
+            backgroundColor: theme.colors.surface,
+          },
+        }} 
+      />
+      <Stack.Screen 
+        name="supabase-debug" 
+        options={{ 
+          title: "Debug",
+          headerStyle: {
+            backgroundColor: theme.colors.surface,
+          },
+        }} 
+      />
+      <Stack.Screen 
+        name="local-only" 
+        options={{ 
+          title: "Local Mode",
+          headerStyle: {
+            backgroundColor: theme.colors.surface,
+          },
+        }} 
+      />
+      <Stack.Screen 
+        name="contact-notes/[id]" 
+        options={{ 
+          title: "Contact Notes",
+          headerStyle: {
+            backgroundColor: theme.colors.surface,
+          },
+        }} 
+      />
+      <Stack.Screen 
+        name="import-contacts" 
+        options={{ 
+          title: "Import Contacts",
+          headerStyle: {
+            backgroundColor: theme.colors.surface,
+          },
+        }} 
+      />
+      <Stack.Screen 
+        name="mode-settings" 
+        options={{ 
+          title: "Mode Settings",
+          headerStyle: {
+            backgroundColor: theme.colors.surface,
+          },
+        }} 
+      />
+      <Stack.Screen 
+        name="onboarding" 
+        options={{ 
+          headerShown: false,
+        }} 
+      />
+      <Stack.Screen 
+        name="notifications" 
+        options={{ 
+          title: "Notifications",
+          headerStyle: {
+            backgroundColor: theme.colors.surface,
+          },
+        }} 
+      />
+      <Stack.Screen 
+        name="chat-intro" 
+        options={{ 
+          title: "Chat",
+          headerStyle: {
+            backgroundColor: theme.colors.surface,
+          },
+        }} 
+      />
+      <Stack.Screen 
+        name="contact-context/[id]" 
+        options={{ 
+          title: "Contact Context",
+          headerStyle: {
+            backgroundColor: theme.colors.surface,
+          },
+        }} 
+      />
+      <Stack.Screen 
+        name="trpc-test" 
+        options={{ 
+          title: "tRPC Test",
+          presentation: "modal",
+          headerStyle: {
+            backgroundColor: theme.colors.surface,
+          },
+        }} 
+      />
+    </Stack>
   );
 }
 
-/**
- * Root layout with providers
- */
 export default function RootLayout() {
   useEffect(() => {
-    // Hide splash screen after a short delay
-    const timer = setTimeout(() => {
-      SplashScreen.hideAsync().catch(() => { });
-    }, 100);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
-    const iosKey = process.env.EXPO_PUBLIC_SUPERWALL_IOS_KEY || '';
-    console.log('[Superwall] Debug Info:');
-    console.log('  - iOS Key:', iosKey.substring(0, 8) + '...');
-    console.log('  - Bundle ID:', Constants.expoConfig?.ios?.bundleIdentifier || 'unknown');
-  }, []);
-
-  useEffect(() => {
-    // Initialize PostHog analytics as early as possible
-    initializePostHog();
-
-    // Initialize backend analytics session
-    import('../lib/backendAnalytics')
-      .then(({ generateSessionId }) => {
-        const sessionId = generateSessionId();
-        console.log('[App] Backend analytics session initialized:', sessionId);
-      })
-      .catch((error) => {
-        console.error('[App] Failed to initialize backend analytics:', error);
-      });
-  }, []);
-
-  // FIX: Force hide splash screen after timeout (prevents stuck loading)
-  useEffect(() => {
-    const timer = setTimeout(async () => {
+    let subscription: any = null;
+    let mounted = true;
+    
+    const initializeApp = async () => {
       try {
-        console.log(' [App] Forcing splash screen hide after 3 seconds');
-        await SplashScreen.hideAsync();
-        console.log('[App] Splash screen hidden');
-      } catch (error) {
-        console.warn('[App] Failed to hide splash screen:', error);
-      }
-    }, 3000);
+        console.log('[RootLayout] Initializing app...');
+        console.log('[RootLayout] Platform:', Platform.OS);
+        console.log('[RootLayout] FLAGS:', FLAGS);
+        
+        // Hide splash screen with a small delay to ensure everything is mounted
+        setTimeout(() => {
+          if (mounted) {
+            SplashScreen.hideAsync().catch((err: any) => {
+              console.warn('[RootLayout] Failed to hide splash screen:', err);
+            });
+          }
+        }, 100);
+        
+        // Handle deep links for OAuth callback (only if not in local-only mode)
+        if (!FLAGS.LOCAL_ONLY && supabase) {
+          console.log('[RootLayout] Setting up deep link handling');
+          const handleDeepLink = (url: string) => {
+            if (!url?.trim() || !mounted) return;
+            console.log('Deep link received:', url);
+            supabase.auth.exchangeCodeForSession(url).catch((err: any) => {
+              console.error('Failed to exchange code for session:', err);
+            });
+          };
 
-    return () => clearTimeout(timer);
+          // Handle when app is opened from a cold start via deep link
+          Linking.getInitialURL().then((initialUrl) => {
+            if (initialUrl && mounted) {
+              handleDeepLink(initialUrl);
+            }
+          }).catch((err: any) => {
+            console.error('Failed to get initial URL:', err);
+          });
+
+          // Handle when app is already running
+          subscription = Linking.addEventListener('url', ({ url }) => {
+            handleDeepLink(url);
+          });
+        }
+        
+        console.log('[RootLayout] App initialization complete');
+      } catch (err) {
+        console.error('[RootLayout] App initialization error:', err);
+      }
+    };
+
+    initializeApp();
+    
+    return () => {
+      mounted = false;
+      if (subscription) {
+        console.log('[RootLayout] Cleaning up deep link subscription');
+        subscription.remove();
+      }
+    };
   }, []);
 
-  const appContent = (
-    <OnboardingProvider>
-      <WarmthSettingsProvider>
-        <WarmthProvider>
-          <TemplatesContext>
-            <SubscriptionProvider>
-              <EntitlementsProviderV3>
-                <PaywallProvider>
-                  <PeopleProvider>
-                    <InteractionsProvider>
-                      <VoiceNotesProvider>
-                        <MessageProvider>
-                          <NotesComposerProvider>
-                            <RootLayoutNav />
-                          </NotesComposerProvider>
-                        </MessageProvider>
-                      </VoiceNotesProvider>
-                    </InteractionsProvider>
-                  </PeopleProvider>
-                </PaywallProvider>
-              </EntitlementsProviderV3>
-            </SubscriptionProvider>
-          </TemplatesContext>
-        </WarmthProvider>
-      </WarmthSettingsProvider>
-    </OnboardingProvider>
-  );
-
-  const providers = (
-    <QueryClientProvider client={queryClient}>
-      <trpc.Provider client={trpcClient} queryClient={queryClient}>
-        <ThemeProvider>
-          <AppSettingsProvider>
-            <AuthProvider>
-              <SuperwallWrapper>
-                {appContent}
-              </SuperwallWrapper>
-            </AuthProvider>
-          </AppSettingsProvider>
-        </ThemeProvider>
-      </trpc.Provider >
-    </QueryClientProvider >
-  );
-
-  return Platform.OS === 'web' ? (
-    <View style={styles.container}>{providers}</View>
-  ) : (
-    <GestureHandlerRootView style={styles.container}>
-      {providers}
-    </GestureHandlerRootView>
+  // Always render the app structure immediately to prevent hydration mismatch
+  return (
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <PostHogProvider>
+          {/* @ts-ignore - tRPC provider type issue */}
+          <trpc.Provider client={trpcClient} queryClient={queryClient}>
+            {Platform.OS === 'web' ? (
+              <View style={styles.gestureHandler}>
+                <AppSettingsProvider>
+                  <AuthProvider>
+                    <OnboardingProvider>
+                      <WarmthSettingsProvider>
+                        <SubscriptionProvider>
+                          <PeopleProvider>
+                            <VoiceNotesProvider>
+                              <MessageProvider>
+                                <RootLayoutNav />
+                              </MessageProvider>
+                            </VoiceNotesProvider>
+                          </PeopleProvider>
+                        </SubscriptionProvider>
+                      </WarmthSettingsProvider>
+                    </OnboardingProvider>
+                  </AuthProvider>
+                </AppSettingsProvider>
+              </View>
+            ) : (
+              <GestureHandlerRootView style={styles.gestureHandler}>
+                <AppSettingsProvider>
+                  <AuthProvider>
+                    <OnboardingProvider>
+                      <WarmthSettingsProvider>
+                        <SubscriptionProvider>
+                          <PeopleProvider>
+                            <VoiceNotesProvider>
+                              <MessageProvider>
+                                <RootLayoutNav />
+                              </MessageProvider>
+                            </VoiceNotesProvider>
+                          </PeopleProvider>
+                        </SubscriptionProvider>
+                      </WarmthSettingsProvider>
+                    </OnboardingProvider>
+                  </AuthProvider>
+                </AppSettingsProvider>
+              </GestureHandlerRootView>
+            )}
+          </trpc.Provider>
+        </PostHogProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -742,5 +524,47 @@ const styles = StyleSheet.create({
     marginTop: 16,
     fontSize: 16,
     color: '#666',
+  },
+  errorText: {
+    marginTop: 16,
+    fontSize: 14,
+    color: '#FF6B6B',
+    textAlign: 'center',
+    paddingHorizontal: 20,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F8F9FA',
+    padding: 20,
+  },
+  errorTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#FF6B6B',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  errorMessage: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 20,
+  },
+  retryButton: {
+    backgroundColor: '#000',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  gestureHandler: {
+    flex: 1,
   },
 });

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -16,7 +16,6 @@ import { useOnboarding, type UserFocus, type ReminderFrequency } from '@/provide
 import { usePeople } from '@/providers/PeopleProvider';
 import { useWarmthSettings } from '@/providers/WarmthSettingsProvider';
 import { router } from 'expo-router';
-import { Video, ResizeMode } from 'expo-av';
 import { 
   Briefcase, 
   Heart, 
@@ -38,7 +37,6 @@ import { pickOneNativeContact } from '@/helpers/nativePicker';
 import * as Clipboard from 'expo-clipboard';
 import VoiceRecorder from '@/components/VoiceRecorder';
 import { useVoiceNotes } from '@/providers/VoiceNotesProvider';
-import { useAnalytics } from '@/hooks/useAnalytics';
 
 
 
@@ -57,7 +55,6 @@ export default function OnboardingFlow() {
   const { addPerson, people } = usePeople();
   const { addVoiceNote } = useVoiceNotes();
   const { settings } = useWarmthSettings();
-  const screenAnalytics = useAnalytics('Onboarding');
   
   const [selectedContact, setSelectedContact] = useState<any>(null);
   const [generatedMessage, setGeneratedMessage] = useState<string>('');
@@ -74,21 +71,11 @@ export default function OnboardingFlow() {
 
   const styles = createStyles(theme, currentStep);
 
-  useEffect(() => {
-    screenAnalytics.track('onboarding_viewed', {});
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    screenAnalytics.track('onboarding_step_viewed', { step: currentStep });
-  }, [currentStep]);
-
   const handleFocusSelection = async (focus: UserFocus) => {
     if (!focus || !['networking', 'personal', 'business'].includes(focus)) {
       console.error('Invalid focus selection:', focus);
       return;
     }
-    screenAnalytics.track('onboarding_focus_selected', { focus });
     await setUserFocus(focus);
     nextStep();
   };
@@ -100,18 +87,16 @@ export default function OnboardingFlow() {
       let addedContact: any = null;
       
       const result = await pickOneNativeContact(people, async (person) => {
-        const saved = await addPerson(person);
+        await addPerson(person);
         addedContact = {
-          id: saved.id,
-          fullName: saved.fullName,
-          name: saved.fullName,
+          id: Date.now().toString(), // This matches how addPerson generates IDs
+          fullName: person.fullName,
+          name: person.fullName
         };
-        return saved;
       });
       console.log('Contact selection result:', result);
       
       if (result.imported === 1 && addedContact) {
-        screenAnalytics.track('onboarding_contact_chosen', {});
         // Successfully imported a contact
         setSelectedContact({
           id: addedContact.id,
@@ -134,19 +119,17 @@ export default function OnboardingFlow() {
         setHasCopied(false);
         setIsEditing(false);
         
-        screenAnalytics.track('onboarding_contact_selected', { contact: addedContact });
         nextStep();
       } else if (result.duplicates === 1) {
         console.log('Contact already exists');
-        screenAnalytics.track('onboarding_contact_already_exists', {});
+        // Could show a message to user that contact already exists
       } else if (result.errors === 1) {
         console.log('Permission denied or error occurred');
-        screenAnalytics.track('onboarding_contact_selection_error', {});
+        // Could show error message to user
       }
       // If result.total === 0, user cancelled - do nothing
     } catch (error) {
       console.error('Error selecting contact:', error);
-      screenAnalytics.track('onboarding_contact_selection_error', { error });
     }
   };
 
@@ -171,7 +154,6 @@ export default function OnboardingFlow() {
     
     setIsRegenerating(true);
     try {
-      screenAnalytics.track('onboarding_message_regenerated', {});
       // Generate a new message
       const firstName = selectedContact.firstName;
       const messages = [
@@ -203,7 +185,6 @@ export default function OnboardingFlow() {
       await Clipboard.setStringAsync(generatedMessage);
       setHasCopied(true);
       console.log('Message copied to clipboard');
-      screenAnalytics.track('onboarding_message_copied', {});
     } catch (error) {
       console.error('Failed to copy message:', error);
       Alert.alert('Error', 'Failed to copy message. Please try again.');
@@ -218,7 +199,6 @@ export default function OnboardingFlow() {
     
     setIsMarkingAsSent(true);
     try {
-      screenAnalytics.track('onboarding_mark_sent', {});
       // Simulate marking as sent
       await new Promise(resolve => setTimeout(resolve, 500));
       
@@ -239,7 +219,6 @@ export default function OnboardingFlow() {
       console.error('Invalid reminder frequency:', frequency);
       return;
     }
-    screenAnalytics.track('onboarding_reminder_selected', { frequency });
     await setReminderFrequency(frequency);
     nextStep();
   };
@@ -249,33 +228,31 @@ export default function OnboardingFlow() {
     setVoiceNoteUri(uri);
     setVoiceNoteDuration(duration);
     setHasRecordedVoiceNote(true);
-    screenAnalytics.track('onboarding_voice_recorded', { duration });
   };
   
   const handleTranscriptReady = (transcript: string) => {
     console.log('Transcript ready:', transcript);
     setVoiceNoteTranscript(transcript);
-    screenAnalytics.track('onboarding_voice_transcribed', { length: transcript?.length || 0 });
     
     // Save the voice note with transcript to the selected contact
     if (selectedContact && voiceNoteUri) {
       addVoiceNote({
         personId: selectedContact.id,
-        audioUri: voiceNoteUri,
-        transcription: transcript,
+        audioUrl: voiceNoteUri,
+        transcript: transcript,
+        duration: voiceNoteDuration,
+        contextScope: 'about_person'
       });
       console.log('Voice note saved with transcript for contact:', selectedContact.id);
     }
   };
 
   const handleComplete = async () => {
-    screenAnalytics.track('onboarding_completed', {});
     await completeOnboarding();
     router.replace('/home');
   };
 
   const handleSkip = async () => {
-    screenAnalytics.track('onboarding_skipped', {});
     await completeOnboarding();
     router.replace('/home');
   };
@@ -650,59 +627,6 @@ export default function OnboardingFlow() {
     </View>
   );
 
-  // New: Video showcase page before completion
-  const videoStarted = useRef(false);
-  const videoCompleted = useRef(false);
-  const renderVideoShowcase = () => (
-    <View style={styles.screenContainer}>
-      <View style={styles.header}>
-        <Text style={styles.title}>See EverReach in action</Text>
-        <Text style={styles.subtitle}>A quick look at how EverReach helps you connect faster.</Text>
-      </View>
-      <View style={styles.content}>
-        <Video
-          style={{ width: '100%', aspectRatio: 16/9, backgroundColor: '#000', borderRadius: 12 }}
-          source={{ uri: 'https://cdn.coverr.co/videos/coverr-woman-typing-on-a-phone-8933/1080p.mp4' }}
-          resizeMode={ResizeMode.COVER}
-          useNativeControls
-          shouldPlay={false}
-          isLooping
-          onPlaybackStatusUpdate={(status: any) => {
-            try {
-              if (!videoStarted.current && status?.isPlaying) {
-                videoStarted.current = true;
-                screenAnalytics.track('onboarding_video_started', {});
-              }
-              if (!videoCompleted.current && status?.didJustFinish) {
-                videoCompleted.current = true;
-                screenAnalytics.track('onboarding_video_completed', {});
-              }
-            } catch {}
-          }}
-        />
-        <View style={{ marginTop: 12 }}>
-          <Text style={{ color: theme.colors.textSecondary, textAlign: 'center' }}>
-            • Context-aware message generation{"\n"}
-            • Warmth tracking & reminders{"\n"}
-            • Unified history across channels
-          </Text>
-        </View>
-      </View>
-      <View style={styles.footer}>
-        <TouchableOpacity 
-          style={styles.primaryButton}
-          onPress={() => {
-            screenAnalytics.track('onboarding_video_next_click', {});
-            nextStep();
-          }}
-        >
-          <Text style={styles.primaryButtonText}>Finish</Text>
-          <ArrowRight size={20} color={theme.colors.surface} />
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-
   const getWarmthColor = (score: number) => {
     if (score >= 80) return '#4ECDC4';
     if (score >= 60) return '#FFD93D';
@@ -719,8 +643,7 @@ export default function OnboardingFlow() {
       case 4: return renderWarmthScreen();
       case 5: return renderVoiceNoteScreen();
       case 6: return renderReminderScreen();
-      case 7: return renderVideoShowcase();
-      case 8: return renderCompleteScreen();
+      case 7: return renderCompleteScreen();
       default: return renderWelcomeScreen();
     }
   };
@@ -730,7 +653,7 @@ export default function OnboardingFlow() {
       <StatusBar style="auto" />
       
       {/* Skip button - only show if not on the final step */}
-      {currentStep < 8 && (
+      {currentStep < 7 && (
         <View style={styles.skipButtonContainer}>
           <TouchableOpacity 
             style={styles.skipButton} 
@@ -751,42 +674,25 @@ export default function OnboardingFlow() {
       </ScrollView>
       
       {/* Progress indicator */}
-      {currentStep < 8 && (
+      {currentStep < 7 && (
         <View style={styles.progressContainer}>
           <View style={styles.progressBar}>
             <View style={styles.progressFill} />
           </View>
-          <Text style={styles.progressText}>{currentStep + 1} of 9</Text>
+          <Text style={styles.progressText}>{currentStep + 1} of 8</Text>
         </View>
       )}
     </SafeAreaView>
   );
 }
 
-// Unified theme colors matching welcome.tsx
-const THEME = {
-  primary: '#7C3AED',
-  background: '#FFFFFF',
-  surface: '#FFFFFF',
-  text: '#1F2937',
-  textSecondary: '#6B7280',
-  border: '#E5E7EB',
-  success: '#10B981',
-  iconBg: {
-    purple: '#EDE9FE',
-    yellow: '#FEF3C7',
-    blue: '#DBEAFE',
-    green: '#D1FAE5',
-  }
-};
-
 const createStyles = (theme: any, currentStep: number = 0) => {
-  const progressWidth = `${((currentStep + 1) / 9) * 100}%`;
+  const progressWidth = `${((currentStep + 1) / 8) * 100}%`;
   
   return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: THEME.background,
+    backgroundColor: theme.colors.background,
   },
   scrollContent: {
     flexGrow: 1,
@@ -813,16 +719,16 @@ const createStyles = (theme: any, currentStep: number = 0) => {
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: THEME.text,
+    color: theme.colors.text,
     textAlign: 'center',
     marginBottom: 16,
     lineHeight: 36,
   },
   subtitle: {
-    fontSize: 17,
-    color: THEME.textSecondary,
+    fontSize: 16,
+    color: theme.colors.textSecondary,
     textAlign: 'center',
-    lineHeight: 26,
+    lineHeight: 24,
   },
   content: {
     flex: 1,
@@ -833,9 +739,9 @@ const createStyles = (theme: any, currentStep: number = 0) => {
     paddingBottom: 40,
   },
   primaryButton: {
-    backgroundColor: THEME.primary,
-    borderRadius: 12,
-    paddingVertical: 16,
+    backgroundColor: theme.colors.primary,
+    borderRadius: 16,
+    paddingVertical: 18,
     paddingHorizontal: 24,
     flexDirection: 'row',
     alignItems: 'center',
@@ -843,16 +749,16 @@ const createStyles = (theme: any, currentStep: number = 0) => {
     gap: 8,
   },
   primaryButtonText: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: theme.colors.surface,
   },
   secondaryButton: {
-    backgroundColor: THEME.surface,
+    backgroundColor: theme.colors.surface,
     borderWidth: 2,
-    borderColor: THEME.border,
-    borderRadius: 12,
-    paddingVertical: 16,
+    borderColor: theme.colors.border,
+    borderRadius: 16,
+    paddingVertical: 18,
     paddingHorizontal: 24,
     alignItems: 'center',
     justifyContent: 'center',
@@ -860,64 +766,59 @@ const createStyles = (theme: any, currentStep: number = 0) => {
   secondaryButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: THEME.text,
+    color: theme.colors.text,
   },
   buttonRow: {
     flexDirection: 'row',
     gap: 12,
   },
   focusOption: {
-    backgroundColor: THEME.surface,
+    backgroundColor: theme.colors.surface,
     borderWidth: 2,
-    borderColor: THEME.border,
-    borderRadius: 16,
-    padding: 20,
+    borderColor: theme.colors.border,
+    borderRadius: 20,
+    padding: 24,
     alignItems: 'center',
     gap: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
   },
   focusOptionSelected: {
-    backgroundColor: THEME.primary,
-    borderColor: THEME.primary,
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
   },
   focusLabel: {
     fontSize: 18,
     fontWeight: '600',
-    color: THEME.text,
+    color: theme.colors.text,
   },
   focusLabelSelected: {
-    color: '#FFFFFF',
+    color: theme.colors.surface,
   },
   focusDescription: {
     fontSize: 14,
-    color: THEME.textSecondary,
+    color: theme.colors.textSecondary,
     textAlign: 'center',
   },
   focusDescriptionSelected: {
-    color: '#FFFFFF',
-    opacity: 0.9,
+    color: theme.colors.surface,
+    opacity: 0.8,
   },
   contactCard: {
-    backgroundColor: THEME.iconBg.purple,
+    backgroundColor: theme.colors.surface,
     borderRadius: 20,
     padding: 48,
     alignItems: 'center',
     gap: 16,
     borderWidth: 2,
-    borderColor: THEME.primary + '30',
+    borderColor: theme.colors.border,
     borderStyle: 'dashed',
   },
   contactCardText: {
     fontSize: 16,
-    color: THEME.textSecondary,
+    color: theme.colors.textSecondary,
     textAlign: 'center',
   },
   messageCard: {
-    backgroundColor: THEME.surface,
+    backgroundColor: theme.colors.surface,
     borderRadius: 20,
     padding: 24,
     shadowColor: '#000',
@@ -925,12 +826,10 @@ const createStyles = (theme: any, currentStep: number = 0) => {
     shadowOpacity: 0.1,
     shadowRadius: 12,
     elevation: 4,
-    borderWidth: 1,
-    borderColor: THEME.border,
   },
   messageText: {
     fontSize: 16,
-    color: THEME.text,
+    color: theme.colors.text,
     lineHeight: 24,
   },
   warmthContainer: {
@@ -938,13 +837,13 @@ const createStyles = (theme: any, currentStep: number = 0) => {
     gap: 24,
   },
   warmthDial: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
     borderWidth: 4,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: THEME.iconBg.green,
+    backgroundColor: theme.colors.surface,
   },
   warmthScore: {
     fontSize: 18,
@@ -953,34 +852,29 @@ const createStyles = (theme: any, currentStep: number = 0) => {
   },
   warmthLabel: {
     fontSize: 16,
-    color: THEME.textSecondary,
+    color: theme.colors.textSecondary,
   },
   reminderOption: {
-    backgroundColor: THEME.surface,
+    backgroundColor: theme.colors.surface,
     borderWidth: 2,
-    borderColor: THEME.border,
+    borderColor: theme.colors.border,
     borderRadius: 16,
     padding: 20,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
   },
   reminderOptionSelected: {
-    backgroundColor: THEME.primary,
-    borderColor: THEME.primary,
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
   },
   reminderLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: THEME.text,
+    color: theme.colors.text,
   },
   reminderLabelSelected: {
-    color: '#FFFFFF',
+    color: theme.colors.surface,
   },
   celebrationContainer: {
     alignItems: 'center',
@@ -993,25 +887,25 @@ const createStyles = (theme: any, currentStep: number = 0) => {
   progressContainer: {
     paddingHorizontal: 24,
     paddingVertical: 16,
-    backgroundColor: THEME.surface,
+    backgroundColor: theme.colors.surface,
     borderTopWidth: 1,
-    borderTopColor: THEME.border,
+    borderTopColor: theme.colors.border,
   },
   progressBar: {
     height: 4,
-    backgroundColor: THEME.border,
+    backgroundColor: theme.colors.border,
     borderRadius: 2,
     marginBottom: 8,
   },
   progressFill: {
     height: '100%',
-    backgroundColor: THEME.primary,
+    backgroundColor: theme.colors.primary,
     borderRadius: 2,
     width: progressWidth as any,
   },
   progressText: {
     fontSize: 12,
-    color: THEME.textSecondary,
+    color: theme.colors.textSecondary,
     textAlign: 'center',
   },
   flexButton: {
@@ -1019,7 +913,7 @@ const createStyles = (theme: any, currentStep: number = 0) => {
   },
   copiedIndicator: {
     fontSize: 14,
-    color: THEME.success,
+    color: theme.colors.success,
     marginTop: 8,
     fontWeight: '500' as const,
   },
@@ -1027,15 +921,15 @@ const createStyles = (theme: any, currentStep: number = 0) => {
     gap: 16,
   },
   messageInput: {
-    backgroundColor: THEME.surface,
+    backgroundColor: theme.colors.surface,
     borderRadius: 20,
     padding: 24,
     fontSize: 16,
-    color: THEME.text,
+    color: theme.colors.text,
     minHeight: 120,
     textAlignVertical: 'top' as const,
     borderWidth: 2,
-    borderColor: THEME.border,
+    borderColor: theme.colors.border,
   },
   editButtonRow: {
     flexDirection: 'row' as const,
@@ -1047,7 +941,7 @@ const createStyles = (theme: any, currentStep: number = 0) => {
     marginTop: 20,
     paddingTop: 20,
     borderTopWidth: 1,
-    borderTopColor: THEME.border,
+    borderTopColor: theme.colors.border,
   },
   actionButton: {
     flexDirection: 'row' as const,
@@ -1056,36 +950,36 @@ const createStyles = (theme: any, currentStep: number = 0) => {
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 12,
-    backgroundColor: THEME.iconBg.purple,
+    backgroundColor: theme.colors.background,
   },
   actionButtonDisabled: {
     opacity: 0.5,
   },
   actionButtonSuccess: {
-    backgroundColor: THEME.success + '20',
+    backgroundColor: theme.colors.success + '20',
   },
   actionButtonText: {
     fontSize: 14,
     fontWeight: '500' as const,
-    color: THEME.primary,
+    color: theme.colors.primary,
   },
   actionButtonTextDisabled: {
-    color: THEME.textSecondary,
+    color: theme.colors.textSecondary,
   },
   actionButtonTextSuccess: {
-    color: THEME.success,
+    color: theme.colors.success,
   },
   primaryButtonDisabled: {
-    backgroundColor: THEME.textSecondary,
+    backgroundColor: theme.colors.textSecondary,
     opacity: 0.6,
   },
   primaryButtonTextDisabled: {
-    color: '#FFFFFF',
+    color: theme.colors.surface,
     opacity: 0.8,
   },
   instructionText: {
     fontSize: 14,
-    color: THEME.textSecondary,
+    color: theme.colors.textSecondary,
     textAlign: 'center' as const,
     marginTop: 16,
     fontStyle: 'italic' as const,
@@ -1097,7 +991,7 @@ const createStyles = (theme: any, currentStep: number = 0) => {
     // Dynamic text color will be applied inline
   },
   voiceNoteContainer: {
-    backgroundColor: THEME.iconBg.blue,
+    backgroundColor: theme.colors.surface,
     borderRadius: 20,
     padding: 24,
     alignItems: 'center',
@@ -1114,31 +1008,31 @@ const createStyles = (theme: any, currentStep: number = 0) => {
     marginTop: 20,
     paddingHorizontal: 16,
     paddingVertical: 8,
-    backgroundColor: THEME.success + '20',
+    backgroundColor: theme.colors.success + '20',
     borderRadius: 12,
   },
   successText: {
     fontSize: 16,
     fontWeight: '500',
-    color: THEME.success,
+    color: theme.colors.success,
   },
   transcriptPreview: {
     marginTop: 16,
     padding: 16,
-    backgroundColor: THEME.background,
+    backgroundColor: theme.colors.background,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: THEME.border,
+    borderColor: theme.colors.border,
   },
   transcriptPreviewTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: THEME.text,
+    color: theme.colors.text,
     marginBottom: 8,
   },
   transcriptPreviewText: {
     fontSize: 14,
-    color: THEME.textSecondary,
+    color: theme.colors.textSecondary,
     fontStyle: 'italic',
     lineHeight: 20,
   },
@@ -1154,10 +1048,10 @@ const createStyles = (theme: any, currentStep: number = 0) => {
     gap: 4,
     paddingVertical: 8,
     paddingHorizontal: 12,
-    backgroundColor: THEME.surface,
+    backgroundColor: theme.colors.surface,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: THEME.border,
+    borderColor: theme.colors.border,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -1167,7 +1061,7 @@ const createStyles = (theme: any, currentStep: number = 0) => {
   skipButtonText: {
     fontSize: 14,
     fontWeight: '500',
-    color: THEME.textSecondary,
+    color: theme.colors.textSecondary,
   },
 });
 };

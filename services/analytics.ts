@@ -1,690 +1,596 @@
 /**
- * Analytics Service
- * 
- * High-level analytics tracking methods for common events.
- * All methods are privacy-safe and follow the events spec.
- * 
- * Respects user consent and category preferences.
+ * Type-Safe Analytics Service
+ * Wraps PostHog with type safety and privacy guarantees
  */
 
-import { captureEvent, trackScreen } from '../lib/posthog';
-import { Platform } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { trackEventToBackend } from '../lib/backendAnalytics';
+import PostHog from 'posthog-react-native';
+import * as Crypto from 'expo-crypto';
 
-const ANALYTICS_CONSENT_KEY = '@analytics_consent';
-const ANALYTICS_CATEGORIES_KEY = '@analytics_categories';
+// =====================================================
+// TYPES
+// =====================================================
 
-export enum AnalyticsCategory {
-  ESSENTIAL = 'essential',
-  PERFORMANCE = 'performance',
-  FEATURE_USAGE = 'feature_usage',
-  ERRORS = 'errors',
-  NAVIGATION = 'navigation',
-}
+type Channel = 'email' | 'sms' | 'dm' | 'imessage' | 'whatsapp' | 'linkedin';
+type Plan = 'free' | 'core' | 'pro';
+type Platform = 'ios' | 'android' | 'web';
+type RequestType = 'feature' | 'feedback' | 'bug';
+type InteractionType = 'call' | 'meeting' | 'dm' | 'email' | 'text' | 'video_call' | 'coffee' | 'event';
 
-export interface AnalyticsConsent {
-  enabled: boolean;
-  categories: {
-    [AnalyticsCategory.ESSENTIAL]: boolean;
-    [AnalyticsCategory.PERFORMANCE]: boolean;
-    [AnalyticsCategory.FEATURE_USAGE]: boolean;
-    [AnalyticsCategory.ERRORS]: boolean;
-    [AnalyticsCategory.NAVIGATION]: boolean;
-  };
-}
-
-const DEFAULT_CONSENT: AnalyticsConsent = {
-  enabled: __DEV__ ? true : false,  // Auto-enable in development for testing
-  categories: {
-    [AnalyticsCategory.ESSENTIAL]: true,
-    [AnalyticsCategory.PERFORMANCE]: __DEV__ ? true : false,  // Enable in dev
-    [AnalyticsCategory.FEATURE_USAGE]: __DEV__ ? true : false,  // Enable in dev
-    [AnalyticsCategory.ERRORS]: true,
-    [AnalyticsCategory.NAVIGATION]: __DEV__ ? true : false,  // Enable in dev
-  },
-};
-
-let cachedConsent: AnalyticsConsent | null = null;
-
-async function getConsent(): Promise<AnalyticsConsent> {
-  if (cachedConsent) return cachedConsent;
-  
-  try {
-    const [consentStr, categoriesStr] = await Promise.all([
-      AsyncStorage.getItem(ANALYTICS_CONSENT_KEY),
-      AsyncStorage.getItem(ANALYTICS_CATEGORIES_KEY),
-    ]);
-    
-    const enabled = consentStr === 'true';
-    const categories = categoriesStr ? JSON.parse(categoriesStr) : DEFAULT_CONSENT.categories;
-    
-    cachedConsent = { enabled, categories };
-    return cachedConsent;
-  } catch (error) {
-    console.error('[AnalyticsService] Failed to load consent:', error);
-    return DEFAULT_CONSENT;
-  }
-}
-
-export async function setAnalyticsConsent(consent: AnalyticsConsent): Promise<void> {
-  try {
-    await Promise.all([
-      AsyncStorage.setItem(ANALYTICS_CONSENT_KEY, consent.enabled ? 'true' : 'false'),
-      AsyncStorage.setItem(ANALYTICS_CATEGORIES_KEY, JSON.stringify(consent.categories)),
-    ]);
-    cachedConsent = consent;
-  } catch (error) {
-    console.error('[AnalyticsService] Failed to save consent:', error);
-  }
-}
-
-export async function getAnalyticsConsent(): Promise<AnalyticsConsent> {
-  return getConsent();
-}
-
-async function shouldTrack(category: AnalyticsCategory): Promise<boolean> {
-  const consent = await getConsent();
-  if (!consent.enabled) return false;
-  return consent.categories[category] ?? false;
-}
-
-async function trackIfConsented(
-  category: AnalyticsCategory,
-  eventName: string,
-  properties?: Record<string, any>
-) {
-  if (__DEV__) {
-    console.log(`🎯 [Analytics] trackIfConsented called: ${eventName}`, { category, properties });
-  }
-  
-  const allowed = await shouldTrack(category);
-  
-  if (__DEV__) {
-    console.log(`🎯 [Analytics] Consent check result for ${eventName}:`, { allowed, category });
-  }
-  
-  // ALWAYS send to backend (internal analytics, not shared with third parties)
-  // Backend events stay in our Supabase database for product analytics
-  if (__DEV__) {
-    console.log(`🎯 [Analytics] About to call trackEventToBackend for: ${eventName}`);
-  }
-  trackEventToBackend(eventName, properties);
-  
-  // Only send to PostHog if user consented (respects privacy for third-party analytics)
-  if (allowed) {
-    if (__DEV__) {
-      console.log(`🎯 [Analytics] Consent allowed, sending to PostHog: ${eventName}`);
-      try {
-        const mod = await import('@/lib/analyticsValidator');
-        if (mod && typeof mod.validateEvent === 'function') {
-          mod.validateEvent(eventName, properties);
-        }
-      } catch {}
-    }
-    // Send to PostHog (third-party analytics)
-    captureEvent(eventName, properties);
-  } else if (__DEV__) {
-    console.log(`🎯 [Analytics] Consent denied, skipping PostHog for: ${eventName}`);
-  }
-}
+// =====================================================
+// ANALYTICS SERVICE
+// =====================================================
 
 export class AnalyticsService {
-  // ============================================================================
-  // CONSENT MANAGEMENT
-  // ============================================================================
-
-  static async updateConsent(consent: Partial<AnalyticsConsent>): Promise<void> {
-    const current = await getConsent();
-    const updated = {
-      ...current,
-      ...consent,
-      categories: {
-        ...current.categories,
-        ...consent.categories,
-      },
-    };
-    await setAnalyticsConsent(updated);
-  }
-
-  static async enableCategory(category: AnalyticsCategory): Promise<void> {
-    const current = await getConsent();
-    current.categories[category] = true;
-    await setAnalyticsConsent(current);
-  }
-
-  static async disableCategory(category: AnalyticsCategory): Promise<void> {
-    const current = await getConsent();
-    current.categories[category] = false;
-    await setAnalyticsConsent(current);
-  }
-
-  // ============================================================================
-  // LIFECYCLE
-  // ============================================================================
-
-  static async trackAppOpened(isFirstLaunch: boolean, timeSinceLastOpen?: number) {
-    await trackIfConsented(AnalyticsCategory.ESSENTIAL, 'App Opened', {
-      platform: Platform.OS,
-      is_first_launch: isFirstLaunch,
-      time_since_last_open: timeSinceLastOpen,
-    });
-  }
-
-  static async trackAppBackgrounded(sessionDuration: number, screensViewed: number) {
-    await trackIfConsented(AnalyticsCategory.ESSENTIAL, 'App Backgrounded', {
-      session_duration: sessionDuration,
-      screens_viewed: screensViewed,
-    });
-  }
-
-  // ============================================================================
-  // AUTHENTICATION
-  // ============================================================================
-
-  static async trackSignInAttempted(method: 'email' | 'google' | 'apple') {
-    await trackIfConsented(AnalyticsCategory.ESSENTIAL, 'Sign In Attempted', { method });
-  }
-
-  static async trackSignInSucceeded(method: 'email' | 'google' | 'apple', isNewUser: boolean) {
-    await trackIfConsented(AnalyticsCategory.ESSENTIAL, 'Sign In Succeeded', { 
-      method, 
-      is_new_user: isNewUser 
-    });
-  }
-
-  static async trackSignInFailed(method: 'email' | 'google' | 'apple', errorType: string) {
-    await trackIfConsented(AnalyticsCategory.ERRORS, 'Sign In Failed', { 
-      method, 
-      error_type: errorType 
-    });
-  }
-
-  static async trackSignOut(sessionDuration: number) {
-    await trackIfConsented(AnalyticsCategory.ESSENTIAL, 'Sign Out', { 
-      session_duration: sessionDuration 
-    });
-  }
-
-  static async trackPasswordResetRequested() {
-    await trackIfConsented(AnalyticsCategory.ESSENTIAL, 'Password Reset Requested', {});
-  }
-
-  // ============================================================================
-  // ONBOARDING
-  // ============================================================================
-
-  static async trackOnboardingStarted() {
-    await trackIfConsented(AnalyticsCategory.FEATURE_USAGE, 'Onboarding Started', {});
-  }
-
-  static async trackOnboardingStepCompleted(stepNumber: number, stepName: string) {
-    await trackIfConsented(AnalyticsCategory.FEATURE_USAGE, 'Onboarding Step Completed', {
-      step_number: stepNumber,
-      step_name: stepName,
-    });
-  }
-
-  static async trackOnboardingCompleted(duration: number, stepsCompleted: number) {
-    await trackIfConsented(AnalyticsCategory.FEATURE_USAGE, 'Onboarding Completed', {
-      duration,
-      steps_completed: stepsCompleted,
-    });
-  }
-
-  static async trackOnboardingSkipped(atStep: number) {
-    await trackIfConsented(AnalyticsCategory.FEATURE_USAGE, 'Onboarding Skipped', { 
-      at_step: atStep 
-    });
-  }
-
-  // ============================================================================
-  // CONTACTS
-  // ============================================================================
-
-  static async trackContactCreated(
-    source: 'manual' | 'import' | 'screenshot',
-    hasPhone: boolean,
-    hasEmail: boolean,
-    pipelineStage?: string
-  ) {
-    await trackIfConsented(AnalyticsCategory.FEATURE_USAGE, 'Contact Created', {
-      source,
-      has_phone: hasPhone,
-      has_email: hasEmail,
-      pipeline_stage: pipelineStage,
-    });
-  }
-
-  static async trackContactUpdated(contactId: string, fieldsChanged: string[]) {
-    await trackIfConsented(AnalyticsCategory.FEATURE_USAGE, 'Contact Updated', {
-      contact_id: contactId,
-      fields_changed: fieldsChanged,
-    });
-  }
-
-  static async trackContactDeleted(contactId: string, hadInteractions: boolean, warmthScore?: number) {
-    await trackIfConsented(AnalyticsCategory.FEATURE_USAGE, 'Contact Deleted', {
-      contact_id: contactId,
-      had_interactions: hadInteractions,
-      warmth_score: warmthScore,
-    });
-  }
-
-  static async trackContactsImported(
-    source: 'native_contacts' | 'csv',
-    totalImported: number,
-    duplicatesSkipped: number,
-    duration: number
-  ) {
-    await trackIfConsented(AnalyticsCategory.FEATURE_USAGE, 'Contacts Imported', {
-      source,
-      total_imported: totalImported,
-      duplicates_skipped: duplicatesSkipped,
-      duration,
-    });
-  }
-
-  static async trackPipelineStageChanged(
-    contactId: string,
-    fromStage: string,
-    toStage: string,
-    pipeline: string
-  ) {
-    await trackIfConsented(AnalyticsCategory.FEATURE_USAGE, 'Pipeline Stage Changed', {
-      contact_id: contactId,
-      from_stage: fromStage,
-      to_stage: toStage,
-      pipeline,
-    });
-  }
-
-  static async trackWarmthScoreChanged(
-    contactId: string,
-    fromScore: number,
-    toScore: number,
-    changeReason: string
-  ) {
-    await trackIfConsented(AnalyticsCategory.FEATURE_USAGE, 'Warmth Score Changed', {
-      contact_id: contactId,
-      from_score: fromScore,
-      to_score: toScore,
-      change_reason: changeReason,
-    });
-  }
-
-  // ============================================================================
-  // MESSAGE GENERATION
-  // ============================================================================
-
-  static async trackMessageGenerationStarted(
-    contactId: string,
-    channel: string,
-    goal: string,
-    hasTemplate: boolean,
-    fromScreenshot: boolean
-  ) {
-    await trackIfConsented(AnalyticsCategory.FEATURE_USAGE, 'Message Generation Started', {
-      contact_id: contactId,
-      channel,
-      goal,
-      has_template: hasTemplate,
-      from_screenshot: fromScreenshot,
-    });
-  }
-
-  static async trackMessageGenerated(
-    contactId: string,
-    channel: string,
-    goal: string,
-    templateId: string | undefined,
-    fromScreenshot: boolean,
-    generationTime: number,
-    messageLength: number,
-    tone?: string
-  ) {
-    await trackIfConsented(AnalyticsCategory.FEATURE_USAGE, 'Message Generated', {
-      contact_id: contactId,
-      channel,
-      goal,
-      template_id: templateId,
-      from_screenshot: fromScreenshot,
-      generation_time: generationTime,
-      message_length: messageLength,
-      tone,
-    });
-  }
-
-  static async trackMessageGenerationFailed(
-    contactId: string,
-    channel: string,
-    goal: string,
-    errorType: string,
-    generationTime: number
-  ) {
-    await trackIfConsented(AnalyticsCategory.ERRORS, 'Message Generation Failed', {
-      contact_id: contactId,
-      channel,
-      goal,
-      error_type: errorType,
-      generation_time: generationTime,
-    });
-  }
-
-  static async trackMessageRegenerated(contactId: string, attemptNumber: number) {
-    await trackIfConsented(AnalyticsCategory.FEATURE_USAGE, 'Message Regenerated', {
-      contact_id: contactId,
-      attempt_number: attemptNumber,
-    });
-  }
-
-  static async trackMessageEdited(
-    contactId: string,
-    editType: 'minor' | 'major',
-    originalLength: number,
-    editedLength: number
-  ) {
-    await trackIfConsented(AnalyticsCategory.FEATURE_USAGE, 'Message Edited', {
-      contact_id: contactId,
-      edit_type: editType,
-      original_length: originalLength,
-      edited_length: editedLength,
-    });
-  }
-
-  static async trackMessageSent(
-    contactId: string,
-    channel: string,
-    goal: string,
-    wasEdited: boolean,
-    timeToSend: number
-  ) {
-    await trackIfConsented(AnalyticsCategory.FEATURE_USAGE, 'Message Sent', {
-      contact_id: contactId,
-      channel,
-      goal,
-      was_edited: wasEdited,
-      time_to_send: timeToSend,
-    });
-  }
-
-  static async trackMessageDiscarded(contactId: string, channel: string, goal: string) {
-    await trackIfConsented(AnalyticsCategory.FEATURE_USAGE, 'Message Discarded', {
-      contact_id: contactId,
-      channel,
-      goal,
-    });
-  }
-
-  // ============================================================================
-  // SCREENSHOT ANALYSIS
-  // ============================================================================
-
-  static async trackScreenshotAnalyzed(
-    ocrChars: number,
-    latencyMs: number,
-    fieldsExtracted: string[],
-    confidenceScore: number
-  ) {
-    await trackIfConsented(AnalyticsCategory.PERFORMANCE, 'Screenshot Analyzed', {
-      ocr_chars: ocrChars,
-      latency_ms: latencyMs,
-      fields_extracted: fieldsExtracted,
-      confidence_score: confidenceScore,
-    });
-  }
-
-  static async trackScreenshotAnalysisFailed(errorType: string, fileSizeKb: number) {
-    await trackIfConsented(AnalyticsCategory.ERRORS, 'Screenshot Analysis Failed', {
-      error_type: errorType,
-      file_size_kb: fileSizeKb,
-    });
-  }
-
-  // ============================================================================
-  // INTERACTIONS
-  // ============================================================================
-
-  static async trackInteractionAdded(
-    contactId: string,
-    interactionType: string,
-    hasNotes: boolean,
-    noteLength: number
-  ) {
-    await trackIfConsented(AnalyticsCategory.FEATURE_USAGE, 'Interaction Added', {
-      contact_id: contactId,
-      interaction_type: interactionType,
-      has_notes: hasNotes,
-      note_length: noteLength,
-    });
-  }
-
-  static async trackInteractionUpdated(interactionId: string, contactId: string) {
-    await trackIfConsented(AnalyticsCategory.FEATURE_USAGE, 'Interaction Updated', {
-      interaction_id: interactionId,
-      contact_id: contactId,
-    });
-  }
-
-  static async trackInteractionDeleted(interactionId: string, contactId: string) {
-    await trackIfConsented(AnalyticsCategory.FEATURE_USAGE, 'Interaction Deleted', {
-      interaction_id: interactionId,
-      contact_id: contactId,
-    });
-  }
-
-  // ============================================================================
-  // VOICE NOTES
-  // ============================================================================
-
-  static async trackVoiceNoteStarted(context: 'contact_note' | 'personal_note') {
-    await trackIfConsented(AnalyticsCategory.FEATURE_USAGE, 'Voice Note Started', { context });
-  }
-
-  static async trackVoiceNoteCompleted(duration: number, context: 'contact_note' | 'personal_note') {
-    await trackIfConsented(AnalyticsCategory.FEATURE_USAGE, 'Voice Note Completed', { 
-      duration, 
-      context 
-    });
-  }
-
-  static async trackVoiceNoteTranscribed(
-    duration: number,
-    transcriptionLength: number,
-    latencyMs: number
-  ) {
-    await trackIfConsented(AnalyticsCategory.PERFORMANCE, 'Voice Note Transcribed', {
-      duration,
-      transcription_length: transcriptionLength,
-      latency_ms: latencyMs,
-    });
-  }
-
-  static async trackVoiceNoteTranscriptionFailed(duration: number, errorType: string) {
-    await trackIfConsented(AnalyticsCategory.ERRORS, 'Voice Note Transcription Failed', {
-      duration,
-      error_type: errorType,
-    });
-  }
-
-  // ============================================================================
-  // TEMPLATES
-  // ============================================================================
-
-  static async trackTemplateCreated(templateType: string, channel: string) {
-    await trackIfConsented(AnalyticsCategory.FEATURE_USAGE, 'Template Created', {
-      template_type: templateType,
-      channel,
-    });
-  }
-
-  static async trackTemplateUsed(templateId: string, templateType: string, isCustom: boolean) {
-    await trackIfConsented(AnalyticsCategory.FEATURE_USAGE, 'Template Used', {
-      template_id: templateId,
-      template_type: templateType,
-      is_custom: isCustom,
-    });
-  }
-
-  static async trackTemplateEdited(templateId: string) {
-    await trackIfConsented(AnalyticsCategory.FEATURE_USAGE, 'Template Edited', { 
-      template_id: templateId 
-    });
-  }
-
-  static async trackTemplateDeleted(templateId: string, usageCount: number) {
-    await trackIfConsented(AnalyticsCategory.FEATURE_USAGE, 'Template Deleted', {
-      template_id: templateId,
-      usage_count: usageCount,
-    });
-  }
-
-  // ============================================================================
-  // SUBSCRIPTION
-  // ============================================================================
-
-  static async trackPaywallViewed(trigger: string, planShown: string) {
-    await trackIfConsented(AnalyticsCategory.FEATURE_USAGE, 'Paywall Viewed', {
-      trigger,
-      plan_shown: planShown,
-    });
-  }
-
-  static async trackTrialStarted(plan: string, durationDays: number) {
-    await trackIfConsented(AnalyticsCategory.ESSENTIAL, 'Trial Started', {
-      plan,
-      duration_days: durationDays,
-    });
-  }
-
-  static async trackTrialConverted(plan: string, trialDurationDays: number) {
-    await trackIfConsented(AnalyticsCategory.ESSENTIAL, 'Trial Converted', {
-      plan,
-      trial_duration_days: trialDurationDays,
-    });
-  }
-
-  static async trackTrialCanceled(plan: string, daysIntoTrial: number, reason?: string) {
-    await trackIfConsented(AnalyticsCategory.ESSENTIAL, 'Trial Canceled', {
-      plan,
-      days_into_trial: daysIntoTrial,
-      reason,
-    });
-  }
-
-  static async trackSubscriptionPurchased(
-    plan: string,
-    billingPeriod: string,
-    price: number,
-    currency: string
-  ) {
-    await trackIfConsented(AnalyticsCategory.ESSENTIAL, 'Subscription Purchased', {
-      plan,
-      billing_period: billingPeriod,
-      price,
-      currency,
-    });
-  }
-
-  static async trackSubscriptionCanceled(plan: string, daysSubscribed: number, reason?: string) {
-    await trackIfConsented(AnalyticsCategory.ESSENTIAL, 'Subscription Canceled', {
-      plan,
-      days_subscribed: daysSubscribed,
-      reason,
-    });
-  }
-
-  static async trackSubscriptionRestored(plan: string, platform: string) {
-    await trackIfConsented(AnalyticsCategory.ESSENTIAL, 'Subscription Restored', { 
-      plan, 
-      platform 
-    });
-  }
-
-  // ============================================================================
-  // FEATURE REQUESTS
-  // ============================================================================
-
-  static async trackFeatureRequestSubmitted(bucket: string, requestLength: number) {
-    await trackIfConsented(AnalyticsCategory.FEATURE_USAGE, 'Feature Request Submitted', {
-      bucket,
-      request_length: requestLength,
-    });
-  }
-
-  // ============================================================================
-  // SETTINGS
-  // ============================================================================
-
-  static async trackSettingsChanged(settingName: string, oldValue: string, newValue: string) {
-    await trackIfConsented(AnalyticsCategory.FEATURE_USAGE, 'Settings Changed', {
-      setting_name: settingName,
-      old_value: oldValue,
-      new_value: newValue,
-    });
-  }
-
-  static async trackThemeChanged(theme: 'light' | 'dark' | 'system') {
-    await trackIfConsented(AnalyticsCategory.FEATURE_USAGE, 'Theme Changed', { theme });
-  }
-
-  static async trackCloudModeToggled(enabled: boolean) {
-    await trackIfConsented(AnalyticsCategory.FEATURE_USAGE, 'Cloud Mode Toggled', { enabled });
-  }
-
-  static async trackAnalyticsConsentChanged(consented: boolean) {
-    await trackIfConsented(AnalyticsCategory.ESSENTIAL, 'Analytics Consent Changed', { 
-      consented 
-    });
-  }
-
-  static async trackWarmthSettingsChanged(settingChanged: string) {
-    await trackIfConsented(AnalyticsCategory.FEATURE_USAGE, 'Warmth Settings Changed', { 
-      setting_changed: settingChanged 
-    });
-  }
-
-  // ============================================================================
-  // NAVIGATION
-  // ============================================================================
-
-  static async trackScreenViewed(
-    screenName: string,
-    previousScreen?: string,
-    timeOnPrevious?: number
-  ) {
-    const allowed = await shouldTrack(AnalyticsCategory.NAVIGATION);
-    if (allowed) {
-      trackScreen(screenName, {
-        previous_screen: previousScreen,
-        time_on_previous: timeOnPrevious,
+  private static initialized = false;
+
+  /**
+   * Initialize PostHog (call once at app start)
+   */
+  static async initialize(apiKey: string) {
+    if (this.initialized || !apiKey) return;
+
+    try {
+      await PostHog.init(apiKey, {
+        host: 'https://app.posthog.com',
+        captureApplicationLifecycleEvents: true,
+        captureScreenViews: true,
+        flushAt: 10,
+        flushInterval: 5000,
       });
+      this.initialized = true;
+      console.log('[Analytics] PostHog initialized');
+    } catch (error) {
+      console.error('[Analytics] Failed to initialize PostHog:', error);
     }
   }
 
-  // ============================================================================
-  // ERRORS
-  // ============================================================================
-
-  static async trackError(
-    errorType: string,
-    errorMessage: string,
-    screen: string,
-    isFatal: boolean
+  /**
+   * Identify user (call after login)
+   */
+  static async identifyUser(
+    userId: string,
+    traits: {
+      plan?: Plan;
+      locale?: string;
+      platform?: Platform;
+    }
   ) {
-    await trackIfConsented(AnalyticsCategory.ERRORS, 'Error Occurred', {
-      error_type: errorType,
-      error_message: errorMessage,
-      screen,
-      is_fatal: isFatal,
+    try {
+      // Hash user ID for privacy
+      const anonId = await Crypto.digestStringAsync(
+        Crypto.CryptoDigestAlgorithm.SHA256,
+        userId
+      );
+      PostHog.identify(anonId, traits);
+      console.log('[Analytics] User identified');
+    } catch (error) {
+      console.error('[Analytics] Failed to identify user:', error);
+    }
+  }
+
+  /**
+   * Reset user (call on logout)
+   */
+  static async resetUser() {
+    try {
+      await PostHog.reset();
+      console.log('[Analytics] User reset');
+    } catch (error) {
+      console.error('[Analytics] Failed to reset user:', error);
+    }
+  }
+
+  // =====================================================
+  // LIFECYCLE & SESSION
+  // =====================================================
+
+  static trackAppOpened(props: {
+    isFirstLaunch: boolean;
+    previousVersion?: string;
+    timeSinceLastOpenHours?: number;
+  }) {
+    PostHog.capture('App Opened', {
+      is_first_launch: props.isFirstLaunch,
+      previous_version: props.previousVersion,
+      time_since_last_open_hours: props.timeSinceLastOpenHours,
     });
   }
 
-  static async trackAPIError(endpoint: string, statusCode: number, errorType: string) {
-    await trackIfConsented(AnalyticsCategory.ERRORS, 'API Error', {
-      endpoint,
-      status_code: statusCode,
-      error_type: errorType,
+  static trackAppBackgrounded(props: {
+    sessionDurationMs: number;
+    screensViewedCount: number;
+    actionsPerformedCount: number;
+  }) {
+    PostHog.capture('App Backgrounded', {
+      session_duration_ms: props.sessionDurationMs,
+      screens_viewed_count: props.screensViewedCount,
+      actions_performed_count: props.actionsPerformedCount,
+    });
+  }
+
+  // =====================================================
+  // AUTHENTICATION
+  // =====================================================
+
+  static trackSignedUp(props: {
+    method: 'email' | 'google' | 'apple' | 'phone';
+    source: 'organic' | 'ad' | 'referral' | 'web';
+    hasReferralCode: boolean;
+  }) {
+    PostHog.capture('Signed Up', {
+      method: props.method,
+      source: props.source,
+      has_referral_code: props.hasReferralCode,
+    });
+  }
+
+  static trackSignedIn(props: {
+    method: 'email' | 'google' | 'apple' | 'phone' | 'biometric';
+    daysSinceLastLogin?: number;
+  }) {
+    PostHog.capture('Signed In', {
+      method: props.method,
+      days_since_last_login: props.daysSinceLastLogin,
+    });
+  }
+
+  // =====================================================
+  // NAVIGATION
+  // =====================================================
+
+  static trackScreenViewed(props: {
+    screenName: string;
+    prevScreen?: string;
+    timeOnPrevMs?: number;
+  }) {
+    PostHog.capture('Screen Viewed', {
+      screen_name: props.screenName,
+      prev_screen: props.prevScreen,
+      time_on_prev_ms: props.timeOnPrevMs,
+    });
+  }
+
+  // =====================================================
+  // CONTACTS & CRM
+  // =====================================================
+
+  static trackContactCreated(props: {
+    source: 'manual' | 'import' | 'scan' | 'voice_note' | 'screenshot';
+    hasCompany: boolean;
+    hasPhoto: boolean;
+    initialPipeline?: string;
+  }) {
+    PostHog.capture('Contact Created', {
+      source: props.source,
+      has_company: props.hasCompany,
+      has_photo: props.hasPhoto,
+      initial_pipeline: props.initialPipeline,
+    });
+  }
+
+  static trackContactsImported(props: {
+    source: 'google' | 'csv' | 'iphone' | 'outlook' | 'vcf';
+    totalCount: number;
+    importedCount: number;
+    dedupedCount: number;
+    hadErrors: boolean;
+  }) {
+    PostHog.capture('Contacts Imported', {
+      source: props.source,
+      total_count: props.totalCount,
+      imported_count: props.importedCount,
+      deduped_count: props.dedupedCount,
+      had_errors: props.hadErrors,
+    });
+  }
+
+  static trackWarmthScoreChanged(props: {
+    contactId: string;
+    fromScore: number;
+    toScore: number;
+    trigger: 'interaction_logged' | 'time_decay' | 'manual_override';
+  }) {
+    PostHog.capture('Warmth Score Changed', {
+      contact_id: props.contactId,
+      from_score: props.fromScore,
+      to_score: props.toScore,
+      delta: props.toScore - props.fromScore,
+      trigger: props.trigger,
+    });
+  }
+
+  // =====================================================
+  // MESSAGES & AI COMPOSER
+  // =====================================================
+
+  static trackMessageGenerated(props: {
+    contactId: string;
+    channel: Channel;
+    goal: string;
+    templateId?: string;
+    tone: 'professional' | 'casual' | 'friendly' | 'formal';
+    fromScreenshot: boolean;
+    fromVoiceNote: boolean;
+    latencyMs: number;
+    tokenCount: number;
+  }) {
+    PostHog.capture('Message Generated', {
+      contact_id: props.contactId,
+      channel: props.channel,
+      goal: props.goal,
+      template_id: props.templateId,
+      tone: props.tone,
+      from_screenshot: props.fromScreenshot,
+      from_voice_note: props.fromVoiceNote,
+      latency_ms: props.latencyMs,
+      token_count: props.tokenCount,
+    });
+  }
+
+  static trackMessageSent(props: {
+    messageId: string;
+    contactId: string;
+    channel: Channel;
+    wasAiGenerated: boolean;
+    wasEdited: boolean;
+  }) {
+    PostHog.capture('Message Sent', {
+      message_id: props.messageId,
+      contact_id: props.contactId,
+      channel: props.channel,
+      was_ai_generated: props.wasAiGenerated,
+      was_edited: props.wasEdited,
+    });
+  }
+
+  // =====================================================
+  // SCREENSHOTS & AI ANALYSIS
+  // =====================================================
+
+  static trackScreenshotAnalyzed(props: {
+    ocrCharCount: number;
+    latencyMs: number;
+    detectedContactsCount: number;
+    confidenceScore: number;
+  }) {
+    PostHog.capture('Screenshot Analyzed', {
+      ocr_char_count: props.ocrCharCount,
+      latency_ms: props.latencyMs,
+      detected_contacts_count: props.detectedContactsCount,
+      confidence_score: props.confidenceScore,
+    });
+  }
+
+  // =====================================================
+  // VOICE NOTES
+  // =====================================================
+
+  static trackVoiceNoteRecorded(props: {
+    durationMs: number;
+    fileSizeKb: number;
+  }) {
+    PostHog.capture('Voice Note Recorded', {
+      duration_ms: props.durationMs,
+      file_size_kb: props.fileSizeKb,
+    });
+  }
+
+  static trackVoiceNoteTranscribed(props: {
+    wordCount: number;
+    latencyMs: number;
+    confidenceScore: number;
+  }) {
+    PostHog.capture('Voice Note Transcribed', {
+      word_count: props.wordCount,
+      latency_ms: props.latencyMs,
+      confidence_score: props.confidenceScore,
+    });
+  }
+
+  // =====================================================
+  // INTERACTIONS
+  // =====================================================
+
+  static trackInteractionLogged(props: {
+    contactId: string;
+    type: InteractionType;
+    hasNotes: boolean;
+    hasFollowup: boolean;
+  }) {
+    PostHog.capture('Interaction Logged', {
+      contact_id: props.contactId,
+      interaction_type: props.type,
+      has_notes: props.hasNotes,
+      has_followup: props.hasFollowup,
+    });
+  }
+
+  // =====================================================
+  // ONBOARDING
+  // =====================================================
+
+  static trackOnboardingStarted() {
+    PostHog.capture('Onboarding Started', {
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  static trackOnboardingStepCompleted(props: {
+    step: number;
+    stepName: string;
+  }) {
+    PostHog.capture('Onboarding Step Completed', {
+      step: props.step,
+      step_name: props.stepName,
+    });
+  }
+
+  static trackOnboardingCompleted(props: {
+    completionTimeMs: number;
+  }) {
+    PostHog.capture('Onboarding Completed', {
+      completion_time_ms: props.completionTimeMs,
+    });
+  }
+
+  static trackOnboardingSkipped(props: {
+    atStep: number;
+  }) {
+    PostHog.capture('Onboarding Skipped', {
+      at_step: props.atStep,
+    });
+  }
+
+  // =====================================================
+  // CONTACT VIEWING
+  // =====================================================
+
+  static trackContactViewed(props: {
+    contactId: string;
+    warmthScore?: number;
+    hasInteractions: boolean;
+    source?: 'list' | 'search' | 'link';
+  }) {
+    PostHog.capture('Contact Viewed', {
+      contact_id: props.contactId,
+      warmth_score: props.warmthScore,
+      has_interactions: props.hasInteractions,
+      source: props.source || 'list',
+    });
+  }
+
+  // =====================================================
+  // AI MESSAGE ACTIONS
+  // =====================================================
+
+  static trackAiMessageEdited(props: {
+    messageId: string;
+    contactId: string;
+    editType: 'text' | 'subject' | 'tone';
+    charsDelta: number;
+  }) {
+    PostHog.capture('AI Message Edited', {
+      message_id: props.messageId,
+      contact_id: props.contactId,
+      edit_type: props.editType,
+      chars_delta: props.charsDelta,
+    });
+  }
+
+  static trackAiMessageAccepted(props: {
+    messageId: string;
+    contactId: string;
+    method: 'copy' | 'send';
+  }) {
+    PostHog.capture('AI Message Accepted', {
+      message_id: props.messageId,
+      contact_id: props.contactId,
+      method: props.method,
+    });
+  }
+
+  static trackAiMessageRejected(props: {
+    messageId: string;
+    contactId: string;
+    reason?: string;
+  }) {
+    PostHog.capture('AI Message Rejected', {
+      message_id: props.messageId,
+      contact_id: props.contactId,
+      reason: props.reason,
+    });
+  }
+
+  // =====================================================
+  // WARMTH TRACKING
+  // =====================================================
+
+  static trackWarmthRecomputed(props: {
+    contactId: string;
+    fromScore?: number;
+    toScore: number;
+    trigger: 'manual' | 'interaction' | 'scheduled';
+  }) {
+    PostHog.capture('Warmth Recomputed', {
+      contact_id: props.contactId,
+      from_score: props.fromScore,
+      to_score: props.toScore,
+      delta: props.fromScore ? props.toScore - props.fromScore : null,
+      trigger: props.trigger,
+    });
+  }
+
+  // =====================================================
+  // TEMPLATE USAGE
+  // =====================================================
+
+  static trackTemplateUsed(props: {
+    templateId: string;
+    contactId: string;
+    channel: Channel;
+  }) {
+    PostHog.capture('Template Used', {
+      template_id: props.templateId,
+      contact_id: props.contactId,
+      channel: props.channel,
+    });
+  }
+
+  // =====================================================
+  // FEATURE REQUESTS & ROADMAP
+  // =====================================================
+
+  static trackFeatureRequestSubmitted(props: {
+    featureId: string;
+    type: RequestType;
+    titleLength: number;
+    descriptionLength: number;
+    hasScreenshot: boolean;
+  }) {
+    PostHog.capture('Feature Request Submitted', {
+      feature_id: props.featureId,
+      request_type: props.type,
+      title_length: props.titleLength,
+      description_length: props.descriptionLength,
+      has_screenshot: props.hasScreenshot,
+    });
+  }
+
+  static trackFeatureRequestVoted(props: {
+    featureId: string;
+    bucketId?: string;
+    bucketTitle?: string;
+    currentVotes: number;
+    isFirstVote: boolean;
+  }) {
+    PostHog.capture('Feature Request Voted', {
+      feature_id: props.featureId,
+      bucket_id: props.bucketId,
+      bucket_title: props.bucketTitle,
+      current_votes: props.currentVotes,
+      is_first_vote: props.isFirstVote,
+    });
+  }
+
+  static trackFeatureBucketViewed(props: {
+    bucketId: string;
+    bucketTitle: string;
+    status: 'backlog' | 'planned' | 'in_progress' | 'shipped' | 'declined';
+    votesCount: number;
+    requestCount: number;
+    progressPercent: number;
+    momentum7d: number;
+  }) {
+    PostHog.capture('Feature Bucket Viewed', {
+      bucket_id: props.bucketId,
+      bucket_title: props.bucketTitle,
+      status: props.status,
+      votes_count: props.votesCount,
+      request_count: props.requestCount,
+      progress_percent: props.progressPercent,
+      momentum_7d: props.momentum7d,
+    });
+  }
+
+  static trackFeatureLeaderboardViewed(props: {
+    sortBy: 'hot' | 'top' | 'new';
+    bucketsVisible: number;
+  }) {
+    PostHog.capture('Feature Leaderboard Viewed', {
+      sort_by: props.sortBy,
+      buckets_visible: props.bucketsVisible,
+    });
+  }
+
+  // =====================================================
+  // SUBSCRIPTIONS & MONETIZATION
+  // =====================================================
+
+  static trackPaywallViewed(props: {
+    variant: string;
+    trigger: 'feature_limit' | 'trial_ended' | 'upgrade_prompt' | 'settings';
+  }) {
+    PostHog.capture('Paywall Viewed', {
+      variant: props.variant,
+      trigger: props.trigger,
+    });
+  }
+
+  static trackTrialStarted(props: {
+    plan: Plan;
+    trialDays: number;
+    source: 'onboarding' | 'paywall' | 'settings';
+  }) {
+    PostHog.capture('Trial Started', {
+      plan: props.plan,
+      trial_days: props.trialDays,
+      source: props.source,
+    });
+  }
+
+  static trackSubscriptionPurchased(props: {
+    plan: Plan;
+    interval: 'monthly' | 'yearly';
+    priceUsd: number;
+    hadTrial: boolean;
+  }) {
+    PostHog.capture('Subscription Purchased', {
+      plan: props.plan,
+      interval: props.interval,
+      price_usd: props.priceUsd,
+      had_trial: props.hadTrial,
+    });
+  }
+
+  // =====================================================
+  // SETTINGS & PREFERENCES
+  // =====================================================
+
+  static trackThemeChanged(props: {
+    fromTheme: 'light' | 'dark' | 'system';
+    toTheme: 'light' | 'dark' | 'system';
+  }) {
+    PostHog.capture('Theme Changed', {
+      from_theme: props.fromTheme,
+      to_theme: props.toTheme,
+    });
+  }
+
+  // =====================================================
+  // FEATURE FLAGS
+  // =====================================================
+
+  static async getFeatureFlag(flagKey: string): Promise<boolean | string | undefined> {
+    try {
+      return await PostHog.getFeatureFlag(flagKey);
+    } catch (error) {
+      console.error('[Analytics] Failed to get feature flag:', error);
+      return undefined;
+    }
+  }
+
+  static async isFeatureEnabled(flagKey: string): Promise<boolean> {
+    try {
+      return await PostHog.isFeatureEnabled(flagKey);
+    } catch (error) {
+      console.error('[Analytics] Failed to check feature flag:', error);
+      return false;
+    }
+  }
+
+  // =====================================================
+  // ERROR TRACKING
+  // =====================================================
+
+  static trackError(props: {
+    errorType: string;
+    screenName: string;
+    isFatal: boolean;
+  }) {
+    PostHog.capture('App Error', {
+      error_type: props.errorType,
+      screen_name: props.screenName,
+      is_fatal: props.isFatal,
     });
   }
 }

@@ -1,8 +1,7 @@
 import React from 'react';
 import { ScrollView, Pressable, View, Text, StyleSheet, useWindowDimensions } from 'react-native';
 import { Bubble, SectionTitle } from './ui';
-import { MessageCircle, Sparkles, Heart, Coffee, Calendar, Users, Check } from 'lucide-react-native';
-import { useAppSettings } from '@/providers/AppSettingsProvider';
+import { MessageCircle, Sparkles, Heart, Coffee, Calendar, Users } from 'lucide-react-native';
 
 type SuggestedGoal = {
   id: string;
@@ -25,7 +24,6 @@ export default function SuggestedGoalsCarousel({
   onSelect: (goal: string) => void;
   contactName?: string;
 }) {
-  const { theme } = useAppSettings();
   const { width: screenWidth } = useWindowDimensions();
   const CARD_WIDTH = screenWidth * 0.75;
   // Convert string suggestions to structured goals with icons and colors
@@ -84,7 +82,7 @@ export default function SuggestedGoalsCarousel({
     <Bubble testID="suggestedGoals">
       <SectionTitle><Text>Suggested Goals</Text></SectionTitle>
       {contactName && (
-        <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>Based on your history with {contactName}</Text>
+        <Text style={styles.subtitle}>Based on your history with {contactName}</Text>
       )}
       <ScrollView 
         horizontal 
@@ -104,10 +102,7 @@ export default function SuggestedGoalsCarousel({
             style={[
               styles.goalCard,
               { backgroundColor: goal.color, width: CARD_WIDTH },
-              selected === goal.id && [
-                styles.goalCardSelected,
-                { borderWidth: 2, borderColor: theme.colors.surface },
-              ],
+              selected === goal.id && styles.goalCardSelected,
               index === 0 && styles.firstCard,
               index === structuredGoals.length - 1 && styles.lastCard
             ]}
@@ -115,12 +110,6 @@ export default function SuggestedGoalsCarousel({
             <View style={styles.iconContainer}>
               {goal.icon}
             </View>
-            {selected === goal.id && (
-              <View style={[styles.checkBadge, { backgroundColor: theme.colors.surface }]}
-              >
-                <Check size={14} color={theme.colors.primary} />
-              </View>
-            )}
             <Text style={styles.goalTitle}>{goal.title}</Text>
             {goal.description && (
               <Text style={styles.goalDescription} numberOfLines={2}>{goal.description}</Text>
@@ -163,16 +152,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 16,
     elevation: 12,
-  },
-  checkBadge: {
-    position: 'absolute',
-    top: 12,
-    right: 12,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   firstCard: {
     marginLeft: CARD_MARGIN,

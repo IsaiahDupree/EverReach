@@ -29,7 +29,6 @@ import {
 import { useAppSettings } from '@/providers/AppSettingsProvider';
 import { usePeople } from '@/providers/PeopleProvider';
 import { useVoiceNotes } from '@/providers/VoiceNotesProvider';
-import { useAnalytics } from '@/hooks/useAnalytics';
 
 
 
@@ -53,15 +52,6 @@ export default function ChatIntroScreen() {
   const { theme } = useAppSettings();
   const { people } = usePeople();
   const { voiceNotes } = useVoiceNotes();
-  
-  // Analytics tracking
-  useAnalytics('ChatIntro', {
-    screenProperties: {
-      contacts_count: people.length,
-      voice_notes_count: voiceNotes.length,
-    },
-  });
-  
   const [selectedTimeframe, setSelectedTimeframe] = useState<'today' | 'week' | 'month'>('today');
   const [inputText, setInputText] = useState('');
 

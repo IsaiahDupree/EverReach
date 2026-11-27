@@ -47,15 +47,12 @@ export default function SupabaseTestScreen() {
     setStatus('Querying protected table people...');
     setErrorMsg(null);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      console.log('Current user:', user?.id);
-      
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('people')
         .select('id')
         .limit(1);
       if (error) throw error;
-      setStatus(`Protected query succeeded! Found ${data?.length ?? 0} people. User: ${user?.email ?? 'anonymous'}`);
+      setStatus('Protected query succeeded (you likely have a session and org membership)');
     } catch (err: any) {
       setErrorMsg(err?.message ?? String(err));
       setStatus('Protected query blocked by RLS (expected if not signed in)');

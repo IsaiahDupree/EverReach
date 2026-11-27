@@ -11,21 +11,12 @@ import {
   ActivityIndicator,
   Keyboard,
   TouchableWithoutFeedback,
-  Image,
 } from 'react-native';
-import CrossPlatformTextInput from '@/components/CrossPlatformTextInput';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
-import { MessageCircle, Send, ChevronLeft, Copy, User, FileText, Activity, Database, Paperclip } from 'lucide-react-native';
+import { MessageCircle, Send, ChevronLeft } from 'lucide-react-native';
 import { usePeople } from '@/providers/PeopleProvider';
 import { useVoiceNotes } from '@/providers/VoiceNotesProvider';
 import VoiceMicButton from '@/components/VoiceMicButton';
-import { sendAgentMessage, type AgentChatRequest, type AgentChatResponse } from '@/lib/agent-api';
-import { useScreenshotAnalysis } from '@/hooks/useScreenshotAnalysis';
-import ScreenshotPreview from '@/components/chat/ScreenshotPreview';
-import AnalysisResults from '@/components/chat/AnalysisResults';
-import { useAppSettings } from '@/providers/AppSettingsProvider';
-import AnalyzingLoader from '@/components/chat/AnalyzingLoader';
 
 interface Message {
   id: string;
@@ -33,8 +24,6 @@ interface Message {
   isUser: boolean;
   timestamp: Date;
   relatedContacts?: string[];
-  references?: AgentChatResponse['references'];
-  imageUri?: string;
 }
 
 interface EmbeddedHeaderProps { onBack: () => void; title?: string }
@@ -49,14 +38,11 @@ interface ChatInterfaceProps {
   draftText?: string;
   onDraftTextChange?: (text: string) => void;
   embedHeader?: EmbeddedHeaderProps;
-  autoOpenImagePicker?: boolean;
 }
 
-export default function ChatInterface({ visible, onClose, threadId, threadLabel, initialQuery, externalQuery, draftText, onDraftTextChange, embedHeader, autoOpenImagePicker = false }: ChatInterfaceProps) {
+export default function ChatInterface({ visible, onClose, threadId, threadLabel, initialQuery, externalQuery, draftText, onDraftTextChange, embedHeader }: ChatInterfaceProps) {
   const { people } = usePeople();
   const { voiceNotes } = useVoiceNotes();
-  const { theme } = useAppSettings();
-  const insets = useSafeAreaInsets();
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [internalDraft, setInternalDraft] = useState<string>('');
@@ -65,83 +51,91 @@ export default function ChatInterface({ visible, onClose, threadId, threadLabel,
   const scrollViewRef = useRef<ScrollView>(null);
   const hydratedRef = useRef(false);
   const lastExternalQueryRef = useRef<string | undefined>(undefined);
-  const [headerHeight, setHeaderHeight] = useState<number>(0);
-  const [inputBarHeight, setInputBarHeight] = useState<number>(0);
-  const [contextInfoHeight, setContextInfoHeight] = useState<number>(0);
-  const inputRef = useRef<TextInput>(null);
-
-  // Screenshot analysis
-  const {
-    image,
-    analyzing,
-    analysisResult,
-    error: screenshotError,
-    showImagePicker,
-    analyzeScreenshot,
-    executeSuggestedAction,
-    removeImage,
-  } = useScreenshotAnalysis();
-
-  // Auto-open image picker when requested by parent (e.g., attach button in Chat tab)
-  const autoOpenedRef = useRef(false);
-  useEffect(() => {
-    if (visible && autoOpenImagePicker && !autoOpenedRef.current) {
-      autoOpenedRef.current = true;
-      showImagePicker();
-    }
-  }, [visible, autoOpenImagePicker, showImagePicker]);
 
   const sendMessageToAI = useCallback(async (history: Message[]) => {
     setIsLoading(true);
     try {
-      const lastUserMessage = history[history.length - 1];
-      if (!lastUserMessage || lastUserMessage.isUser === false) {
-        throw new Error('No user message to send');
-      }
-
-      const request: AgentChatRequest = {
-        message: lastUserMessage.text,
-        context: {
-          use_tools: true
-        }
-      };
-
-      const response = await sendAgentMessage(request);
-
-      const aiMessage: Message = {
-        id: Date.now().toString(),
-        text: response.message,
-        isUser: false,
-        timestamp: new Date(),
-        references: response.references,
-      };
-      setMessages(prev => [...prev, aiMessage]);
-
-      console.log('📊 Agent response:', {
-        tools_used: response.tools_used ?? [],
-        tokens: response.usage?.total_tokens ?? 0
+      // Build contact context for AI
+      const contactsContext = people.map(person => {
+        const warmthStatus = person.warmth ? 
+          (person.warmth >= 70 ? 'hot' : person.warmth >= 50 ? 'warm' : person.warmth >= 30 ? 'cool' : 'cold') : 'unknown';
+        
+        return {
+          name: person.fullName || person.name,
+          company: person.company,
+          title: person.title,
+          emails: person.emails,
+          phones: person.phones,
+          tags: person.tags,
+          interests: person.interests,
+          lastInteraction: person.lastInteraction,
+          lastInteractionSummary: person.lastInteractionSummary,
+          warmthStatus,
+          warmthScore: person.warmth
+        };
       });
+
+      // Build voice notes context
+      const notesContext = voiceNotes.map(note => ({
+        personId: note.personId,
+        transcript: note.transcript,
+        duration: note.duration,
+        createdAt: note.createdAt,
+        contextScope: note.contextScope,
+        extractedInterests: note.extractedInterests
+      }));
+
+      const systemPrompt = `You are a helpful personal CRM assistant for EverReach. You have access to the user's contact list and voice notes.
+
+CONTACT LIST (${people.length} contacts):
+${contactsContext.map(c => `• ${c.name}${c.company ? ` (${c.company})` : ''}${c.title ? ` - ${c.title}` : ''}
+  Warmth: ${c.warmthStatus} (${c.warmthScore || 'unknown'})
+  Last interaction: ${c.lastInteractionSummary || 'No recent interaction'}
+  Interests: ${c.interests?.join(', ') || 'None listed'}
+  Contact: ${c.emails?.[0] || c.phones?.[0] || 'No contact info'}`).join('\n\n')}
+
+VOICE NOTES (${voiceNotes.length} notes):
+${notesContext.map(n => `• Note from ${n.createdAt}: ${n.transcript || 'No transcript'}`).join('\n')}
+
+You can help with:
+- Finding specific contacts by name, company, or other details
+- Providing information about contacts and their interaction history
+- Suggesting follow-ups based on warmth scores and last interactions
+- Analyzing voice notes and extracting insights
+- General CRM tasks and relationship management advice
+
+Be concise, helpful, and reference specific contact details when relevant.`;
+
+      const response = await fetch('https://toolkit.rork.com/text/llm/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [
+            { role: 'system', content: systemPrompt },
+            ...history.slice(-12).map(m => ({ role: m.isUser ? 'user' : 'assistant', content: m.text })),
+          ],
+        }),
+      });
+      
+      const data = await response.json();
+      const completion: string | undefined = data?.completion;
+
+      if (completion) {
+        const aiMessage: Message = {
+          id: Date.now().toString(),
+          text: completion,
+          isUser: false,
+          timestamp: new Date(),
+        };
+        setMessages(prev => [...prev, aiMessage]);
+      } else {
+        throw new Error('No response from AI');
+      }
     } catch (e) {
-      console.error('\n========== CHAT INTERFACE ERROR ==========');
-      console.error('❌ AI chat error:', e);
-      console.error('💥 Error type:', e instanceof Error ? e.constructor.name : typeof e);
-      console.error('📝 Error message:', e instanceof Error ? e.message : String(e));
-      console.error('📚 Error stack:', e instanceof Error ? e.stack : 'No stack trace');
-      console.error('🔍 Full error object:', JSON.stringify(e, Object.getOwnPropertyNames(e), 2));
-      console.error('==========================================\n');
-      
-      const errorText = e instanceof Error ? e.message : String(e);
-      const userFriendlyMessage = errorText.includes('401') || errorText.includes('Unauthorized')
-        ? "Authentication error. Please sign in again."
-        : errorText.includes('404') || errorText.includes('Not Found')
-        ? "Service not available. Please check your connection."
-        : errorText.includes('Network')
-        ? "Network error. Please check your internet connection."
-        : "I'm having trouble connecting right now. Please try again shortly.";
-      
+      console.error('AI chat error:', e);
       const errMessage: Message = {
         id: Date.now().toString(),
-        text: userFriendlyMessage,
+        text: "I'm having trouble connecting right now. Please try again shortly.",
         isUser: false,
         timestamp: new Date(),
       };
@@ -149,7 +143,7 @@ export default function ChatInterface({ visible, onClose, threadId, threadLabel,
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [people, voiceNotes]);
 
   // Handle externalQuery submissions
   useEffect(() => {
@@ -204,69 +198,31 @@ export default function ChatInterface({ visible, onClose, threadId, threadLabel,
     }
   }, [messages]);
 
-  // Scroll to end when keyboard opens
-  useEffect(() => {
-    const showSub = Keyboard.addListener('keyboardDidShow', () => {
-      setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 50);
-    });
-    return () => {
-      showSub.remove();
-    };
-  }, []);
 
-  const handleSendMessage = useCallback(async () => {
-    const trimmed = inputText.trim();
-    if ((!trimmed && !image) || isLoading) return;
 
-    // If screenshot attached, analyze it first
-    if (image) {
-      const userImageMessage: Message = {
-        id: Date.now().toString(),
-        text: trimmed || '',
-        isUser: true,
-        timestamp: new Date(),
-        imageUri: image.uri,
-      };
-      setMessages(prev => [...prev, userImageMessage]);
-      if (onDraftTextChange) onDraftTextChange(''); else setInternalDraft('');
-      const result = await analyzeScreenshot(trimmed || undefined);
-      removeImage();
-      if (result) {
-        const aiMessage: Message = {
-          id: Date.now().toString(),
-          text: result.vision_summary,
-          isUser: false,
-          timestamp: new Date(),
-        };
-        setMessages(prev => [...prev, aiMessage]);
-      }
-      return;
-    }
 
-    // Regular text message
-    const newMessage: Message = {
+
+  const handleSendMessage = async () => {
+    if (!inputText.trim() || isLoading) return;
+    const newMsg: Message = {
       id: Date.now().toString(),
-      text: trimmed,
+      text: inputText.trim(),
       isUser: true,
       timestamp: new Date(),
     };
-    const history = [...messages, newMessage];
-    setMessages(prev => [...prev, newMessage]);
+    const history = [...messages, newMsg];
+    setMessages(prev => [...prev, newMsg]);
     if (onDraftTextChange) onDraftTextChange(''); else setInternalDraft('');
-    // Keep the keyboard open for faster follow-ups
-    setTimeout(() => inputRef.current?.focus(), 0);
-    void (async () => { await sendMessageToAI(history); })();
-  }, [inputText, isLoading, messages, image, analyzeScreenshot, sendMessageToAI, onDraftTextChange]);
+    await sendMessageToAI(history);
+  };
 
-  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
 
-  const handleCopyMessage = async (text: string, messageId: string) => {
+
+  const handleCopyMessage = async (text: string) => {
     if (!text.trim()) return;
     try {
       await Clipboard.setStringAsync(text);
       console.log('Message copied to clipboard');
-      setCopiedMessageId(messageId);
-      setTimeout(() => setCopiedMessageId(null), 2000);
     } catch (error) {
       console.error('Failed to copy message:', error);
     }
@@ -274,86 +230,23 @@ export default function ChatInterface({ visible, onClose, threadId, threadLabel,
 
   const renderMessage = (m: Message) => {
     const isUser = m.isUser;
-    const isCopied = copiedMessageId === m.id;
-    const hasReferences = !isUser && m.references && (
-      (m.references.contacts && m.references.contacts.length > 0) ||
-      (m.references.notes && m.references.notes.length > 0) ||
-      (m.references.interactions && m.references.interactions.length > 0) ||
-      (m.references.data_sources && m.references.data_sources.length > 0)
-    );
-
     return (
       <View key={m.id} style={[styles.msgRow, isUser && styles.msgRowUser]}>
-        <View style={[styles.bubble, isUser ? styles.userBubble : styles.aiBubble]}>
+        <TouchableOpacity
+          style={[styles.bubble, isUser ? styles.userBubble : styles.aiBubble]}
+          onLongPress={() => handleCopyMessage(m.text)}
+          activeOpacity={0.8}
+        >
           {!isUser && (
             <View style={styles.aiHeader}>
               <MessageCircle size={14} color="#007AFF" />
               <Text style={styles.aiLabel}>CRM Assistant</Text>
             </View>
           )}
-          {m.text ? (
-            <Text style={[styles.msgText, isUser ? styles.userText : styles.aiText]}>{m.text}</Text>
-          ) : null}
-          {m.imageUri ? (
-            <Image source={{ uri: m.imageUri }} style={styles.msgImage} resizeMode="cover" />
-          ) : null}
+          <Text style={[styles.msgText, isUser ? styles.userText : styles.aiText]}>{m.text}</Text>
 
-          {hasReferences && m.references && (
-            <View style={styles.referencesContainer}>
-              <Text style={styles.referencesTitle}>Sources:</Text>
-              <View style={styles.referencesContent}>
-                {m.references.contacts && m.references.contacts.length > 0 && (
-                  <View style={styles.referenceItem}>
-                    <User size={12} color="#666" />
-                    <Text style={styles.referenceText}>
-                      {m.references.contacts.length} contact{m.references.contacts.length > 1 ? 's' : ''}
-                    </Text>
-                  </View>
-                )}
-                {m.references.notes && m.references.notes.length > 0 && (
-                  <View style={styles.referenceItem}>
-                    <FileText size={12} color="#666" />
-                    <Text style={styles.referenceText}>
-                      {m.references.notes.length} note{m.references.notes.length > 1 ? 's' : ''}
-                    </Text>
-                  </View>
-                )}
-                {m.references.interactions && m.references.interactions.length > 0 && (
-                  <View style={styles.referenceItem}>
-                    <Activity size={12} color="#666" />
-                    <Text style={styles.referenceText}>
-                      {m.references.interactions.length} interaction{m.references.interactions.length > 1 ? 's' : ''}
-                    </Text>
-                  </View>
-                )}
-                {m.references.data_sources && m.references.data_sources.length > 0 && (
-                  <View style={styles.referenceItem}>
-                    <Database size={12} color="#666" />
-                    <Text style={styles.referenceText}>
-                      {m.references.data_sources.join(', ')}
-                    </Text>
-                  </View>
-                )}
-              </View>
-            </View>
-          )}
-
-          <View style={styles.messageFooter}>
-            <Text style={[styles.time, isUser && styles.timeUser]}>
-              {m.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-            </Text>
-            <TouchableOpacity
-              style={styles.copyButton}
-              onPress={() => handleCopyMessage(m.text, m.id)}
-              activeOpacity={0.7}
-            >
-              <Copy size={14} color={isUser ? '#fff' : '#007AFF'} />
-              {isCopied && (
-                <Text style={[styles.copiedText, isUser && styles.copiedTextUser]}>Copied!</Text>
-              )}
-            </TouchableOpacity>
-          </View>
-        </View>
+          <Text style={styles.time}>{m.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+        </TouchableOpacity>
       </View>
     );
   };
@@ -361,21 +254,19 @@ export default function ChatInterface({ visible, onClose, threadId, threadLabel,
   return (
     <KeyboardAvoidingView 
       style={styles.container} 
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' 
-        ? Math.max(0, Math.round(insets.top + (embedHeader ? headerHeight : 0) + contextInfoHeight)) 
-        : 0}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={styles.innerContainer}>
           {/* Context Info */}
-          <View style={styles.contextInfo} onLayout={(e) => setContextInfoHeight(e.nativeEvent.layout.height)}>
+          <View style={styles.contextInfo}>
             <Text style={styles.contextText}>{people.length} contacts • {voiceNotes.length} notes</Text>
           </View>
 
           {/* Optional Embedded Header */}
           {embedHeader && (
-            <View style={styles.headerBar} onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}>
+            <View style={styles.headerBar}>
               <TouchableOpacity style={styles.headerBack} onPress={embedHeader.onBack} testID="chat-embedded-back">
                 <ChevronLeft size={20} color="#007AFF" />
                 <Text style={styles.headerBackText}>Trending</Text>
@@ -389,7 +280,7 @@ export default function ChatInterface({ visible, onClose, threadId, threadLabel,
           <ScrollView 
             ref={scrollViewRef} 
             style={styles.scroll} 
-            contentContainerStyle={[styles.scrollContent, { paddingBottom: 16 }]}
+            contentContainerStyle={styles.scrollContent}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
             showsVerticalScrollIndicator={false}
@@ -401,34 +292,14 @@ export default function ChatInterface({ visible, onClose, threadId, threadLabel,
                 <Text style={styles.loadingText}>Thinking...</Text>
               </View>
             )}
-            {analyzing && <AnalyzingLoader />}
-            {analysisResult && (
-              <AnalysisResults
-                result={analysisResult}
-                onExecuteAction={executeSuggestedAction}
-              />
-            )}
           </ScrollView>
 
-          {/* Screenshot Preview */}
-          {image && !analyzing && (
-            <ScreenshotPreview image={image} onRemove={removeImage} />
-          )}
-
           {/* Input Row */}
-          <View style={styles.inputBar} onLayout={(e) => setInputBarHeight(e.nativeEvent.layout.height)}>
-            <TouchableOpacity
-              style={styles.attachBtn}
-              onPress={showImagePicker}
-              disabled={isLoading || analyzing}
-            >
-              <Paperclip size={20} color={isLoading || analyzing ? theme.colors.textSecondary : theme.colors.primary} />
-            </TouchableOpacity>
-            <CrossPlatformTextInput
-              ref={inputRef}
+          <View style={styles.inputBar}>
+            <TextInput
               style={styles.input}
               placeholder="Ask about your contacts, notes, or get suggestions..."
-              placeholderTextColor={theme.colors.textSecondary}
+              placeholderTextColor="#999"
               value={inputText}
               onChangeText={(t) => {
                 if (onDraftTextChange) onDraftTextChange(t); else setInternalDraft(t);
@@ -455,22 +326,14 @@ export default function ChatInterface({ visible, onClose, threadId, threadLabel,
               }}
               style={styles.micBtn}
             />
-            {(() => {
-              const canSend = (!!inputText.trim() || !!image) && !isLoading;
-              return (
-                <TouchableOpacity
-                  style={[
-                    styles.sendBtn,
-                    { backgroundColor: canSend ? theme.colors.primary : theme.colors.border },
-                  ]}
-                  onPress={handleSendMessage}
-                  disabled={!canSend}
-                  testID="chat-send"
-                >
-                  <Send size={18} color={canSend ? theme.colors.surface : theme.colors.textSecondary} />
-                </TouchableOpacity>
-              );
-            })()}
+            <TouchableOpacity
+              style={[styles.sendBtn, (!inputText.trim() || isLoading) && styles.sendDisabled]}
+              onPress={handleSendMessage}
+              disabled={!inputText.trim() || isLoading}
+              testID="chat-send"
+            >
+              <Send size={18} color={(!inputText.trim() || isLoading) ? '#999' : '#fff'} />
+            </TouchableOpacity>
           </View>
         </View>
       </TouchableWithoutFeedback>
@@ -508,59 +371,14 @@ const styles = StyleSheet.create({
   aiText: { color: '#000' },
   related: { flexDirection: 'row', alignItems: 'center', marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#F0F0F0', gap: 6 },
   relatedText: { fontSize: 12, color: '#666', flex: 1 },
-  messageFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 },
-  time: { fontSize: 11, color: '#999' },
-  timeUser: { color: 'rgba(255, 255, 255, 0.7)' },
-  copyButton: { flexDirection: 'row', alignItems: 'center', gap: 4, padding: 4 },
-  copiedText: { fontSize: 10, color: '#007AFF', fontWeight: '600' },
-  copiedTextUser: { color: '#fff' },
-  referencesContainer: {
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#E5E5E5',
-  },
-  referencesTitle: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#666',
-    marginBottom: 6,
-  },
-  referencesContent: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  referenceItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: '#F0F0F0',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  referenceText: {
-    fontSize: 11,
-    color: '#666',
-  },
+  time: { fontSize: 11, color: '#999', marginTop: 6, alignSelf: 'flex-end' },
   loadingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, paddingVertical: 16 },
   loadingText: { fontSize: 14, color: '#666' },
-  inputBar: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    gap: 10, 
-    backgroundColor: '#fff', 
-    padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#E5E5E5',
-  },
-  attachBtn: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
+  inputBar: { flexDirection: 'row', alignItems: 'flex-end', gap: 10, backgroundColor: '#fff', padding: 16 },
   input: { flex: 1, borderWidth: 1, borderColor: '#E5E5E5', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 12, fontSize: 16, color: '#000', maxHeight: 100, backgroundColor: '#F8F9FA' },
   micBtn: {
     // Style for VoiceMicButton container
   },
   sendBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#007AFF', justifyContent: 'center', alignItems: 'center' },
   sendDisabled: { backgroundColor: '#E5E5E5' },
-  msgImage: { width: 180, height: 180, borderRadius: 10, marginTop: 8, backgroundColor: '#EEE' },
 });
